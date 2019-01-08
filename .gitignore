@@ -1,0 +1,7 @@
+.settings
+.classpath
+.project
+*.iml
+**/target/
+**/src/main/java-gen/*
+**/*.log

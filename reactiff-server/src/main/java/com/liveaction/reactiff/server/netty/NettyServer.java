@@ -1,6 +1,7 @@
 package com.liveaction.reactiff.server.netty;
 
 import com.google.common.collect.Maps;
+import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.server.netty.annotation.Get;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -16,50 +17,37 @@ import reactor.netty.http.server.HttpServerRoutes;
 import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public final class NettyServer implements Closeable {
-
     public static final Logger LOGGER = LoggerFactory.getLogger(NettyServer.class);
     private final Set<ReactiveFilter> reactiveFilters = Collections.synchronizedSortedSet(new TreeSet<>((o1, o2) -> o2.compareTo(o1)));
     private final Set<ReactiveHandler> reactiveHandlers = Collections.synchronizedSortedSet(new TreeSet<>());
     private final String host;
     private final int port;
-    private final Iterable<HttpProtocol> protocols;
+    private final Collection<HttpProtocol> protocols;
+    private final CodecManager codecManager;
     private DisposableServer disposableServer;
     private HttpServerRoutes httpServerRoutes;
 
-    public void addRouteFilter(ReactiveFilter reactiveFilter) {
-        reactiveFilters.add(reactiveFilter);
-    }
-
-    public void removeRouteFilter(ReactiveFilter reactiveFilter) {
-        reactiveFilters.remove(reactiveFilter);
-    }
-
-    public void addRouteHandler(ReactiveHandler reactiveHandler) {
-        reactiveHandlers.add(reactiveHandler);
-    }
-
-    public void removeRouteHandler(ReactiveHandler reactiveHandler) {
-        reactiveHandlers.remove(reactiveHandler);
-    }
-
-    public NettyServer(String host, int port, Iterable<HttpProtocol> protocols) {
+    NettyServer(String host,
+                int port,
+                Collection<HttpProtocol> protocols,
+                Collection<ReactiveFilter> filters,
+                Collection<ReactiveHandler> handlers,
+                CodecManager codecManager) {
         this.host = host;
         this.port = port;
         this.protocols = protocols;
-
+        this.codecManager = codecManager;
+        this.reactiveFilters.addAll(filters);
+        this.reactiveHandlers.addAll(handlers);
     }
 
     public NettyServer start() {
         HttpServer httpServer = HttpServer.create()
-                .protocol(StreamSupport.stream(protocols.spliterator(), false).toArray(HttpProtocol[]::new))
+                .protocol(protocols.toArray(new HttpProtocol[0]))
                 .host(host)
                 .port(port);
         registerAllRoutes();
@@ -71,10 +59,10 @@ public final class NettyServer implements Closeable {
 
     private void registerAllRoutes() {
         HttpServerRoutes httpServerRoutes = HttpServerRoutes.newRoutes();
+        this.httpServerRoutes = httpServerRoutes;
 
         reactiveHandlers.forEach(this::registerRoutes);
 
-        this.httpServerRoutes = httpServerRoutes;
     }
 
     private void registerRoutes(ReactiveHandler reactiveHandler) {
@@ -88,7 +76,8 @@ public final class NettyServer implements Closeable {
                     LOGGER.info("Registered route : '{}' -> {}", annotation.path(), m);
                     httpServerRoutes.get(annotation.path(), (req, res) -> {
                         try {
-                            return (Publisher<Void>) m.invoke(reactiveHandler, req, res);
+                            Publisher<?> invoke = (Publisher<?>) m.invoke(reactiveHandler, req);
+                            return res.send(codecManager.encode(req.requestHeaders(), res, invoke));
                         } catch (IllegalAccessException | InvocationTargetException error) {
                             return Mono.error(error);
                         }

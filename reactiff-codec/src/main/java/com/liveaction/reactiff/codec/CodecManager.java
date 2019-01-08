@@ -1,7 +1,6 @@
-package com.liveaction.reactiff.server.codec;
+package com.liveaction.reactiff.codec;
 
 import com.google.common.reflect.TypeToken;
-import com.liveaction.reactiff.codec.Codec;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
