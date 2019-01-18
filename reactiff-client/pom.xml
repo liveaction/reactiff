@@ -11,5 +11,15 @@
 
     <artifactId>reactiff-client</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.liveaction</groupId>
+            <artifactId>reactiff-codec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

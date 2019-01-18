@@ -64,13 +64,14 @@ public class CodecManager {
     }
 
     public <T> Publisher<ByteBuf> encodeAs(String contentType, HttpServerResponse response, Publisher<T> data) {
-        Codec jsonCodec = codecs.stream()
-                .filter(codec -> codec.supports(contentType))
+        Codec codec = codecs.stream()
+                .filter(myCodec -> myCodec.supports(contentType))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unable to found an encoder that supports Content-Type '" + contentType + "'"));
         LOGGER.debug("Found a encoder for Content-Type='{}'", contentType);
+        LOGGER.info("set {}", HttpHeaderNames.CONTENT_TYPE);
         response.responseHeaders().set(HttpHeaderNames.CONTENT_TYPE, contentType);
-        return jsonCodec.encode(contentType, data);
+        return codec.encode(contentType, data);
     }
 
 }

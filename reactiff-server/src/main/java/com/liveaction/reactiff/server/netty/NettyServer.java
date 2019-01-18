@@ -58,8 +58,7 @@ public final class NettyServer implements Closeable {
     }
 
     private void registerAllRoutes() {
-        HttpServerRoutes httpServerRoutes = HttpServerRoutes.newRoutes();
-        this.httpServerRoutes = httpServerRoutes;
+        this.httpServerRoutes = HttpServerRoutes.newRoutes();
 
         reactiveHandlers.forEach(this::registerRoutes);
 
@@ -76,6 +75,7 @@ public final class NettyServer implements Closeable {
                     LOGGER.info("Registered route : '{}' -> {}", annotation.path(), m);
                     httpServerRoutes.get(annotation.path(), (req, res) -> {
                         try {
+                            LOGGER.info("invoke path {} with {}", annotation.path(), req.uri());
                             Publisher<?> invoke = (Publisher<?>) m.invoke(reactiveHandler, req);
                             return res.send(codecManager.encode(req.requestHeaders(), res, invoke));
                         } catch (IllegalAccessException | InvocationTargetException error) {
