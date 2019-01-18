@@ -2,6 +2,5 @@
 .classpath
 .project
 *.iml
-**/target/
-**/src/main/java-gen/*
+target/
 **/*.log
