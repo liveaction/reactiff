@@ -1,6 +1,7 @@
 package com.liveaction.reactiff.server.netty;
 
 import com.google.common.collect.Maps;
+import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.server.netty.annotation.RequestMapping;
 import org.reactivestreams.Publisher;
@@ -8,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
+import reactor.netty.NettyOutbound;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.server.HttpServer;
 import reactor.netty.http.server.HttpServerRequest;
@@ -53,11 +55,13 @@ public final class NettyServer implements Closeable {
     public NettyServer start() {
         HttpServer httpServer = HttpServer.create()
                 .protocol(protocols.toArray(new HttpProtocol[0]))
-                .host(host)
-                .port(port);
+                .host(host);
+        if (port != -1) {
+            httpServer = httpServer.port(port);
+        }
         registerAllRoutes();
 
-        httpServer = httpServer.handle(this::handle);
+        httpServer = httpServer.handle(this.httpServerRoutes);
         disposableServer = httpServer.bindNow();
         return this;
     }
@@ -78,15 +82,17 @@ public final class NettyServer implements Closeable {
                     RequestMapping annotation = e.getKey();
                     Method m = e.getValue();
                     LOGGER.info("Registered route {} : '{}' -> {}", annotation.method(), annotation.path(), m);
-                    BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> {
+                    FilterChain route = (req, res) -> {
                         try {
                             LOGGER.info("invoke path {} with {}", annotation.path(), req.uri());
-                            Publisher<?> invoke = (Publisher<?>) m.invoke(reactiveHandler, req);
-                            return res.send(codecManager.encode(req.requestHeaders(), res, invoke));
+                            TypeToken<?> returnType = TypeToken.of(m.getGenericReturnType());
+                            Object rawResult = m.invoke(reactiveHandler, req);
+                            return toResult(returnType, rawResult);
                         } catch (IllegalAccessException | InvocationTargetException error) {
                             return Mono.error(error);
                         }
                     };
+                    BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> applyFilters(req, res, route);
                     switch (annotation.method()) {
                         case GET:
                             httpServerRoutes.get(annotation.path(), onRequest);
@@ -108,24 +114,52 @@ public final class NettyServer implements Closeable {
                             break;
                         default:
                             LOGGER.warn("Unknown HttpMethod: {}", annotation.method());
+                            break;
                     }
                 });
     }
 
-    private Publisher<Void> handle(HttpServerRequest httpServerRequest, HttpServerResponse httpServerResponse) {
-        FilterChain filterChain = this.handleRoutes();
+    private Mono<Result<?>> toResult(TypeToken<?> returnType, Object result) {
+        Class<?> rawType = returnType.getRawType();
+
+        if (Mono.class.isAssignableFrom(rawType)) {
+            TypeToken<?> paramType = returnType.resolveType(Mono.class.getTypeParameters()[0]);
+            if (Result.class.isAssignableFrom(paramType.getClass())) {
+                return (Mono<Result<?>>) result;
+            }
+            Mono<?> publisher = (Mono) result;
+            return publisher.transform(f -> f.map(f2 -> Result.ok(f)));
+
+        } else if (Publisher.class.isAssignableFrom(rawType)) {
+            TypeToken<?> paramType = returnType.resolveType(Publisher.class.getTypeParameters()[0]);
+            if (Result.class.isAssignableFrom(paramType.getClass())) {
+                return Mono.from((Publisher<Result<?>>) result);
+            }
+            Publisher<?> publisher = (Publisher) result;
+            return Mono.just(Result.ok(publisher));
+
+        } else if (Result.class.isAssignableFrom(rawType)) {
+            Result<?> httpResult = (Result<?>) result;
+            return Mono.just(httpResult);
+        } else {
+            return Mono.just(Result.ok(Mono.just(result)));
+        }
+    }
+
+    private Publisher<Void> applyFilters(HttpServerRequest req, HttpServerResponse res, FilterChain route) {
+        FilterChain filterChain = route;
         for (ReactiveFilter element : this.reactiveFilters) {
             filterChain = chain(element, filterChain);
         }
-        return filterChain.chain(httpServerRequest, httpServerResponse);
+        return filterChain.chain(req, res)
+                .flatMap(filteredResult -> {
+                    NettyOutbound send = res.status(filteredResult.status()).send(codecManager.encode(req.requestHeaders(), res, filteredResult.data()));
+                    return Mono.from(send);
+                });
     }
 
     private FilterChain chain(ReactiveFilter element, FilterChain filterChain) {
         return (httpServerRequest, httpServerResponse) -> element.filter(httpServerRequest, httpServerResponse, filterChain);
-    }
-
-    private FilterChain handleRoutes() {
-        return (httpServerRequest, httpServerResponse) -> Mono.from(httpServerRoutes.apply(httpServerRequest, httpServerResponse));
     }
 
     @Override
@@ -136,6 +170,5 @@ public final class NettyServer implements Closeable {
     public int port() {
         return disposableServer.port();
     }
-
 
 }

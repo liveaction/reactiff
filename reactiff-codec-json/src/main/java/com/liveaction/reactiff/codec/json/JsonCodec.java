@@ -11,6 +11,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.netty.ByteBufFlux;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 
 public final class JsonCodec implements Codec {
@@ -39,8 +40,13 @@ public final class JsonCodec implements Codec {
         return ByteBufFlux.fromInbound(byteBufFlux)
                 .aggregate()
                 .asInputStream()
-//                .map(inputStream -> objectMapper.readValue(inputStream, typeToken)); //TODO TypeReference ?
-                .map(inputStream -> null);
+                .map(inputStream -> {
+                    try {
+                        return objectMapper.readValue(inputStream, toTypeReference(typeToken));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     @Override

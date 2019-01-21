@@ -1,13 +1,13 @@
 package com.liveaction.reactiff.client;
 
 import com.liveaction.reactiff.codec.Codec;
-import com.liveaction.reactiff.codec.CodecManager;
+import com.liveaction.reactiff.codec.CodecManagerImpl;
 
 public class NettyHttpClientBuilder {
     private final String protocol;
     private final String host;
     private final int port;
-    private CodecManager codecManager = new CodecManager();
+    private CodecManagerImpl codecManager = new CodecManagerImpl();
 
     public NettyHttpClientBuilder(String protocol, String host, int port) {
         this.protocol = protocol;

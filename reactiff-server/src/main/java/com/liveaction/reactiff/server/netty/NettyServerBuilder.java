@@ -2,7 +2,7 @@ package com.liveaction.reactiff.server.netty;
 
 import com.google.common.collect.Sets;
 import com.liveaction.reactiff.codec.Codec;
-import com.liveaction.reactiff.codec.CodecManager;
+import com.liveaction.reactiff.codec.CodecManagerImpl;
 import reactor.netty.http.HttpProtocol;
 
 import java.util.Arrays;
@@ -14,7 +14,7 @@ public class NettyServerBuilder {
     private Collection<HttpProtocol> protocols = Sets.newHashSet();
     private Collection<ReactiveFilter> filters = Sets.newHashSet();
     private Collection<ReactiveHandler> handlers = Sets.newHashSet();
-    private CodecManager codecManager = new CodecManager();
+    private CodecManagerImpl codecManager = new CodecManagerImpl();
 
     /**
      * 0.0.0.0 by default

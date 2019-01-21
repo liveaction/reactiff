@@ -2,7 +2,7 @@ package com.liveaction.reactiff.client;
 
 import com.google.common.collect.Multimap;
 import com.google.common.reflect.TypeToken;
-import com.liveaction.reactiff.codec.CodecManager;
+import com.liveaction.reactiff.codec.CodecManagerImpl;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.QueryStringEncoder;
@@ -18,9 +18,9 @@ public final class NettyHttpClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyHttpClient.class);
 
     private final HttpClient httpClient;
-    private final CodecManager codecManager;
+    private final CodecManagerImpl codecManager;
 
-    public NettyHttpClient(String protocol, String host, int port, CodecManager codecManager) {
+    public NettyHttpClient(String protocol, String host, int port, CodecManagerImpl codecManager) {
         this.codecManager = codecManager;
         String url = protocol + "://" + host + ":" + port;
         this.httpClient = HttpClient.create()

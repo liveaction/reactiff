@@ -6,6 +6,6 @@ import reactor.netty.http.server.HttpServerResponse;
 
 public interface ReactiveFilter extends Rankable<ReactiveFilter> {
 
-    Mono<Void> filter(HttpServerRequest httpServerRequest, HttpServerResponse httpServerResponse, FilterChain chain);
+    Mono<Result<?>> filter(HttpServerRequest httpServerRequest, HttpServerResponse httpServerResponse, FilterChain chain);
 
 }

@@ -7,6 +7,6 @@ import reactor.netty.http.server.HttpServerResponse;
 @FunctionalInterface
 public interface FilterChain {
 
-    Mono<Void> chain(HttpServerRequest httpServerRequest, HttpServerResponse httpServerResponse);
+    Mono<Result<?>> chain(HttpServerRequest httpServerRequest, HttpServerResponse httpServerResponse);
 
 }

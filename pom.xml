@@ -16,8 +16,12 @@
     </modules>
 
     <properties>
-        <vertx.version>3.2.1</vertx.version>
         <netty.version>4.1.31.Final</netty.version>
+        <reactor-core.version>3.2.3.RELEASE</reactor-core.version>
+        <slf4j.version>1.7.25</slf4j.version>
+        <guava.version>18.0</guava.version>
+        <reactor-netty.version>0.8.4.RELEASE</reactor-netty.version>
+        <jackson.version>2.9.7</jackson.version>
     </properties>
 
     <build>
@@ -31,6 +35,11 @@
                 </configuration>
                 <version>3.6.0</version>
             </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+            </plugin>
         </plugins>
     </build>
 
@@ -38,36 +47,39 @@
         <dependencies>
             <dependency>
                 <groupId>com.liveaction</groupId>
+                <artifactId>reactiff-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.liveaction</groupId>
                 <artifactId>reactiff-codec</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.liveaction</groupId>
+                <artifactId>reactiff-codec-json</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.liveaction</groupId>
+                <artifactId>reactiff-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.25</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>18.0</version>
-            </dependency>
-
-            <!-- Vertx -->
-            <dependency>
-                <groupId>io.vertx</groupId>
-                <artifactId>vertx-core</artifactId>
-                <version>${vertx.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.vertx</groupId>
-                <artifactId>vertx-web</artifactId>
-                <version>${vertx.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.vertx</groupId>
-                <artifactId>vertx-reactive-streams</artifactId>
-                <version>${vertx.version}</version>
+                <version>${guava.version}</version>
             </dependency>
 
             <dependency>
@@ -119,12 +131,25 @@
             <dependency>
                 <groupId>io.projectreactor.netty</groupId>
                 <artifactId>reactor-netty</artifactId>
-                <version>0.8.3.RELEASE</version>
+                <version>${reactor-netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-core</artifactId>
-                <version>3.2.3.RELEASE</version>
+                <version>${reactor-core.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-test</artifactId>
+                <version>${reactor-core.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.12</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
