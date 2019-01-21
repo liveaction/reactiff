@@ -7,10 +7,13 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Get {
+public @interface RequestMapping {
 
     String path();
 
+    HttpMethod method() default HttpMethod.GET;
+
     int rank() default 0;
+
 
 }

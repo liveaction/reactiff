@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.netty.ByteBufFlux;
 import reactor.netty.http.client.HttpClientResponse;
+import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 
 import java.util.Comparator;
@@ -51,6 +52,17 @@ public class CodecManager {
                 .orElseThrow(() -> new IllegalArgumentException("Unable to found a decoder that supports Content-Type '" + contentType + "'"));
         LOGGER.debug("Found a decoder for Content-Type='{}'", contentType);
         return codec.decode(contentType, byteBufFlux, typeToken);
+    }
+
+    public <T> Publisher<T> decodeAs(HttpServerRequest request, TypeToken<T> typeToken) {
+        String contentType = Optional.ofNullable(request.requestHeaders().get(HttpHeaderNames.CONTENT_TYPE))
+                .orElse(TEXT_PLAIN);
+        Codec codec = codecs.stream()
+                .filter(myCodec -> myCodec.supports(contentType))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unable to found a decoder that supports Content-Type '" + contentType + "'"));
+        LOGGER.debug("Found a decoder for Content-Type='{}'", contentType);
+        return codec.decode(contentType, request.receive(), typeToken);
     }
 
     public <T> Publisher<ByteBuf> encode(HttpHeaders httpHeaders, HttpServerResponse response, Publisher<T> data) {

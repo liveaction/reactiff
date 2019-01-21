@@ -2,7 +2,7 @@ package com.liveaction.reactiff.server.netty;
 
 import com.google.common.collect.Maps;
 import com.liveaction.reactiff.codec.CodecManager;
-import com.liveaction.reactiff.server.netty.annotation.Get;
+import com.liveaction.reactiff.server.netty.annotation.RequestMapping;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +17,12 @@ import reactor.netty.http.server.HttpServerRoutes;
 import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 public final class NettyServer implements Closeable {
@@ -66,14 +71,14 @@ public final class NettyServer implements Closeable {
 
     private void registerRoutes(ReactiveHandler reactiveHandler) {
         Stream.of(reactiveHandler.getClass().getDeclaredMethods())
-                .map(m -> Maps.immutableEntry(m.getAnnotation(Get.class), m))
+                .map(m -> Maps.immutableEntry(m.getAnnotation(RequestMapping.class), m))
                 .filter(e -> e.getKey() != null)
                 .sorted(Comparator.comparingInt(o -> o.getKey().rank()))
                 .forEach(e -> {
-                    Get annotation = e.getKey();
+                    RequestMapping annotation = e.getKey();
                     Method m = e.getValue();
-                    LOGGER.info("Registered route : '{}' -> {}", annotation.path(), m);
-                    httpServerRoutes.get(annotation.path(), (req, res) -> {
+                    LOGGER.info("Registered route {} : '{}' -> {}", annotation.method(), annotation.path(), m);
+                    BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> {
                         try {
                             LOGGER.info("invoke path {} with {}", annotation.path(), req.uri());
                             Publisher<?> invoke = (Publisher<?>) m.invoke(reactiveHandler, req);
@@ -81,7 +86,16 @@ public final class NettyServer implements Closeable {
                         } catch (IllegalAccessException | InvocationTargetException error) {
                             return Mono.error(error);
                         }
-                    });
+                    };
+                    switch (annotation.method()) {
+                        case GET:
+                            httpServerRoutes.get(annotation.path(), onRequest);
+                            break;
+                        case POST:
+                            httpServerRoutes.post(annotation.path(),onRequest);
+                            break;
+                            default: LOGGER.warn("Unknown HttpMethod: {}", annotation.method());
+                    }
                 });
     }
 
@@ -109,5 +123,6 @@ public final class NettyServer implements Closeable {
     public int port() {
         return disposableServer.port();
     }
+
 
 }
