@@ -93,12 +93,16 @@ public final class NettyServer implements Closeable {
                             break;
                         case POST:
                             httpServerRoutes.post(annotation.path(), onRequest);
+                            break;
                         case OPTIONS:
                             httpServerRoutes.options(annotation.path(), onRequest);
+                            break;
                         case HEAD:
                             httpServerRoutes.head(annotation.path(), onRequest);
+                            break;
                         case PUT:
                             httpServerRoutes.put(annotation.path(), onRequest);
+                            break;
                         case DELETE:
                             httpServerRoutes.delete(annotation.path(), onRequest);
                             break;
