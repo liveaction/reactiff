@@ -92,9 +92,18 @@ public final class NettyServer implements Closeable {
                             httpServerRoutes.get(annotation.path(), onRequest);
                             break;
                         case POST:
-                            httpServerRoutes.post(annotation.path(),onRequest);
+                            httpServerRoutes.post(annotation.path(), onRequest);
+                        case OPTIONS:
+                            httpServerRoutes.options(annotation.path(), onRequest);
+                        case HEAD:
+                            httpServerRoutes.head(annotation.path(), onRequest);
+                        case PUT:
+                            httpServerRoutes.put(annotation.path(), onRequest);
+                        case DELETE:
+                            httpServerRoutes.delete(annotation.path(), onRequest);
                             break;
-                            default: LOGGER.warn("Unknown HttpMethod: {}", annotation.method());
+                        default:
+                            LOGGER.warn("Unknown HttpMethod: {}", annotation.method());
                     }
                 });
     }
