@@ -1,57 +1,75 @@
 package com.liveaction.reactiff.server.netty;
 
 import com.google.common.collect.Sets;
-import com.liveaction.reactiff.codec.Codec;
+import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
 import reactor.netty.http.HttpProtocol;
+import reactor.util.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
 
 public class NettyServerBuilder {
+
     private String host = "0.0.0.0";
-    private int port;
+    
+    private int port = -1;
+
     private Collection<HttpProtocol> protocols = Sets.newHashSet();
+
     private Collection<ReactiveFilter> filters = Sets.newHashSet();
+
     private Collection<ReactiveHandler> handlers = Sets.newHashSet();
-    private CodecManagerImpl codecManager = new CodecManagerImpl();
+
+    @Nullable
+    private CodecManager codecManager;
 
     /**
      * 0.0.0.0 by default
-     * @param host
-     * @return
      */
-    public NettyServerBuilder setHost(String host) {
+    public NettyServerBuilder host(String host) {
         this.host = host;
         return this;
     }
 
-    public NettyServerBuilder setPort(int port) {
+    /**
+     * -1 by default which means random.
+     */
+    public NettyServerBuilder port(int port) {
         this.port = port;
         return this;
     }
 
-    public NettyServerBuilder addProtocols(HttpProtocol... protocols) {
+    public NettyServerBuilder protocols(HttpProtocol... protocols) {
         this.protocols.addAll(Arrays.asList(protocols));
         return this;
     }
 
-    public NettyServerBuilder addFilters(ReactiveFilter... filters) {
-        this.filters.addAll(Arrays.asList(filters));
+    public NettyServerBuilder filters(Iterable<ReactiveFilter> filters) {
+        filters.forEach(this.filters::add);
         return this;
     }
 
-    public NettyServerBuilder addHandlers(ReactiveHandler handlers) {
-        this.handlers.addAll(Arrays.asList(handlers));
+    public NettyServerBuilder filter(ReactiveFilter filter) {
+        filters.add(filter);
         return this;
     }
 
-    public NettyServerBuilder addCodec(Codec codec) {
-        this.codecManager.addCodec(codec);
+    public NettyServerBuilder handler(ReactiveHandler handler) {
+        this.handlers.add(handler);
         return this;
     }
 
-    public NettyServer build() {
-        return new NettyServer(host, port, protocols, filters, handlers, codecManager);
+    public NettyServerBuilder codecManager(CodecManager codecManager) {
+        this.codecManager = codecManager;
+        return this;
     }
+
+    public NettyServerImpl build() {
+        if (codecManager == null) {
+            codecManager = new CodecManagerImpl();
+        }
+        return new NettyServerImpl(host, port, protocols, filters, handlers, codecManager);
+    }
+
 }

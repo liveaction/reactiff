@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.netty;
+package com.liveaction.reactiff.server.netty.example.api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;

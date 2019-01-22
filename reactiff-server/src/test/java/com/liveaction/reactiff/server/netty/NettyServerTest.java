@@ -1,28 +1,27 @@
 package com.liveaction.reactiff.server.netty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
 import com.liveaction.reactiff.codec.TextPlainCodec;
 import com.liveaction.reactiff.codec.json.JsonCodec;
+import com.liveaction.reactiff.server.netty.example.AuthFilter;
+import com.liveaction.reactiff.server.netty.example.ExceptionMappingFilter;
+import com.liveaction.reactiff.server.netty.example.TestController;
+import com.liveaction.reactiff.server.netty.example.api.Pojo;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.reactivestreams.Publisher;
-import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientResponse;
-import reactor.netty.http.server.HttpServerRequest;
-import reactor.netty.http.server.HttpServerResponse;
 import reactor.test.StepVerifier;
 
-import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
 
 public class NettyServerTest {
@@ -42,54 +41,13 @@ public class NettyServerTest {
         codecManager.addCodec(jsonCodec);
         codecManager.addCodec(plainCodec);
 
-        TestController testController = new TestController();
-
-        ImmutableList<HttpProtocol> protocols = ImmutableList.of(HttpProtocol.HTTP11);
-        ImmutableList<ReactiveHandler> handlers = ImmutableList.of(testController);
-        ImmutableList<ReactiveFilter> reactiveFilters = ImmutableList.of(
-                new ReactiveFilter() {
-                    @Override
-                    public Mono<Result<?>> filter(HttpServerRequest httpServerRequest, HttpServerResponse httpServerResponse, FilterChain chain) {
-                        return chain.chain(httpServerRequest, httpServerResponse)
-                                .onErrorResume(throwable -> {
-                                    boolean caught = false;
-                                    int status = 500;
-                                    if (throwable instanceof IllegalAccessException) {
-                                        status = 401;
-                                        caught = true;
-                                    } else if (throwable instanceof NoSuchElementException) {
-                                        status = 404;
-                                        caught = true;
-                                    }
-                                    if (!caught) {
-                                        LoggerFactory.getLogger(NettyServerTest.class).error("Unexpected error", throwable);
-                                    }
-                                    return Mono.just(Result.withCode(status, throwable.getMessage()));
-                                });
-                    }
-
-                    @Override
-                    public int rank() {
-                        return -1;
-                    }
-                },
-                new ReactiveFilter() {
-                    @Override
-                    public Mono<Result<?>> filter(HttpServerRequest httpServerRequest, HttpServerResponse httpServerResponse, FilterChain chain) {
-                        if (httpServerRequest.uri().startsWith("/yes")) {
-                            return chain.chain(httpServerRequest, httpServerResponse);
-                        } else {
-                            return Mono.empty();
-                        }
-                    }
-
-                    @Override
-                    public int rank() {
-                        return 0;
-                    }
-                }
-        );
-        tested = new NettyServer("0.0.0.0", -1, protocols, reactiveFilters, handlers, codecManager);
+        tested = NettyServer.create()
+                .protocols(HttpProtocol.HTTP11)
+                .codecManager(codecManager)
+                .filter(new ExceptionMappingFilter())
+                .filter(new AuthFilter())
+                .handler(new TestController())
+                .build();
         tested.start();
     }
 
