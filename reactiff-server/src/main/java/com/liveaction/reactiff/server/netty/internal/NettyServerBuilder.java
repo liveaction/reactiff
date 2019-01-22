@@ -1,8 +1,10 @@
-package com.liveaction.reactiff.server.netty;
+package com.liveaction.reactiff.server.netty.internal;
 
 import com.google.common.collect.Sets;
 import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
+import com.liveaction.reactiff.server.netty.ReactiveFilter;
+import com.liveaction.reactiff.server.netty.ReactiveHandler;
 import reactor.netty.http.HttpProtocol;
 import reactor.util.annotation.Nullable;
 
@@ -12,7 +14,7 @@ import java.util.Collection;
 public class NettyServerBuilder {
 
     private String host = "0.0.0.0";
-    
+
     private int port = -1;
 
     private Collection<HttpProtocol> protocols = Sets.newHashSet();
