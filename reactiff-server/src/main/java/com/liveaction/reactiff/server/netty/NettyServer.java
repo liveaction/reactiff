@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.server.netty.annotation.RequestMapping;
+import com.liveaction.reactiff.server.netty.internal.RequestImpl;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,7 +87,8 @@ public final class NettyServer implements Closeable {
                         try {
                             LOGGER.info("invoke path {} with {}", annotation.path(), req.uri());
                             TypeToken<?> returnType = TypeToken.of(m.getGenericReturnType());
-                            Object rawResult = m.invoke(reactiveHandler, req);
+                            Request request = new RequestImpl(req, codecManager);
+                            Object rawResult = m.invoke(reactiveHandler, request);
                             return toResult(returnType, rawResult);
                         } catch (IllegalAccessException | InvocationTargetException error) {
                             return Mono.error(error);
@@ -141,6 +143,7 @@ public final class NettyServer implements Closeable {
         } else if (Result.class.isAssignableFrom(rawType)) {
             Result<?> httpResult = (Result<?>) result;
             return Mono.just(httpResult);
+
         } else {
             return Mono.just(Result.ok(Mono.just(result)));
         }

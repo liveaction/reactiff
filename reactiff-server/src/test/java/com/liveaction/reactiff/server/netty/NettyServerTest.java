@@ -42,11 +42,7 @@ public class NettyServerTest {
         codecManager.addCodec(jsonCodec);
         codecManager.addCodec(plainCodec);
 
-        TestController reactiveHandler = new TestController();
-        reactiveHandler.setCodecManager(codecManager);
-
         TestController testController = new TestController();
-        testController.setCodecManager(codecManager);
 
         ImmutableList<HttpProtocol> protocols = ImmutableList.of(HttpProtocol.HTTP11);
         ImmutableList<ReactiveHandler> handlers = ImmutableList.of(testController);
