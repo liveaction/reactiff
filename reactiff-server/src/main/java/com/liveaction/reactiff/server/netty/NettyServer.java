@@ -128,7 +128,7 @@ public final class NettyServer implements Closeable {
                 return (Mono<Result<?>>) result;
             }
             Mono<?> publisher = (Mono) result;
-            return publisher.transform(f -> f.map(f2 -> Result.ok(f)));
+            return publisher.flatMap(mono -> Mono.just(Result.ok(Mono.just(mono))));
 
         } else if (Publisher.class.isAssignableFrom(rawType)) {
             TypeToken<?> paramType = returnType.resolveType(Publisher.class.getTypeParameters()[0]);
@@ -153,7 +153,7 @@ public final class NettyServer implements Closeable {
         }
         return filterChain.chain(req, res)
                 .flatMap(filteredResult -> {
-                    NettyOutbound send = res.status(filteredResult.status()).send(codecManager.encode(req.requestHeaders(), res, filteredResult.data()));
+                    NettyOutbound send = res.status(filteredResult.status()).send(codecManager.encode(req.requestHeaders(), filteredResult.data()));
                     return Mono.from(send);
                 });
     }

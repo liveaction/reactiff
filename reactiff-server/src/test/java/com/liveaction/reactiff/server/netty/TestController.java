@@ -35,7 +35,7 @@ public class TestController implements ReactiveHandler {
         return Flux.just("Hey " + httpServerRequest.param("name"), "Hey baby !");
     }
 
-    @RequestMapping(method = POST, path = "yes")
+    @RequestMapping(method = POST, path = "/yes")
     public Mono<Pojo> postPojo(HttpServerRequest httpServerRequest) {
         return Mono.from(
                 codecManager.decodeAs(httpServerRequest, new TypeToken<Pojo>() {

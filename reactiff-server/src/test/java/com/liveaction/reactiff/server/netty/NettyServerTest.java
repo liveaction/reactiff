@@ -136,6 +136,20 @@ public class NettyServerTest {
                 .verify();
     }
 
+    @Test
+    public void shouldPostAndReceivePojo() {
+        StepVerifier.create(
+                httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/yes")
+                        .send(codecManager.send(Mono.just(new Pojo("haroun", "tazieff"))))
+                        .response(decodeAs(Pojo.class)))
+                .expectNext(new Pojo("haroun", "tazieff from server"))
+                .expectComplete()
+                .verify();
+    }
+
     private <T> BiFunction<HttpClientResponse, ByteBufFlux, Publisher<T>> decodeAs(Class<T> clazz) {
         return (response, flux) -> {
             HttpResponseStatus status = response.status();
