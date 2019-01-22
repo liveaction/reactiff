@@ -7,20 +7,10 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RequestMapping {
+public @interface WsMapping {
 
     String path();
 
-    HttpMethod[] method() default {
-            HttpMethod.GET,
-            HttpMethod.POST,
-            HttpMethod.OPTIONS,
-            HttpMethod.PUT,
-            HttpMethod.HEAD,
-            HttpMethod.DELETE
-    };
-
     int rank() default 0;
-
 
 }

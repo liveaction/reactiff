@@ -3,6 +3,7 @@ package com.liveaction.reactiff.server.netty;
 import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.codec.CodecManager;
+import com.liveaction.reactiff.server.netty.annotation.HttpMethod;
 import com.liveaction.reactiff.server.netty.annotation.RequestMapping;
 import com.liveaction.reactiff.server.netty.internal.RequestImpl;
 import org.reactivestreams.Publisher;
@@ -95,28 +96,8 @@ public final class NettyServer implements Closeable {
                         }
                     };
                     BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> applyFilters(req, res, route);
-                    switch (annotation.method()) {
-                        case GET:
-                            httpServerRoutes.get(annotation.path(), onRequest);
-                            break;
-                        case POST:
-                            httpServerRoutes.post(annotation.path(), onRequest);
-                            break;
-                        case OPTIONS:
-                            httpServerRoutes.options(annotation.path(), onRequest);
-                            break;
-                        case HEAD:
-                            httpServerRoutes.head(annotation.path(), onRequest);
-                            break;
-                        case PUT:
-                            httpServerRoutes.put(annotation.path(), onRequest);
-                            break;
-                        case DELETE:
-                            httpServerRoutes.delete(annotation.path(), onRequest);
-                            break;
-                        default:
-                            LOGGER.warn("Unknown HttpMethod: {}", annotation.method());
-                            break;
+                    for (HttpMethod httpMethod : annotation.method()) {
+                        httpServerRoutes = httpMethod.route(httpServerRoutes, annotation.path(), onRequest);
                     }
                 });
     }
