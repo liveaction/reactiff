@@ -26,6 +26,10 @@ public interface CodecManager {
         return (httpClientRequest, nettyOutbound) -> nettyOutbound.send(this.encode(httpClientRequest.requestHeaders(), data));
     }
 
+    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> encode(Publisher<T> data) {
+        return (httpClientRequest, nettyOutbound) -> nettyOutbound.send(encode(httpClientRequest.requestHeaders(), data));
+    }
+
     void addCodec(Codec codec);
 
     void removeCodec(Codec codec);
