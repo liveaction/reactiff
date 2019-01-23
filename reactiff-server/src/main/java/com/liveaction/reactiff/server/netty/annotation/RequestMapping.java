@@ -1,5 +1,7 @@
 package com.liveaction.reactiff.server.netty.annotation;
 
+import com.liveaction.reactiff.server.netty.HttpMethod;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

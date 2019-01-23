@@ -1,40 +1,110 @@
 package com.liveaction.reactiff.server.netty;
 
+import com.google.common.collect.Maps;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.Mono;
 
-public interface Result<T> {
+import java.util.Collection;
+import java.util.Map;
 
-    static <A> Result<A> withCode(int code, A data) {
-        return new Result<A>() {
+public abstract class Result {
+
+    public static Result withStatus(int status, String reasonPhrase) {
+        return new Result() {
             @Override
-            public int status() {
-                return code;
+            public HttpResponseStatus status() {
+                return HttpResponseStatus.valueOf(status, reasonPhrase);
             }
 
             @Override
-            public Publisher<A> data() {
-                return Mono.just(data);
+            public Publisher<?> data() {
+                return null;
             }
         };
     }
 
-    static <A> Result<A> ok(Publisher<A> publisher) {
-        return new Result<A>() {
+    public static Result ok(Publisher<?> publisher) {
+        return new Result() {
             @Override
-            public int status() {
-                return 200;
-            }
-
-            @Override
-            public Publisher<A> data() {
+            public Publisher<?> data() {
                 return publisher;
             }
         };
     }
 
-    int status();
+    public static Builder builder() {
+        return new Builder();
+    }
 
-    Publisher<T> data();
+    public Builder copy() {
+        Builder builder = new Builder();
+        builder.status(status());
+        builder.data(data());
+        headers().forEach(builder::header);
+        return builder;
+    }
+
+    public static final class Builder {
+
+        private HttpResponseStatus status = HttpResponseStatus.valueOf(200);
+        private Publisher data;
+        private final Map<String, String> httpHeaders = Maps.newHashMap();
+
+        public Builder status(int status, String reasonPhrase) {
+            this.status = HttpResponseStatus.valueOf(status, reasonPhrase);
+            return this;
+        }
+
+        public Builder status(HttpResponseStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder data(Publisher data) {
+            this.data = data;
+            return this;
+        }
+
+        public Builder header(String name, String value) {
+            httpHeaders.put(name, value);
+            return this;
+        }
+
+        public Builder headers(String name, Collection<String> values) {
+            httpHeaders.put(name, String.join(",", values));
+            return this;
+        }
+
+        public Result build() {
+            return new Result() {
+
+                @Override
+                public HttpResponseStatus status() {
+                    return status;
+                }
+
+                @Override
+                public Publisher data() {
+                    return data;
+                }
+
+                @Override
+                public Headers headers() {
+                    return Headers.of(httpHeaders);
+                }
+            };
+        }
+
+    }
+
+    public HttpResponseStatus status() {
+        return HttpResponseStatus.valueOf(200);
+    }
+
+    public Headers headers() {
+        return Headers.empty();
+    }
+
+    public abstract Publisher<?> data();
 
 }

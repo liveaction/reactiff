@@ -1,11 +1,13 @@
 package com.liveaction.reactiff.server.netty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
 import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
 import com.liveaction.reactiff.codec.TextPlainCodec;
 import com.liveaction.reactiff.codec.json.JsonCodec;
 import com.liveaction.reactiff.server.netty.example.AuthFilter;
+import com.liveaction.reactiff.server.netty.example.CorsFilter;
 import com.liveaction.reactiff.server.netty.example.ExceptionMappingFilter;
 import com.liveaction.reactiff.server.netty.example.TestController;
 import com.liveaction.reactiff.server.netty.example.api.Pojo;
@@ -22,6 +24,7 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientResponse;
 import reactor.test.StepVerifier;
 
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 public class NettyServerTest {
@@ -41,9 +44,18 @@ public class NettyServerTest {
         codecManager.addCodec(jsonCodec);
         codecManager.addCodec(plainCodec);
 
+        CorsFilter filter = new CorsFilter(
+                ImmutableSet.of("http://localhost"),
+                ImmutableSet.of("X-UserToken"),
+                ImmutableSet.of("GET", "POST", "PUT", "DELETE"),
+                false,
+                Optional.empty()
+        );
+
         tested = NettyServer.create()
                 .protocols(HttpProtocol.HTTP11)
                 .codecManager(codecManager)
+                .filter(filter)
                 .filter(new ExceptionMappingFilter())
                 .filter(new AuthFilter())
                 .handler(new TestController())
@@ -76,7 +88,7 @@ public class NettyServerTest {
                 .get()
                 .uri("/yes/nosuch")
                 .response(decodeAs(String.class)))
-                .expectErrorMessage("Not Found")
+                .expectErrorMessage("404 : Not Found")
                 .verify();
     }
 
@@ -86,7 +98,7 @@ public class NettyServerTest {
                 .get()
                 .uri("/yes/unauthorized")
                 .response(decodeAs(String.class)))
-                .expectErrorMessage("Unauthorized")
+                .expectErrorMessage("401 : Unauthorized")
                 .verify();
     }
 
@@ -104,13 +116,46 @@ public class NettyServerTest {
                 .verify();
     }
 
+    @Test
+    public void shouldReceiveNotFoundWhenNoRouteMatch() {
+        StepVerifier.create(httpClient()
+                .get()
+                .uri("/yes_not_exists")
+                .response(decodeAs(String.class)))
+                .expectErrorMessage("404 : Not Found")
+                .verify();
+    }
+
+    @Test
+    public void shouldHandlePreflightCORSRequest() {
+        StepVerifier.create(httpClient()
+                .headers(httpHeaders -> {
+                    httpHeaders.set("Origin", "http://localhost");
+                    httpHeaders.set("Access-Control-Request-Method", "GET");
+                    httpHeaders.set("X-UserToken", "XXXXX");
+                })
+                .options()
+                .uri("/yes")
+                .response())
+                .expectNextMatches(response -> {
+                    String origin = response.responseHeaders().get("Access-Control-Allow-Origin");
+                    String headers = response.responseHeaders().get("Access-Control-Allow-Headers");
+                    String methods = response.responseHeaders().get("Access-Control-Allow-Methods");
+                    return "http://localhost".equals(origin) &&
+                            "Accept,Accept-Language,Content-Language,Content-Type,X-UserToken".equals(headers) &&
+                            "DELETE,POST,GET,PUT".equals(methods);
+                })
+                .expectComplete()
+                .verify();
+    }
+
     private <T> BiFunction<HttpClientResponse, ByteBufFlux, Publisher<T>> decodeAs(Class<T> clazz) {
         return (response, flux) -> {
             HttpResponseStatus status = response.status();
             if (status.code() == 200) {
                 return codecManager.decodeAs(clazz).apply(response, flux);
             } else {
-                throw new RuntimeException(status.reasonPhrase());
+                return Mono.error(new HttpException(status.code(), status.code() + " : " + status.reasonPhrase()));
             }
         };
     }
