@@ -110,7 +110,7 @@ public class NettyServerTest {
             if (status.code() == 200) {
                 return codecManager.decodeAs(clazz).apply(response, flux);
             } else {
-                throw new RuntimeException(status.reasonPhrase());
+                return Mono.error(new RuntimeException(status.reasonPhrase()));
             }
         };
     }
