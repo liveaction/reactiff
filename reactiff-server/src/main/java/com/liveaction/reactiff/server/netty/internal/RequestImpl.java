@@ -6,6 +6,7 @@ import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.server.netty.HttpMethod;
 import com.liveaction.reactiff.server.netty.Request;
+import com.liveaction.reactiff.server.netty.Route;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
@@ -26,9 +27,9 @@ public final class RequestImpl implements Request {
     private final CodecManager codecManager;
     private final ImmutableMap<String, List<String>> parameters;
     private final HttpMethod httpMethod;
-    private final String matchingRoute;
+    private final Route matchingRoute;
 
-    public RequestImpl(HttpServerRequest httpServerRequest, CodecManager codecManager, Optional<String> matchingRoute) {
+    public RequestImpl(HttpServerRequest httpServerRequest, CodecManager codecManager, Optional<Route> matchingRoute) {
         this.httpServerRequest = httpServerRequest;
         this.codecManager = codecManager;
         QueryStringDecoder decoder = new QueryStringDecoder(httpServerRequest.uri());
@@ -123,7 +124,7 @@ public final class RequestImpl implements Request {
     }
 
     @Override
-    public Optional<String> matchingRoute() {
+    public Optional<Route> matchingRoute() {
         return Optional.ofNullable(matchingRoute);
     }
 

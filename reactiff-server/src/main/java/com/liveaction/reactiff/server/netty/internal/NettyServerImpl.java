@@ -6,11 +6,14 @@ import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.server.netty.NettyServer;
 import com.liveaction.reactiff.server.netty.ReactiveFilter;
 import com.liveaction.reactiff.server.netty.ReactiveHandler;
+import com.liveaction.reactiff.server.netty.Request;
+import com.liveaction.reactiff.server.netty.Result;
 import com.liveaction.reactiff.server.netty.internal.support.HandlerSupportFunction;
 import com.liveaction.reactiff.server.netty.internal.support.RequestMappingSupport;
 import com.liveaction.reactiff.server.netty.internal.support.WsMappingSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.server.HttpServer;
@@ -20,6 +23,7 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
@@ -29,13 +33,15 @@ public final class NettyServerImpl implements NettyServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyServerImpl.class);
     private static final Comparator<ReactiveFilter> FILTER_COMPARATOR = Comparator.reverseOrder();
 
-    private final Set<ReactiveHandler> reactiveHandlers = Collections.synchronizedSortedSet(new TreeSet<>());
+    private final Set<ReactiveHandler> reactiveHandlers;
+    private final Set<ReactiveFilter> reactiveFilters;
     private final String host;
     private final int port;
     private final Collection<HttpProtocol> protocols;
 
     private final ImmutableSet<HandlerSupportFunction<?>> handlerSupportFunctions;
     private final HttpServer httpServer;
+    private final CodecManager codecManager;
 
     private DisposableServer disposableServer;
 
@@ -48,13 +54,18 @@ public final class NettyServerImpl implements NettyServer {
         this.host = host;
         this.port = port;
         this.protocols = protocols;
+        this.codecManager = codecManager;
 
         Set<ReactiveFilter> reactiveFilters = Collections.synchronizedSortedSet(new TreeSet<>(FILTER_COMPARATOR));
         reactiveFilters.addAll(filters);
+        this.reactiveFilters = reactiveFilters;
+
+        Set<ReactiveHandler> reactiveHandlers = Collections.synchronizedSortedSet(new TreeSet<>());
         reactiveHandlers.addAll(handlers);
+        this.reactiveHandlers = reactiveHandlers;
 
         this.handlerSupportFunctions = ImmutableSet.of(
-                new RequestMappingSupport(codecManager, reactiveFilters, new CorsConfig()),
+                new RequestMappingSupport(codecManager, reactiveFilters),
                 new WsMappingSupport(codecManager)
         );
         this.httpServer = createServer();
@@ -91,6 +102,7 @@ public final class NettyServerImpl implements NettyServer {
                         registerMethod(httpServerRoutes, reactiveHandler, handlerSupportFunction)
                 )
         );
+        httpServerRoutes.route(httpServerRequest -> true, (req, res) -> FilterUtils.applyFilters(req, res, codecManager, reactiveFilters, this::notFound, Optional.empty()));
 
         return httpServer.handle(httpServerRoutes);
     }
@@ -101,6 +113,10 @@ public final class NettyServerImpl implements NettyServer {
                 .filter(e -> e.getKey() != null)
                 .sorted(Comparator.comparingInt(o -> handlerSupportFunction.rank(o.getKey())))
                 .forEach(e -> handlerSupportFunction.register(httpServerRoutes, e.getKey(), reactiveHandler, e.getValue()));
+    }
+
+    private Mono<Result> notFound(Request request) {
+        return Mono.just(Result.withStatus(404, "Not found"));
     }
 
 }

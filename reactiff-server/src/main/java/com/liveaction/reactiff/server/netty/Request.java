@@ -52,5 +52,6 @@ public interface Request {
 
     HttpVersion version();
 
-    Optional<String> matchingRoute();
+    Optional<Route> matchingRoute();
+
 }
