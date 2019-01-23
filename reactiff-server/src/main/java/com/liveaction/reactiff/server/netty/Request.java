@@ -3,7 +3,6 @@ package com.liveaction.reactiff.server.netty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeToken;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.cookie.Cookie;
 import reactor.core.publisher.Flux;
@@ -12,6 +11,7 @@ import reactor.core.publisher.Mono;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public interface Request {
@@ -52,4 +52,5 @@ public interface Request {
 
     HttpVersion version();
 
+    Optional<String> matchingRoute();
 }

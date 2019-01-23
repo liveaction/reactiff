@@ -54,7 +54,7 @@ public final class NettyServerImpl implements NettyServer {
         reactiveHandlers.addAll(handlers);
 
         this.handlerSupportFunctions = ImmutableSet.of(
-                new RequestMappingSupport(codecManager, reactiveFilters),
+                new RequestMappingSupport(codecManager, reactiveFilters, new CorsConfig()),
                 new WsMappingSupport(codecManager)
         );
         this.httpServer = createServer();
@@ -85,7 +85,12 @@ public final class NettyServerImpl implements NettyServer {
         }
 
         HttpServerRoutes httpServerRoutes = HttpServerRoutes.newRoutes();
-        handlerSupportFunctions.forEach(handlerSupportFunction -> reactiveHandlers.forEach(reactiveHandler -> this.registerMethod(httpServerRoutes, reactiveHandler, handlerSupportFunction)));
+
+        handlerSupportFunctions.forEach(handlerSupportFunction ->
+                reactiveHandlers.forEach(reactiveHandler ->
+                        registerMethod(httpServerRoutes, reactiveHandler, handlerSupportFunction)
+                )
+        );
 
         return httpServer.handle(httpServerRoutes);
     }

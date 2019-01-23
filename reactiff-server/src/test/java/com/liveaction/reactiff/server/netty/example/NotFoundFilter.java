@@ -6,15 +6,20 @@ import com.liveaction.reactiff.server.netty.Request;
 import com.liveaction.reactiff.server.netty.Result;
 import reactor.core.publisher.Mono;
 
-public class AuthFilter implements ReactiveFilter {
+import java.util.NoSuchElementException;
+
+public final class NotFoundFilter implements ReactiveFilter {
+
+    @Override
+    public int filterRank() {
+        return Integer.MAX_VALUE;
+    }
 
     @Override
     public Mono<Result> filter(Request request, FilterChain chain) {
-        if (request.uri().startsWith("/yes")) {
-            return chain.chain(request);
-        } else {
-            return Mono.error(new IllegalAccessException("not yes routes are forbidden"));
-        }
+        return request.matchingRoute()
+                .map(r -> chain.chain(request))
+                .orElse(Mono.error(new NoSuchElementException()));
     }
 
 }

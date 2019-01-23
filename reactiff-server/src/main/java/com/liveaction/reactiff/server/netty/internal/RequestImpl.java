@@ -4,9 +4,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.codec.CodecManager;
+import com.liveaction.reactiff.server.netty.HttpMethod;
 import com.liveaction.reactiff.server.netty.Request;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -17,6 +17,7 @@ import reactor.netty.http.server.HttpServerRequest;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public final class RequestImpl implements Request {
@@ -24,12 +25,16 @@ public final class RequestImpl implements Request {
     private final HttpServerRequest httpServerRequest;
     private final CodecManager codecManager;
     private final ImmutableMap<String, List<String>> parameters;
+    private final HttpMethod httpMethod;
+    private final String matchingRoute;
 
-    public RequestImpl(HttpServerRequest httpServerRequest, CodecManager codecManager) {
+    public RequestImpl(HttpServerRequest httpServerRequest, CodecManager codecManager, Optional<String> matchingRoute) {
         this.httpServerRequest = httpServerRequest;
         this.codecManager = codecManager;
         QueryStringDecoder decoder = new QueryStringDecoder(httpServerRequest.uri());
         parameters = ImmutableMap.copyOf(decoder.parameters());
+        httpMethod = HttpMethod.valueOf(httpServerRequest.method().name());
+        this.matchingRoute = matchingRoute.orElse(null);
     }
 
     @Override
@@ -99,7 +104,7 @@ public final class RequestImpl implements Request {
 
     @Override
     public HttpMethod method() {
-        return httpServerRequest.method();
+        return httpMethod;
     }
 
     @Override
@@ -116,4 +121,10 @@ public final class RequestImpl implements Request {
     public HttpVersion version() {
         return httpServerRequest.version();
     }
+
+    @Override
+    public Optional<String> matchingRoute() {
+        return Optional.ofNullable(matchingRoute);
+    }
+
 }

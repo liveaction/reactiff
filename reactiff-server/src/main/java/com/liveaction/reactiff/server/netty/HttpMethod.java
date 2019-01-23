@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.netty.annotation;
+package com.liveaction.reactiff.server.netty;
 
 import org.reactivestreams.Publisher;
 import reactor.netty.http.server.HttpServerRequest;

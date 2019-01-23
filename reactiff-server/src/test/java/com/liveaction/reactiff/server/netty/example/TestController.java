@@ -10,8 +10,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.NoSuchElementException;
 
-import static com.liveaction.reactiff.server.netty.annotation.HttpMethod.GET;
-import static com.liveaction.reactiff.server.netty.annotation.HttpMethod.POST;
+import static com.liveaction.reactiff.server.netty.HttpMethod.GET;
+import static com.liveaction.reactiff.server.netty.HttpMethod.POST;
 
 public class TestController implements ReactiveHandler {
 
