@@ -1,25 +1,24 @@
 package com.liveaction.reactiff.server.netty;
 
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.Mono;
 
+import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 
 public abstract class Result {
 
-    public static Result withStatus(int status, Object data) {
+    public static Result withStatus(int status, String reasonPhrase) {
         return new Result() {
             @Override
-            public int status() {
-                return status;
+            public HttpResponseStatus status() {
+                return HttpResponseStatus.valueOf(status, reasonPhrase);
             }
 
             @Override
             public Publisher<?> data() {
-                return Mono.just(data);
+                return null;
             }
         };
     }
@@ -47,11 +46,16 @@ public abstract class Result {
 
     public static final class Builder {
 
-        private int status = 200;
+        private HttpResponseStatus status = HttpResponseStatus.valueOf(200);
         private Publisher data;
-        private final Map<String, Set<String>> httpHeaders = Maps.newHashMap();
+        private final Map<String, String> httpHeaders = Maps.newHashMap();
 
-        public Builder status(int status) {
+        public Builder status(int status, String reasonPhrase) {
+            this.status = HttpResponseStatus.valueOf(status, reasonPhrase);
+            return this;
+        }
+
+        public Builder status(HttpResponseStatus status) {
             this.status = status;
             return this;
         }
@@ -62,7 +66,12 @@ public abstract class Result {
         }
 
         public Builder header(String name, String value) {
-            httpHeaders.computeIfAbsent(name, s -> Sets.newHashSet()).add(value);
+            httpHeaders.put(name, value);
+            return this;
+        }
+
+        public Builder headers(String name, Collection<String> values) {
+            httpHeaders.put(name, String.join(",", values));
             return this;
         }
 
@@ -70,7 +79,7 @@ public abstract class Result {
             return new Result() {
 
                 @Override
-                public int status() {
+                public HttpResponseStatus status() {
                     return status;
                 }
 
@@ -88,8 +97,8 @@ public abstract class Result {
 
     }
 
-    public int status() {
-        return 200;
+    public HttpResponseStatus status() {
+        return HttpResponseStatus.valueOf(200);
     }
 
     public Headers headers() {

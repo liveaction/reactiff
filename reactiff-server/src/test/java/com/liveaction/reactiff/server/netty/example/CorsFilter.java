@@ -1,6 +1,5 @@
 package com.liveaction.reactiff.server.netty.example;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.liveaction.reactiff.server.netty.FilterChain;
@@ -8,8 +7,10 @@ import com.liveaction.reactiff.server.netty.HttpMethod;
 import com.liveaction.reactiff.server.netty.ReactiveFilter;
 import com.liveaction.reactiff.server.netty.Request;
 import com.liveaction.reactiff.server.netty.Result;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -64,7 +65,6 @@ public final class CorsFilter implements ReactiveFilter {
             return retrieveAndReturnResult(request, chain, originHeader);
         }
 
-        // Try "Preflight"
         return preflight(request, chain, originHeader);
     }
 
@@ -74,36 +74,36 @@ public final class CorsFilter implements ReactiveFilter {
         if (originHeader == null || accessControlMethod == null) {
             return chain.chain(request);
         }
-
         Result.Builder resultBuilder = Result.builder();
 
-        if (!this.allowedMethods.contains(request.method())) {
-            resultBuilder.status(401).data(Mono.just("No such method for this route"));
+        try {
+            HttpMethod parsedMethod = HttpMethod.valueOf(accessControlMethod);
+            if (!this.allowedMethods.contains(parsedMethod)) {
+                resultBuilder.status(401, "No such method for this route");
+            } else {
+                emitValidCORSResponse(originHeader, resultBuilder);
+            }
+
+        } catch (IllegalArgumentException e) {
+            resultBuilder.status(401, "No such method for this route");
         }
 
+        return Mono.just(resultBuilder.build());
+
+    }
+
+    private void emitValidCORSResponse(String originHeader, Result.Builder resultBuilder) {
+        resultBuilder.status(HttpResponseStatus.ACCEPTED);
         if (this.maxAge != null) {
             resultBuilder.header(ACCESS_CONTROL_MAX_AGE, String.valueOf(this.maxAge));
         }
 
-        // Otherwise we should be return OK withHeader the appropriate headers.
-
-        String exposedHeadersHeader = getExposedHeadersHeader();
-        String allowedOriginsHeader = getAllowedOriginsHeader(originHeader);
-
-        String allowedMethodsHeader = Joiner.on(", ").join(allowedMethods);
-
-        resultBuilder.header(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOriginsHeader)
-                .header(ACCESS_CONTROL_ALLOW_METHODS, allowedMethodsHeader)
-                .header(ACCESS_CONTROL_ALLOW_HEADERS, exposedHeadersHeader);
+        resultBuilder.headers(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowedOriginsHeader(originHeader))
+                .headers(ACCESS_CONTROL_ALLOW_METHODS, allowedMethods.stream().map(Objects::toString).collect(Collectors.toSet()))
+                .headers(ACCESS_CONTROL_ALLOW_HEADERS, allowedHeaders);
         if (allowCredentials) {
             resultBuilder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
-
-        return Mono.just(resultBuilder.build());
-    }
-
-    private String getExposedHeadersHeader() {
-        return String.join(", ", allowedHeaders);
     }
 
     private Mono<Result> retrieveAndReturnResult(Request request, FilterChain chain, String originHeader) {
@@ -115,13 +115,12 @@ public final class CorsFilter implements ReactiveFilter {
 
                 Result.Builder copy = r.copy();
 
-                String allowedOriginsHeader = getAllowedOriginsHeader(originHeader);
-                copy.header(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOriginsHeader);
+                copy.headers(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowedOriginsHeader(originHeader));
                 if (allowCredentials) {
                     copy.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
                 }
                 if (!allowedHeaders.isEmpty()) {
-                    copy.header(ACCESS_CONTROL_EXPOSE_HEADERS, getExposedHeadersHeader());
+                    copy.headers(ACCESS_CONTROL_EXPOSE_HEADERS, allowedHeaders);
                 }
                 return copy.build();
             });
@@ -131,12 +130,12 @@ public final class CorsFilter implements ReactiveFilter {
         return result;
     }
 
-    private String getAllowedOriginsHeader(String origin) {
+    private ImmutableSet<String> getAllowedOriginsHeader(String origin) {
         // If wildcard is used, only return the request supplied origin
         if (allowedOrigins.contains("*")) {
-            return origin;
+            return ImmutableSet.of(origin);
         } else {
-            return Joiner.on(", ").join(allowedOrigins);
+            return ImmutableSet.copyOf(allowedOrigins);
         }
     }
 

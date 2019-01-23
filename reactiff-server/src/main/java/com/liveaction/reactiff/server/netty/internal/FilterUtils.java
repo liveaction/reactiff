@@ -7,7 +7,6 @@ import com.liveaction.reactiff.server.netty.Request;
 import com.liveaction.reactiff.server.netty.Route;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
-import reactor.netty.NettyOutbound;
 import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 
@@ -28,8 +27,13 @@ public final class FilterUtils {
         return filterChain.chain(request)
                 .flatMap(filteredResult -> {
                     filteredResult.headers().forEach(res::header);
-                    NettyOutbound send = res.status(filteredResult.status()).send(codecManager.encode(req.requestHeaders(), filteredResult.data()));
-                    return Mono.from(send);
+                    HttpServerResponse httpServerResponse = res.status(filteredResult.status());
+                    Publisher<?> data = filteredResult.data();
+                    if (data == null) {
+                        return Mono.from(httpServerResponse.send());
+                    } else {
+                        return Mono.from(httpServerResponse.send(codecManager.encode(req.requestHeaders(), data)));
+                    }
                 });
     }
 
