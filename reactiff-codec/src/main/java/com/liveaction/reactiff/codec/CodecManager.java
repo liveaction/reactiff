@@ -22,12 +22,18 @@ public interface CodecManager {
         return (response, byteBufFlux) -> this.decodeAs(response, byteBufFlux, typeToken);
     }
 
-    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(Publisher<T> data) {
-        return (httpClientRequest, nettyOutbound) -> nettyOutbound.send(this.encode(httpClientRequest.requestHeaders(), data));
+    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(String contentType, Publisher<T> data) {
+        return (httpClientRequest, nettyOutbound) -> nettyOutbound.send(this.encodeAs(contentType, httpClientRequest.requestHeaders(), data));
     }
 
-    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> encode(Publisher<T> data) {
-        return (httpClientRequest, nettyOutbound) -> nettyOutbound.send(encode(httpClientRequest.requestHeaders(), data));
+    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(Publisher<T> data) {
+        return (httpClientRequest, nettyOutbound) -> {
+            String contentType = httpClientRequest.requestHeaders().get("Content-Type");
+            if (contentType == null) {
+                throw new IllegalArgumentException("No content-type set in http headers. Unable to determine one, please specify one to encode the body");
+            }
+            return nettyOutbound.send(this.encodeAs(contentType, data));
+        };
     }
 
     void addCodec(Codec codec);
@@ -38,8 +44,15 @@ public interface CodecManager {
 
     <T> Publisher<T> decodeAs(HttpServerRequest request, TypeToken<T> typeToken);
 
-    <T> Publisher<ByteBuf> encode(HttpHeaders httpHeaders, Publisher<T> data);
+    /**
+     * Negociate the best matching Content-Type between the requestHttpHeaders and the available codecs.
+     * Read 'Accept' header from the requestHttpHeaders.
+     * Writes the matching 'Content-Type' to the responseHttpHeaders and returns the data produced by this codec.
+     */
+    <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data);
 
-    <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders httpHeaders, Publisher<T> data);
+    <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders responseHttpHeaders, Publisher<T> data);
+
+    <T> Publisher<ByteBuf> encodeAs(String contentType, Publisher<T> data);
 
 }

@@ -112,7 +112,7 @@ public class NettyServerTest {
                         .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
                         .post()
                         .uri("/yes")
-                        .send(codecManager.send(Mono.just(new Pojo("haroun", "tazieff"))))
+                        .send(codecManager.send("application/json", Mono.just(new Pojo("haroun", "tazieff"))))
                         .response(decodeAs(Pojo.class)))
                 .expectNext(new Pojo("haroun", "tazieff from server"))
                 .expectComplete()

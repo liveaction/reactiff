@@ -32,7 +32,7 @@ public final class FilterUtils {
                     if (data == null) {
                         return Mono.from(httpServerResponse.send());
                     } else {
-                        return Mono.from(httpServerResponse.send(codecManager.encode(req.requestHeaders(), data)));
+                        return Mono.from(httpServerResponse.send(codecManager.encode(req.requestHeaders(), res.responseHeaders(), data)));
                     }
                 });
     }

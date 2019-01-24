@@ -12,10 +12,10 @@ import reactor.netty.http.client.HttpClientResponse;
 import reactor.netty.http.server.HttpServerRequest;
 
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.stream.Stream;
 
 public final class CodecManagerImpl implements CodecManager {
 
@@ -59,29 +59,46 @@ public final class CodecManagerImpl implements CodecManager {
     }
 
     @Override
-    public <T> Publisher<ByteBuf> encode(HttpHeaders httpHeaders, Publisher<T> data) {
-        String acceptHeader = httpHeaders.get(HttpHeaderNames.ACCEPT);
+    public <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data) {
+        String acceptHeader = requestHttpHeaders.get(HttpHeaderNames.ACCEPT);
         String contentType = negociateContentType(acceptHeader);
-        return encodeAs(contentType, httpHeaders, data);
+        return encodeAs(contentType, responseHttpHeaders, data);
     }
 
     @Override
     public <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders httpHeaders, Publisher<T> data) {
+        LOGGER.debug("Found an encoder for Content-Type='{}'", contentType);
+        httpHeaders.set(HttpHeaderNames.CONTENT_TYPE, contentType);
+        return encodeAs(contentType, data);
+    }
+
+    @Override
+    public <T> Publisher<ByteBuf> encodeAs(String contentType, Publisher<T> data) {
         Codec codec = codecs.stream()
                 .filter(myCodec -> myCodec.supports(contentType))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unable to found an encoder that supports Content-Type '" + contentType + "'"));
-        LOGGER.debug("Found a encoder for Content-Type='{}'", contentType);
-        httpHeaders.set(HttpHeaderNames.CONTENT_TYPE, contentType);
         return codec.encode(contentType, data);
     }
 
     private String negociateContentType(String acceptHeader) {
-        return Stream.of(acceptHeader.split(";"))
-                .filter(contentType -> codecs.stream()
-                        .anyMatch(codec -> codec.supports(contentType)))
-                .findFirst()
-                .orElse(HttpHeaderValues.TEXT_PLAIN.toString());
+        for (String contentType : acceptHeader.split(",")) {
+            String trim = contentType.trim();
+            Optional<String> matches = codecs.stream()
+                    .map(codec -> {
+                        if (codec.supports(trim)) {
+                            return trim;
+                        } else {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .findFirst();
+            if (matches.isPresent()) {
+                return matches.get();
+            }
+        }
+        return HttpHeaderValues.TEXT_PLAIN.toString();
     }
 
 }
