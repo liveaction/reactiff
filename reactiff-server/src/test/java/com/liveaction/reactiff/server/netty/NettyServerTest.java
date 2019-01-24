@@ -13,10 +13,13 @@ import com.liveaction.reactiff.server.netty.example.TestController;
 import com.liveaction.reactiff.server.netty.example.api.Pojo;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
 import reactor.netty.http.HttpProtocol;
@@ -145,6 +148,23 @@ public class NettyServerTest {
                             "Accept,Accept-Language,Content-Language,Content-Type,X-UserToken".equals(headers) &&
                             "DELETE,POST,GET,PUT".equals(methods);
                 })
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldHandlerWebSocket() {
+        Flux<WebSocketFrame> frames = httpClient()
+                .baseUrl("ws://localhost:" + tested.port())
+                .wiretap(true)
+                .websocket()
+                .uri("/websocket")
+                .handle((websocketInbound, websocketOutbound) -> websocketInbound.receiveFrames());
+
+        StepVerifier.create(frames)
+                .expectNext(new TextWebSocketFrame("Salut !"))
+                .expectNext(new TextWebSocketFrame("Je m'appelle"))
+                .expectNext(new TextWebSocketFrame("Jean Baptiste Poquelin"))
                 .expectComplete()
                 .verify();
     }

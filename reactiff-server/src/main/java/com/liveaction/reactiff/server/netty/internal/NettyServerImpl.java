@@ -66,7 +66,7 @@ public final class NettyServerImpl implements NettyServer {
 
         this.handlerSupportFunctions = ImmutableSet.of(
                 new RequestMappingSupport(codecManager, reactiveFilters),
-                new WsMappingSupport(codecManager)
+                new WsMappingSupport()
         );
         this.httpServer = createServer();
     }

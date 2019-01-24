@@ -10,7 +10,7 @@ public class AuthFilter implements ReactiveFilter {
 
     @Override
     public Mono<Result> filter(Request request, FilterChain chain) {
-        if (request.uri().startsWith("/yes")) {
+        if (request.uri().startsWith("/yes") || request.uri().startsWith("/websocket")) {
             return chain.chain(request);
         } else {
             return Mono.error(new IllegalAccessException("not yes routes are forbidden"));
