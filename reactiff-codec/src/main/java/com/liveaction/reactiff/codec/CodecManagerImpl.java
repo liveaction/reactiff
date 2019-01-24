@@ -37,7 +37,7 @@ public final class CodecManagerImpl implements CodecManager {
     @Override
     public <T> Publisher<T> decodeAs(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         String contentType = Optional.ofNullable(response.responseHeaders().get(HttpHeaderNames.CONTENT_TYPE))
-                .orElse(HttpHeaders.Values.APPLICATION_JSON);
+                .orElse(TEXT_PLAIN);
         Codec codec = codecs.stream()
                 .filter(myCodec -> myCodec.supports(contentType))
                 .findFirst()

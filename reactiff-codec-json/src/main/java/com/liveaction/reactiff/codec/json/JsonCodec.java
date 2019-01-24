@@ -32,7 +32,7 @@ public final class JsonCodec implements Codec {
 
     @Override
     public boolean supports(String contentType) {
-        return APPLICATION_JSON.equals(contentType) || APPLICATION_STREAM_JSON.equals(contentType);
+        return contentType.contains(APPLICATION_JSON) || contentType.equals(APPLICATION_STREAM_JSON);
     }
 
     @Override
