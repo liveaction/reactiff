@@ -39,7 +39,6 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
         this.host = host;
         this.port = port;
         this.protocols = protocols;
-
         this.router = new Router(codecManager, this::chain);
         this.httpServer = createServer();
     }
