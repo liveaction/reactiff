@@ -1,7 +1,7 @@
 package com.liveaction.reactiff.server.netty.example;
 
 import com.liveaction.reactiff.server.netty.FilterChain;
-import com.liveaction.reactiff.server.netty.NettyServerTest;
+import com.liveaction.reactiff.server.netty.ReactiveHttpServerTest;
 import com.liveaction.reactiff.server.netty.ReactiveFilter;
 import com.liveaction.reactiff.server.netty.Request;
 import com.liveaction.reactiff.server.netty.Result;
@@ -26,7 +26,7 @@ public class ExceptionMappingFilter implements ReactiveFilter {
                         caught = true;
                     }
                     if (!caught) {
-                        LoggerFactory.getLogger(NettyServerTest.class).error("Unexpected error", throwable);
+                        LoggerFactory.getLogger(ReactiveHttpServerTest.class).error("Unexpected error", throwable);
                     }
                     return Mono.just(Result.withStatus(status, throwable.getMessage()));
                 });

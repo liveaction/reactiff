@@ -3,9 +3,9 @@ package com.liveaction.reactiff.server.netty.internal;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.liveaction.reactiff.codec.CodecManager;
-import com.liveaction.reactiff.server.netty.NettyServer;
 import com.liveaction.reactiff.server.netty.ReactiveFilter;
 import com.liveaction.reactiff.server.netty.ReactiveHandler;
+import com.liveaction.reactiff.server.netty.ReactiveHttpServer;
 import com.liveaction.reactiff.server.netty.Request;
 import com.liveaction.reactiff.server.netty.Result;
 import com.liveaction.reactiff.server.netty.internal.support.HandlerSupportFunction;
@@ -28,9 +28,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
-public final class NettyServerImpl implements NettyServer {
+public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyServerImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveHttpServerImpl.class);
     private static final Comparator<ReactiveFilter> FILTER_COMPARATOR = Comparator.reverseOrder();
 
     private final Set<ReactiveHandler> reactiveHandlers;
@@ -45,12 +45,12 @@ public final class NettyServerImpl implements NettyServer {
 
     private DisposableServer disposableServer;
 
-    NettyServerImpl(String host,
-                    int port,
-                    Collection<HttpProtocol> protocols,
-                    Collection<ReactiveFilter> filters,
-                    Collection<ReactiveHandler> handlers,
-                    CodecManager codecManager) {
+    ReactiveHttpServerImpl(String host,
+                           int port,
+                           Collection<HttpProtocol> protocols,
+                           Collection<ReactiveFilter> filters,
+                           Collection<ReactiveHandler> handlers,
+                           CodecManager codecManager) {
         this.host = host;
         this.port = port;
         this.protocols = protocols;
@@ -116,7 +116,7 @@ public final class NettyServerImpl implements NettyServer {
     }
 
     private Mono<Result> notFound(Request request) {
-        return Mono.just(Result.withStatus(404, "Not found"));
+        return Mono.just(Result.withStatus(404, String.format("'%s' not found", request.uri())));
     }
 
 }

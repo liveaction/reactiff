@@ -30,10 +30,10 @@ import reactor.test.StepVerifier;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-public class NettyServerTest {
+public class ReactiveHttpServerTest {
 
     private static CodecManager codecManager;
-    private static NettyServer tested;
+    private static ReactiveHttpServer tested;
 
     @BeforeClass
     public static void setUp() {
@@ -55,7 +55,7 @@ public class NettyServerTest {
                 Optional.empty()
         );
 
-        tested = NettyServer.create()
+        tested = ReactiveHttpServer.create()
                 .protocols(HttpProtocol.HTTP11)
                 .codecManager(codecManager)
                 .filter(filter)
