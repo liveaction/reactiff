@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableSet;
 import com.liveaction.reactiff.server.netty.internal.filters.CorsFilter;
 import com.liveaction.reactiff.server.netty.internal.filters.ExceptionMappingFilter;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 public final class DefaultFilters {

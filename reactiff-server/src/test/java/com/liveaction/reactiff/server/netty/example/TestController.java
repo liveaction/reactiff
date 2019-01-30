@@ -53,9 +53,10 @@ public class TestController implements ReactiveHandler {
         return Mono.just("oui");
     }
 
-    @RequestMapping(method = GET, path = "/non")
     @RequiresAuth(authorized = false)
+    @RequestMapping(method = GET, path = "/non")
     public Mono<String> unauthorized() {
         return Mono.just("non");
     }
+
 }
