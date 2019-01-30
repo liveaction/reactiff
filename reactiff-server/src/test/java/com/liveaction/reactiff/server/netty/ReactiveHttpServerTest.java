@@ -65,11 +65,11 @@ public class ReactiveHttpServerTest {
         tested = ReactiveHttpServer.create()
                 .protocols(HttpProtocol.HTTP11)
                 .codecManager(codecManager)
-                .filter(corsFilter)
-                .filter(exceptionMapping)
-                .filter(new AuthFilter())
-                .handler(new TestController())
                 .build();
+        tested.addReactiveFilter(corsFilter);
+        tested.addReactiveFilter(exceptionMapping);
+        tested.addReactiveFilter(new AuthFilter());
+        tested.addReactiveHandler(new TestController());
         tested.start();
     }
 

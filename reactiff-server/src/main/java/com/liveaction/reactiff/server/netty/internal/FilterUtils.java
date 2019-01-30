@@ -11,6 +11,7 @@ import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 public final class FilterUtils {
 
@@ -18,12 +19,9 @@ public final class FilterUtils {
 
     }
 
-    public static Publisher<Void> applyFilters(HttpServerRequest req, HttpServerResponse res, CodecManager codecManager, Iterable<ReactiveFilter> reactiveFilters, FilterChain chain, Optional<Route> matchingRoute) {
+    public static Publisher<Void> applyFilters(HttpServerRequest req, HttpServerResponse res, CodecManager codecManager, Function<FilterChain, FilterChain> chainFunction, FilterChain chain, Optional<Route> matchingRoute) {
         Request request = new RequestImpl(req, codecManager, matchingRoute);
-        FilterChain filterChain = chain;
-        for (ReactiveFilter element : reactiveFilters) {
-            filterChain = chain(element, filterChain);
-        }
+        FilterChain filterChain = chainFunction.apply(chain);
         return filterChain.chain(request)
                 .flatMap(filteredResult -> {
                     filteredResult.headers().forEach(res::header);
@@ -37,7 +35,7 @@ public final class FilterUtils {
                 });
     }
 
-    private static FilterChain chain(ReactiveFilter element, FilterChain filterChain) {
+    static FilterChain chain(ReactiveFilter element, FilterChain filterChain) {
         return (request) -> element.filter(request, filterChain);
     }
 

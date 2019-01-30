@@ -35,7 +35,7 @@ public class WsMappingSupport implements HandlerSupportFunction<WsMapping> {
                 return Mono.error(error);
             }
         });
-        LOGGER.info("Registered websocket '{}' -> {}", annotation.path(), method);
+        LOGGER.trace("Registered websocket '{}' -> {}", annotation.path(), method);
     }
 
 }

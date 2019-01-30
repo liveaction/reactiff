@@ -5,7 +5,6 @@ import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.server.netty.FilterChain;
 import com.liveaction.reactiff.server.netty.HttpMethod;
-import com.liveaction.reactiff.server.netty.ReactiveFilter;
 import com.liveaction.reactiff.server.netty.ReactiveHandler;
 import com.liveaction.reactiff.server.netty.Request;
 import com.liveaction.reactiff.server.netty.Route;
@@ -25,19 +24,19 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class RequestMappingSupport implements HandlerSupportFunction<RequestMapping> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestMappingSupport.class);
 
     private final CodecManager codecManager;
-    private final Set<ReactiveFilter> reactiveFilters;
+    private final Function<FilterChain, FilterChain> filterChainer;
 
-    public RequestMappingSupport(CodecManager codecManager, Set<ReactiveFilter> reactiveFilters) {
+    public RequestMappingSupport(CodecManager codecManager, Function<FilterChain, FilterChain> chainFunction) {
         this.codecManager = codecManager;
-        this.reactiveFilters = reactiveFilters;
+        this.filterChainer = chainFunction;
     }
 
     @Override
@@ -72,12 +71,12 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
         };
         BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> {
             Optional<Route> matchingRoute = Optional.of(new Route(HttpMethod.valueOf(req.method().name()), annotation.path(), method));
-            return FilterUtils.applyFilters(req, res, codecManager, reactiveFilters, routeChain, matchingRoute);
+            return FilterUtils.applyFilters(req, res, codecManager, filterChainer, routeChain, matchingRoute);
         };
         for (HttpMethod httpMethod : annotation.method()) {
             httpMethod.route(httpServerRoutes, annotation.path(), onRequest);
         }
-        LOGGER.info("Registered route {} : '{}' -> {}", annotation.method(), annotation.path(), method);
+        LOGGER.trace("Registered route {} : '{}' -> {}", annotation.method(), annotation.path(), method);
     }
 
 }

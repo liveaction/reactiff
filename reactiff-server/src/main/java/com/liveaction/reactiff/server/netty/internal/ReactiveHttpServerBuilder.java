@@ -3,8 +3,6 @@ package com.liveaction.reactiff.server.netty.internal;
 import com.google.common.collect.Sets;
 import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
-import com.liveaction.reactiff.server.netty.ReactiveFilter;
-import com.liveaction.reactiff.server.netty.ReactiveHandler;
 import reactor.netty.http.HttpProtocol;
 import reactor.util.annotation.Nullable;
 
@@ -18,10 +16,6 @@ public class ReactiveHttpServerBuilder {
     private int port = -1;
 
     private Collection<HttpProtocol> protocols = Sets.newHashSet();
-
-    private Collection<ReactiveFilter> filters = Sets.newHashSet();
-
-    private Collection<ReactiveHandler> handlers = Sets.newHashSet();
 
     @Nullable
     private CodecManager codecManager;
@@ -47,21 +41,6 @@ public class ReactiveHttpServerBuilder {
         return this;
     }
 
-    public ReactiveHttpServerBuilder filters(Iterable<ReactiveFilter> filters) {
-        filters.forEach(this.filters::add);
-        return this;
-    }
-
-    public ReactiveHttpServerBuilder filter(ReactiveFilter filter) {
-        filters.add(filter);
-        return this;
-    }
-
-    public ReactiveHttpServerBuilder handler(ReactiveHandler handler) {
-        this.handlers.add(handler);
-        return this;
-    }
-
     public ReactiveHttpServerBuilder codecManager(CodecManager codecManager) {
         this.codecManager = codecManager;
         return this;
@@ -71,7 +50,7 @@ public class ReactiveHttpServerBuilder {
         if (codecManager == null) {
             codecManager = new CodecManagerImpl();
         }
-        return new ReactiveHttpServerImpl(host, port, protocols, filters, handlers, codecManager);
+        return new ReactiveHttpServerImpl(host, port, protocols, codecManager);
     }
 
 }

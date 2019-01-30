@@ -16,4 +16,13 @@ public interface ReactiveHttpServer extends Closeable {
 
     int port();
 
+    void addReactiveFilter(ReactiveFilter reactiveFilter);
+
+    void removeReactiveFilter(ReactiveFilter reactiveFilter);
+
+
+    void addReactiveHandler(ReactiveHandler reactiveHandler);
+
+    void removeReactiveHandler(ReactiveHandler reactiveHandler);
+
 }
