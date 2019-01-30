@@ -47,4 +47,15 @@ public class TestController implements ReactiveHandler {
                 .map(pojo -> new Pojo(pojo.id, pojo.name + " from server"));
     }
 
+    @RequiresAuth(authorized = true)
+    @RequestMapping(method = GET, path = "/oui")
+    public Mono<String> authorized() {
+        return Mono.just("oui");
+    }
+
+    @RequestMapping(method = GET, path = "/non")
+    @RequiresAuth(authorized = false)
+    public Mono<String> unauthorized() {
+        return Mono.just("non");
+    }
 }

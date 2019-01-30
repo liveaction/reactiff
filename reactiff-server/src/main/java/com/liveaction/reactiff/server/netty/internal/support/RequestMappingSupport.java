@@ -1,11 +1,13 @@
 package com.liveaction.reactiff.server.netty.internal.support;
 
+import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.server.netty.FilterChain;
 import com.liveaction.reactiff.server.netty.HttpMethod;
 import com.liveaction.reactiff.server.netty.ReactiveFilter;
 import com.liveaction.reactiff.server.netty.ReactiveHandler;
+import com.liveaction.reactiff.server.netty.Request;
 import com.liveaction.reactiff.server.netty.Route;
 import com.liveaction.reactiff.server.netty.annotation.RequestMapping;
 import com.liveaction.reactiff.server.netty.internal.FilterUtils;
@@ -20,6 +22,8 @@ import reactor.netty.http.server.HttpServerRoutes;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -52,14 +56,22 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
             try {
                 TypeToken<?> returnType = TypeToken.of(method.getGenericReturnType());
 
-                Object rawResult = method.invoke(reactiveHandler, request);
+                List<Object> args = Lists.newArrayList();
+                for (int i = 0; i < method.getParameterCount(); i++) {
+                    Type[] genericParameterTypes = method.getGenericParameterTypes();
+                    TypeToken<?> genericParameterType = TypeToken.of(genericParameterTypes[i]);
+                    if (genericParameterType.isAssignableFrom(Request.class)) {
+                        args.add(request);
+                    }
+                }
+                Object rawResult = method.invoke(reactiveHandler, args.toArray());
                 return ResultUtils.toResult(returnType, rawResult);
             } catch (IllegalAccessException | InvocationTargetException error) {
                 return Mono.error(error);
             }
         };
         BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> {
-            Optional<Route> matchingRoute = Optional.of(new Route(HttpMethod.valueOf(req.method().name()), annotation.path()));
+            Optional<Route> matchingRoute = Optional.of(new Route(HttpMethod.valueOf(req.method().name()), annotation.path(), method));
             return FilterUtils.applyFilters(req, res, codecManager, reactiveFilters, routeChain, matchingRoute);
         };
         for (HttpMethod httpMethod : annotation.method()) {

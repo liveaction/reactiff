@@ -176,6 +176,27 @@ public class ReactiveHttpServerTest {
                 .verify();
     }
 
+    @Test
+    public void shouldNotFilterAuthorized() {
+        StepVerifier.create(httpClient()
+                .get()
+                .uri("/oui")
+                .response(decodeAs(String.class)))
+                .expectNext("oui")
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldFilterUnauthorized() {
+        StepVerifier.create(httpClient()
+                .get()
+                .uri("/non")
+                .response(decodeAs(String.class)))
+                .expectErrorMessage("401 : Unauthorized")
+                .verify();
+    }
+
     private <T> BiFunction<HttpClientResponse, ByteBufFlux, Publisher<T>> decodeAs(Class<T> clazz) {
         return (response, flux) -> {
             HttpResponseStatus status = response.status();
