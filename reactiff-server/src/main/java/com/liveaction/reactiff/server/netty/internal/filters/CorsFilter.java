@@ -11,7 +11,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import reactor.core.publisher.Mono;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,13 +30,13 @@ public final class CorsFilter implements ReactiveFilter {
     private Set<String> allowedHeaders;
     private ImmutableSet<HttpMethod> allowedMethods;
     private boolean allowCredentials;
-    private Integer maxAge;
+    private int maxAge;
 
     public CorsFilter(ImmutableSet<String> allowedOrigins,
                       ImmutableSet<String> allowedHeaders,
                       ImmutableSet<String> allowedMethods,
                       boolean allowCredentials,
-                      Optional<Integer> maxAge) {
+                      int maxAge) {
         this.allowedOrigins = Sets.newTreeSet(String.CASE_INSENSITIVE_ORDER);
         this.allowedOrigins.addAll(allowedOrigins);
 
@@ -47,7 +46,7 @@ public final class CorsFilter implements ReactiveFilter {
 
         this.allowedMethods = ImmutableSet.copyOf(allowedMethods.stream().map(String::toUpperCase).map(HttpMethod::valueOf).collect(Collectors.toSet()));
         this.allowCredentials = allowCredentials;
-        this.maxAge = maxAge.orElse(null);
+        this.maxAge = maxAge;
     }
 
     @Override
@@ -94,7 +93,7 @@ public final class CorsFilter implements ReactiveFilter {
 
     private void emitValidCORSResponse(String originHeader, Result.Builder resultBuilder) {
         resultBuilder.status(HttpResponseStatus.ACCEPTED);
-        if (this.maxAge != null) {
+        if (this.maxAge > 0) {
             resultBuilder.header(ACCESS_CONTROL_MAX_AGE, String.valueOf(this.maxAge));
         }
 

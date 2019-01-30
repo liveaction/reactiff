@@ -16,7 +16,7 @@ public final class DefaultFilters {
                                       ImmutableSet<String> allowedHeaders,
                                       ImmutableSet<String> allowedMethods,
                                       boolean allowCredentials,
-                                      Optional<Integer> maxAge) {
+                                      int maxAge) {
         return new CorsFilter(allowedOrigins, allowedHeaders, allowedMethods, allowCredentials, maxAge);
 
     }

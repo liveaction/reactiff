@@ -26,7 +26,6 @@ import reactor.netty.http.client.HttpClientResponse;
 import reactor.test.StepVerifier;
 
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.function.BiFunction;
 
 public class ReactiveHttpServerTest {
@@ -51,7 +50,7 @@ public class ReactiveHttpServerTest {
                 ImmutableSet.of("X-UserToken"),
                 ImmutableSet.of("GET", "POST", "PUT", "DELETE"),
                 false,
-                Optional.empty()
+                -1
         );
 
         ReactiveFilter exceptionMapping = DefaultFilters.exceptionMapping(throwable -> {
