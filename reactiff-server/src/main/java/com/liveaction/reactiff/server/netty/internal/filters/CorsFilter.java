@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.netty.example;
+package com.liveaction.reactiff.server.netty.internal.filters;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;

@@ -7,8 +7,6 @@ import com.liveaction.reactiff.codec.CodecManagerImpl;
 import com.liveaction.reactiff.codec.TextPlainCodec;
 import com.liveaction.reactiff.codec.json.JsonCodec;
 import com.liveaction.reactiff.server.netty.example.AuthFilter;
-import com.liveaction.reactiff.server.netty.example.CorsFilter;
-import com.liveaction.reactiff.server.netty.example.ExceptionMappingFilter;
 import com.liveaction.reactiff.server.netty.example.TestController;
 import com.liveaction.reactiff.server.netty.example.api.Pojo;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -27,6 +25,7 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientResponse;
 import reactor.test.StepVerifier;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
@@ -47,7 +46,7 @@ public class ReactiveHttpServerTest {
         codecManager.addCodec(jsonCodec);
         codecManager.addCodec(plainCodec);
 
-        CorsFilter filter = new CorsFilter(
+        ReactiveFilter corsFilter = DefaultFilters.cors(
                 ImmutableSet.of("http://localhost"),
                 ImmutableSet.of("X-UserToken"),
                 ImmutableSet.of("GET", "POST", "PUT", "DELETE"),
@@ -55,11 +54,20 @@ public class ReactiveHttpServerTest {
                 Optional.empty()
         );
 
+        ReactiveFilter exceptionMapping = DefaultFilters.exceptionMapping(throwable -> {
+            if (throwable instanceof IllegalAccessException) {
+                return 401;
+            } else if (throwable instanceof NoSuchElementException) {
+                return 404;
+            } else {
+                return null;
+            }
+        });
         tested = ReactiveHttpServer.create()
                 .protocols(HttpProtocol.HTTP11)
                 .codecManager(codecManager)
-                .filter(filter)
-                .filter(new ExceptionMappingFilter())
+                .filter(corsFilter)
+                .filter(exceptionMapping)
                 .filter(new AuthFilter())
                 .handler(new TestController())
                 .build();
