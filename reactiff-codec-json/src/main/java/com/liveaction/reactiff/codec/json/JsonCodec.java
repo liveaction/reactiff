@@ -38,7 +38,6 @@ public final class JsonCodec implements Codec {
     @Override
     public <T> Publisher<T> decode(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         return ByteBufFlux.fromInbound(byteBufFlux)
-                .aggregate()
                 .asInputStream()
                 .map(inputStream -> {
                     try {
