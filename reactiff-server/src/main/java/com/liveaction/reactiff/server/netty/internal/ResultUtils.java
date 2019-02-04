@@ -7,27 +7,29 @@ import reactor.core.publisher.Mono;
 
 public final class ResultUtils {
 
+    private static final TypeToken<Mono> MONO_TYPE_TOKEN = TypeToken.of(Mono.class);
+    private static final TypeToken<Result> RESULT_TYPE_TOKEN = TypeToken.of(Result.class);
+    private static final TypeToken<Publisher> PUBLISHER_TYPE_TOKEN = TypeToken.of(Publisher.class);
+
     @SuppressWarnings("unchecked")
     public static Mono<Result> toResult(TypeToken<?> returnType, Object result) {
-        Class<?> rawType = returnType.getRawType();
-
-        if (Mono.class.isAssignableFrom(rawType)) {
+        if (MONO_TYPE_TOKEN.isSupertypeOf(returnType)) {
             TypeToken<?> paramType = returnType.resolveType(Mono.class.getTypeParameters()[0]);
-            if (Result.class.isAssignableFrom(paramType.getClass())) {
+            if (RESULT_TYPE_TOKEN.isSupertypeOf(paramType)) {
                 return (Mono<Result>) result;
             }
             Mono<?> publisher = (Mono) result;
             return publisher.flatMap(mono -> Mono.just(Result.ok(Mono.just(mono))));
 
-        } else if (Publisher.class.isAssignableFrom(rawType)) {
+        } else if (PUBLISHER_TYPE_TOKEN.isSupertypeOf(returnType)) {
             TypeToken<?> paramType = returnType.resolveType(Publisher.class.getTypeParameters()[0]);
-            if (Result.class.isAssignableFrom(paramType.getClass())) {
+            if (RESULT_TYPE_TOKEN.isSupertypeOf(paramType)) {
                 return Mono.from((Publisher<Result>) result);
             }
             Publisher<?> publisher = (Publisher) result;
             return Mono.just(Result.ok(publisher));
 
-        } else if (Result.class.isAssignableFrom(rawType)) {
+        } else if (RESULT_TYPE_TOKEN.isSupertypeOf(returnType)) {
             Result httpResult = (Result) result;
             return Mono.just(httpResult);
 
