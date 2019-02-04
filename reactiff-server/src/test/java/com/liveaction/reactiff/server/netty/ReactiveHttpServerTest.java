@@ -25,6 +25,7 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientResponse;
 import reactor.test.StepVerifier;
 
+import java.time.Duration;
 import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
 
@@ -124,6 +125,29 @@ public class ReactiveHttpServerTest {
                 .expectNext(new Pojo("haroun", "tazieff from server"))
                 .expectComplete()
                 .verify();
+    }
+
+    @Test
+    public void shouldPostAndReceivePojo_flux() {
+        StepVerifier.withVirtualTime(() ->
+        {
+            Flux<Pojo> just = Flux.just(new Pojo("haroun", "tazieff"),
+                    new Pojo("haroun", "tazieff2"))
+                    .delayElements(Duration.ofMillis(1000));
+            return httpClient()
+                    .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                    .post()
+                    .uri("/yes")
+                    .send(codecManager.send("application/json", just))
+                    .response(decodeAs(Pojo.class));
+        })
+                .expectSubscription()
+                .expectNoEvent(Duration.ofMillis(1000))
+                .expectNext(new Pojo("haroun", "tazieff from server"))
+                .expectNoEvent(Duration.ofMillis(1000))
+                .expectNext(new Pojo("haroun", "tazieff2 from server"))
+                .expectComplete()
+                .verify(Duration.ofMillis(1000));
     }
 
     @Test

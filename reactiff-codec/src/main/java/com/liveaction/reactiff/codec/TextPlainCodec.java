@@ -5,7 +5,6 @@ import com.google.common.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
 
 public final class TextPlainCodec implements Codec {
@@ -26,7 +25,7 @@ public final class TextPlainCodec implements Codec {
     @SuppressWarnings("unchecked")
     public <T> Publisher<T> decode(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         if (String.class.equals(typeToken.getRawType())) {
-            return (Mono<T>) ByteBufFlux.fromInbound(byteBufFlux).aggregate().asString();
+            return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux).asString();
         } else {
             throw new IllegalArgumentException(TEXT_PLAIN + " deserialization is only compatible with Type String. Type " + typeToken + " is not supported");
         }

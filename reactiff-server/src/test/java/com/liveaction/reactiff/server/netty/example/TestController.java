@@ -41,8 +41,8 @@ public class TestController implements ReactiveHandler {
     }
 
     @RequestMapping(method = POST, path = "/yes")
-    public Mono<Pojo> postPojo(Request request) {
-        return request.bodyToMono(new TypeToken<Pojo>() {
+    public Flux<Pojo> postPojo(Request request) {
+        return request.bodyToFlux(new TypeToken<Pojo>() {
         })
                 .map(pojo -> new Pojo(pojo.id, pojo.name + " from server"));
     }

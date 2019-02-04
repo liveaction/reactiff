@@ -6,6 +6,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import org.reactivestreams.Publisher;
 import reactor.netty.ByteBufFlux;
 import reactor.netty.NettyOutbound;
+import reactor.netty.NettyPipeline;
 import reactor.netty.http.client.HttpClientRequest;
 import reactor.netty.http.client.HttpClientResponse;
 import reactor.netty.http.server.HttpServerRequest;
@@ -23,7 +24,10 @@ public interface CodecManager {
     }
 
     default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(String contentType, Publisher<T> data) {
-        return (httpClientRequest, nettyOutbound) -> nettyOutbound.send(this.encodeAs(contentType, httpClientRequest.requestHeaders(), data));
+        return (httpClientRequest, nettyOutbound) ->
+                nettyOutbound.withConnection(connection -> connection.channel().config().setAutoRead(true))
+                        .options(NettyPipeline.SendOptions::flushOnEach)
+                        .send(this.encodeAs(contentType, httpClientRequest.requestHeaders(), data));
     }
 
     default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(Publisher<T> data) {
