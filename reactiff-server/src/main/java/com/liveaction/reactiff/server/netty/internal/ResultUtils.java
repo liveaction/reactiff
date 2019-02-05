@@ -13,23 +13,23 @@ public final class ResultUtils {
 
     @SuppressWarnings("unchecked")
     public static Mono<Result> toResult(TypeToken<?> returnType, Object result) {
-        if (MONO_TYPE_TOKEN.isSupertypeOf(returnType)) {
+        if (MONO_TYPE_TOKEN.isAssignableFrom(returnType)) {
             TypeToken<?> paramType = returnType.resolveType(Mono.class.getTypeParameters()[0]);
-            if (RESULT_TYPE_TOKEN.isSupertypeOf(paramType)) {
+            if (RESULT_TYPE_TOKEN.isAssignableFrom(paramType)) {
                 return (Mono<Result>) result;
             }
             Mono<?> publisher = (Mono) result;
             return publisher.flatMap(mono -> Mono.just(Result.ok(Mono.just(mono))));
 
-        } else if (PUBLISHER_TYPE_TOKEN.isSupertypeOf(returnType)) {
+        } else if (PUBLISHER_TYPE_TOKEN.isAssignableFrom(returnType)) {
             TypeToken<?> paramType = returnType.resolveType(Publisher.class.getTypeParameters()[0]);
-            if (RESULT_TYPE_TOKEN.isSupertypeOf(paramType)) {
+            if (RESULT_TYPE_TOKEN.isAssignableFrom(paramType)) {
                 return Mono.from((Publisher<Result>) result);
             }
             Publisher<?> publisher = (Publisher) result;
             return Mono.just(Result.ok(publisher));
 
-        } else if (RESULT_TYPE_TOKEN.isSupertypeOf(returnType)) {
+        } else if (RESULT_TYPE_TOKEN.isAssignableFrom(returnType)) {
             Result httpResult = (Result) result;
             return Mono.just(httpResult);
 
