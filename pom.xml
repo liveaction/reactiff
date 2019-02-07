@@ -16,12 +16,16 @@
     </modules>
 
     <properties>
-        <netty.version>4.1.32.Final</netty.version>
-        <reactor-core.version>3.2.3.RELEASE</reactor-core.version>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <netty.version>4.1.33.Final</netty.version>
+        <reactor-core.version>3.2.5.RELEASE</reactor-core.version>
         <slf4j.version>1.7.25</slf4j.version>
         <guava.version>18.0</guava.version>
         <reactor-netty.version>0.8.4.RELEASE</reactor-netty.version>
         <jackson.version>2.9.7</jackson.version>
+
     </properties>
 
     <build>
@@ -39,6 +43,7 @@
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
                 <extensions>true</extensions>
+                <version>4.1.0</version>
             </plugin>
         </plugins>
     </build>
