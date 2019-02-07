@@ -5,13 +5,14 @@ import com.liveaction.reactiff.codec.CodecManager;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
 import com.liveaction.reactiff.server.netty.ReactiveFilter;
 import com.liveaction.reactiff.server.netty.ReactiveHandler;
+import com.liveaction.reactiff.server.netty.ReactiveHttpServer;
 import reactor.netty.http.HttpProtocol;
 import reactor.util.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
 
-public class ReactiveHttpServerBuilder {
+public final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
 
     private String host = "0.0.0.0";
 
@@ -26,47 +27,49 @@ public class ReactiveHttpServerBuilder {
     @Nullable
     private CodecManager codecManager;
 
-    /**
-     * 0.0.0.0 by default
-     */
-    public ReactiveHttpServerBuilder host(String host) {
+    @Override
+    public ReactiveHttpServer.Builder host(String host) {
         this.host = host;
         return this;
     }
 
-    /**
-     * -1 by default which means random.
-     */
-    public ReactiveHttpServerBuilder port(int port) {
+    @Override
+    public ReactiveHttpServer.Builder port(int port) {
         this.port = port;
         return this;
     }
 
-    public ReactiveHttpServerBuilder protocols(HttpProtocol... protocols) {
+    @Override
+    public ReactiveHttpServer.Builder protocols(HttpProtocol... protocols) {
         this.protocols.addAll(Arrays.asList(protocols));
         return this;
     }
 
-    public ReactiveHttpServerBuilder filters(Iterable<ReactiveFilter> filters) {
+    @Override
+    public ReactiveHttpServer.Builder filters(Iterable<ReactiveFilter> filters) {
         filters.forEach(this.filters::add);
         return this;
     }
 
-    public ReactiveHttpServerBuilder filter(ReactiveFilter filter) {
+    @Override
+    public ReactiveHttpServer.Builder filter(ReactiveFilter filter) {
         filters.add(filter);
         return this;
     }
 
-    public ReactiveHttpServerBuilder handler(ReactiveHandler handler) {
+    @Override
+    public ReactiveHttpServer.Builder handler(ReactiveHandler handler) {
         this.handlers.add(handler);
         return this;
     }
 
-    public ReactiveHttpServerBuilder codecManager(CodecManager codecManager) {
+    @Override
+    public ReactiveHttpServer.Builder codecManager(CodecManager codecManager) {
         this.codecManager = codecManager;
         return this;
     }
 
+    @Override
     public ReactiveHttpServerImpl build() {
         if (codecManager == null) {
             codecManager = new CodecManagerImpl();
