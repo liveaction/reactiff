@@ -1,6 +1,6 @@
 package com.liveaction.reactiff.client;
 
-import com.liveaction.reactiff.codec.Codec;
+import com.liveaction.reactiff.api.codec.Codec;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
 
 public class NettyHttpClientBuilder {
