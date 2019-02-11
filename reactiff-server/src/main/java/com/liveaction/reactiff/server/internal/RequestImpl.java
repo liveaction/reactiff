@@ -49,7 +49,17 @@ public final class RequestImpl implements Request {
     }
 
     @Override
-    public ImmutableList<String> uriParam(String name) {
+    public String uriParam(String name) {
+        List<String> values = parameters.get(name);
+        if (values != null && !values.isEmpty()) {
+            return values.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public ImmutableList<String> uriParams(String name) {
         return ImmutableList.copyOf(parameters.get(name));
     }
 

@@ -20,7 +20,9 @@ public interface Request {
 
     <T> Flux<T> bodyToFlux(TypeToken<T> typeToken);
 
-    ImmutableList<String> uriParam(String name);
+    String uriParam(String name);
+
+    ImmutableList<String> uriParams(String name);
 
     String pathParam(String name);
 
