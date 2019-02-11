@@ -2,6 +2,7 @@ package com.liveaction.reactiff.codec;
 
 import com.google.common.base.Charsets;
 import com.google.common.reflect.TypeToken;
+import com.liveaction.reactiff.api.codec.Codec;
 import io.netty.buffer.ByteBuf;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
