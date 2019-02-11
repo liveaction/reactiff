@@ -28,6 +28,9 @@ public interface Request {
 
     String header(String name);
 
+    /**
+     * The list of values for this header, empty if no header found with this name.
+     */
     List<String> headers(String name);
 
     // delegates methods
