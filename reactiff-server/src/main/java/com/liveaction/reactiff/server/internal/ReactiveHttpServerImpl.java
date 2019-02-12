@@ -62,11 +62,13 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     @Override
     public void addReactiveFilter(ReactiveFilter reactiveFilter) {
         this.reactiveFilters.add(reactiveFilter);
+        LOGGER.info("ReactiveFilter {}(rank={}) added", reactiveFilter, reactiveFilter.filterRank());
     }
 
     @Override
     public void removeReactiveFilter(ReactiveFilter reactiveFilter) {
         this.reactiveFilters.remove(reactiveFilter);
+        LOGGER.info("ReactiveFilter {}(rank={}) removed", reactiveFilter, reactiveFilter.filterRank());
     }
 
     @Override
