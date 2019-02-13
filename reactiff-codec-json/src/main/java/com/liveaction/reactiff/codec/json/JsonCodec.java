@@ -1,6 +1,5 @@
 package com.liveaction.reactiff.codec.json;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.reflect.TypeToken;
@@ -11,6 +10,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.netty.ByteBufFlux;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
@@ -18,6 +18,7 @@ public final class JsonCodec implements Codec {
 
     public static final String APPLICATION_STREAM_JSON = "application/stream+json";
     public static final String APPLICATION_JSON = "application/json";
+    private static final char NEW_LINE = '\n';
 
     private ObjectMapper objectMapper;
 
@@ -52,9 +53,13 @@ public final class JsonCodec implements Codec {
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data) {
         return Flux.from(data)
                 .map(t -> {
+
                     try {
-                        return Unpooled.wrappedBuffer(objectMapper.writeValueAsBytes(t));
-                    } catch (JsonProcessingException e) {
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        objectMapper.writeValue(out, t);
+                        out.write(NEW_LINE);
+                        return Unpooled.wrappedBuffer(out.toByteArray());
+                    } catch (IOException e) {
                         throw new IllegalStateException("Unable to encode as JSON", e);
                     }
                 });
