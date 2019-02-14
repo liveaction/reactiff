@@ -17,7 +17,6 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
@@ -65,6 +64,7 @@ public class ReactiveHttpServerTest {
             }
         });
         tested = ReactiveHttpServer.create()
+                .wiretap(true)
                 .protocols(HttpProtocol.HTTP11)
                 .codecManager(codecManager)
                 .build();
@@ -99,7 +99,7 @@ public class ReactiveHttpServerTest {
         StepVerifier.create(httpClient()
                 .get()
                 .uri("/yes/nosuch")
-                .response(decodeAs(String.class)))
+                .response(decodeAsFlux(String.class)))
                 .expectErrorMessage("404 : Not Found")
                 .verify();
     }
@@ -109,38 +109,38 @@ public class ReactiveHttpServerTest {
         StepVerifier.create(httpClient()
                 .get()
                 .uri("/yes/unauthorized")
-                .response(decodeAs(String.class)))
+                .response(decodeAsFlux(String.class)))
                 .expectErrorMessage("401 : Unauthorized")
                 .verify();
     }
 
     @Test
-    public void shouldPostAndReceivePojo() {
+    public void shouldPostAndReceivePojoUsingStreamJson() {
         StepVerifier.create(
                 httpClient()
-                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/stream+json"))
                         .post()
                         .uri("/yes")
-                        .send(codecManager.send("application/json", Mono.just(new Pojo("haroun", "tazieff"))))
-                        .response(decodeAs(Pojo.class)))
+                        .send(codecManager.send("application/stream+json", Mono.just(new Pojo("haroun", "tazieff"))))
+                        .response(decodeAsFlux(Pojo.class)))
                 .expectNext(new Pojo("haroun", "tazieff from server"))
                 .expectComplete()
                 .verify();
     }
 
     @Test
-    public void shouldPostAndReceivePojo_flux() {
+    public void shouldPostAndReceivePojoUsingStreamJson_flux() {
         StepVerifier.withVirtualTime(() ->
         {
             Flux<Pojo> just = Flux.just(new Pojo("haroun", "tazieff"),
                     new Pojo("haroun", "tazieff2"))
                     .delayElements(Duration.ofMillis(1000));
             return httpClient()
-                    .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                    .headers(httpHeaders -> httpHeaders.set("Accept", "application/stream+json"))
                     .post()
                     .uri("/yes")
-                    .send(codecManager.send("application/json", just))
-                    .response(decodeAs(Pojo.class));
+                    .send(codecManager.send("application/stream+json", just))
+                    .response(decodeAsFlux(Pojo.class));
         })
                 .expectSubscription()
                 .expectNoEvent(Duration.ofMillis(1000))
@@ -152,11 +152,43 @@ public class ReactiveHttpServerTest {
     }
 
     @Test
+    public void shouldPostAndReceivePojo() {
+        StepVerifier.create(
+                httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/yes")
+                        .send(codecManager.send("application/json", Flux.just(new Pojo("haroun", "tazieff"))))
+                        .response(decodeAsFlux(Pojo.class)))
+                .expectNext(new Pojo("haroun", "tazieff from server"))
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldPostAndReceivePojo_flux() {
+        Flux<Pojo> just = Flux.just(new Pojo("haroun", "tazieff"),
+                new Pojo("haroun", "tazieff2"));
+        Flux<Pojo> actual = httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .post()
+                .uri("/yes")
+                .send(codecManager.send("application/json", just))
+                .response(decodeAsFlux(Pojo.class));
+
+        StepVerifier.create(actual)
+                .expectNext(new Pojo("haroun", "tazieff from server"))
+                .expectNext(new Pojo("haroun", "tazieff2 from server"))
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
     public void shouldReceiveNotFoundWhenNoRouteMatch() {
         StepVerifier.create(httpClient()
                 .get()
                 .uri("/yes_not_exists")
-                .response(decodeAs(String.class)))
+                .response(decodeAsFlux(String.class)))
                 .expectErrorMessage("404 : Not Found")
                 .verify();
     }
@@ -206,7 +238,7 @@ public class ReactiveHttpServerTest {
         StepVerifier.create(httpClient()
                 .get()
                 .uri("/oui")
-                .response(decodeAs(String.class)))
+                .response(decodeAsFlux(String.class)))
                 .expectNext("oui")
                 .expectComplete()
                 .verify();
@@ -217,18 +249,29 @@ public class ReactiveHttpServerTest {
         StepVerifier.create(httpClient()
                 .get()
                 .uri("/non")
-                .response(decodeAs(String.class)))
+                .response(decodeAsFlux(String.class)))
                 .expectErrorMessage("401 : Unauthorized")
                 .verify();
     }
 
-    private <T> BiFunction<HttpClientResponse, ByteBufFlux, Publisher<T>> decodeAs(Class<T> clazz) {
+    private <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> decodeAsMono(Class<T> clazz) {
         return (response, flux) -> {
             HttpResponseStatus status = response.status();
             if (status.code() == 200) {
-                return codecManager.decodeAs(clazz).apply(response, flux);
+                return codecManager.decodeAsMono(clazz).apply(response, flux);
             } else {
                 return Mono.error(new HttpException(status.code(), status.code() + " : " + status.reasonPhrase()));
+            }
+        };
+    }
+
+    private <T> BiFunction<HttpClientResponse, ByteBufFlux, Flux<T>> decodeAsFlux(Class<T> clazz) {
+        return (response, flux) -> {
+            HttpResponseStatus status = response.status();
+            if (status.code() == 200) {
+                return codecManager.decodeAsFlux(clazz).apply(response, flux);
+            } else {
+                return Flux.error(new HttpException(status.code(), status.code() + " : " + status.reasonPhrase()));
             }
         };
     }

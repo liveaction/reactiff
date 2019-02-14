@@ -4,6 +4,8 @@ import com.google.common.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
 import reactor.netty.NettyOutbound;
 import reactor.netty.NettyPipeline;
@@ -15,19 +17,27 @@ import java.util.function.BiFunction;
 
 public interface CodecManager {
 
-    default <T> BiFunction<HttpClientResponse, ByteBufFlux, Publisher<T>> decodeAs(Class<T> clazz) {
-        return decodeAs(TypeToken.of(clazz));
+    default <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> decodeAsMono(Class<T> clazz) {
+        return decodeAsMono(TypeToken.of(clazz));
     }
 
-    default <T> BiFunction<HttpClientResponse, ByteBufFlux, Publisher<T>> decodeAs(TypeToken<T> typeToken) {
-        return (response, byteBufFlux) -> this.decodeAs(response, byteBufFlux, typeToken);
+    default <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> decodeAsMono(TypeToken<T> typeToken) {
+        return (response, byteBufFlux) -> decodeAsMono(response, byteBufFlux, typeToken);
+    }
+
+    default <T> BiFunction<HttpClientResponse, ByteBufFlux, Flux<T>> decodeAsFlux(Class<T> clazz) {
+        return decodeAsFlux(TypeToken.of(clazz));
+    }
+
+    default <T> BiFunction<HttpClientResponse, ByteBufFlux, Flux<T>> decodeAsFlux(TypeToken<T> typeToken) {
+        return (response, byteBufFlux) -> decodeAsFlux(response, byteBufFlux, typeToken);
     }
 
     default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(String contentType, Publisher<T> data) {
         return (httpClientRequest, nettyOutbound) ->
                 nettyOutbound.withConnection(connection -> connection.channel().config().setAutoRead(true))
                         .options(NettyPipeline.SendOptions::flushOnEach)
-                        .send(this.encodeAs(contentType, httpClientRequest.requestHeaders(), data));
+                        .send(encodeAs(contentType, httpClientRequest.requestHeaders(), data));
     }
 
     default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(Publisher<T> data) {
@@ -36,7 +46,7 @@ public interface CodecManager {
             if (contentType == null) {
                 throw new IllegalArgumentException("No content-type set in http headers. Unable to determine one, please specify one to encode the body");
             }
-            return nettyOutbound.send(this.encodeAs(contentType, data));
+            return nettyOutbound.send(encodeAs(contentType, data));
         };
     }
 
@@ -44,9 +54,13 @@ public interface CodecManager {
 
     void removeCodec(Codec codec);
 
-    <T> Publisher<T> decodeAs(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken);
+    <T> Mono<T> decodeAsMono(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken);
 
-    <T> Publisher<T> decodeAs(HttpServerRequest request, TypeToken<T> typeToken);
+    <T> Mono<T> decodeAsMono(HttpServerRequest request, TypeToken<T> typeToken);
+
+    <T> Flux<T> decodeAsFlux(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken);
+
+    <T> Flux<T> decodeAsFlux(HttpServerRequest request, TypeToken<T> typeToken);
 
     /**
      * Negociate the best matching Content-Type between the requestHttpHeaders and the available codecs.

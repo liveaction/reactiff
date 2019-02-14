@@ -26,8 +26,9 @@ public interface ReactiveHttpServer extends Closeable {
 
         Builder codecManager(CodecManager codecManager);
 
-        ReactiveHttpServer build();
+        Builder wiretap(boolean wiretap);
 
+        ReactiveHttpServer build();
     }
 
     static Builder create() {

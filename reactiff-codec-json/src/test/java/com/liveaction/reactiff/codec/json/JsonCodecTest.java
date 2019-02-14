@@ -7,14 +7,19 @@ import io.netty.buffer.ByteBuf;
 import org.junit.Before;
 import org.junit.Test;
 import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
 import java.util.Objects;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 public class JsonCodecTest {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(JsonCodecTest.class);
     private JsonCodec tested;
 
     @Before
@@ -24,14 +29,36 @@ public class JsonCodecTest {
     }
 
     @Test
+    public void shouldDeserializeFluxAsStream() {
+        StepVerifier.withVirtualTime(() -> {
+            Flux<Pojo> toEncode = Flux.range(0, 3)
+                    .delayElements(Duration.ofMillis(1000))
+                    .map(i -> new Pojo("test", "value_" + i));
+            Publisher<ByteBuf> byteBufFlux = Flux.from(tested.encode("application/stream+json", toEncode))
+                    .doOnNext(byteBuf -> LOGGER.info("new bytebuf to send : {}", byteBuf.toString(UTF_8)));
+            return tested.decodeFlux("application/stream+json", byteBufFlux, new TypeToken<Pojo>() {
+            });
+        })
+                .expectSubscription()
+                .expectNoEvent(Duration.ofMillis(1000))
+                .expectNext(new Pojo("test", "value_0"))
+                .expectNoEvent(Duration.ofMillis(1000))
+                .expectNext(new Pojo("test", "value_1"))
+                .expectNoEvent(Duration.ofMillis(1000))
+                .expectNext(new Pojo("test", "value_2"))
+                .expectComplete()
+                .verify(Duration.ofMillis(200));
+    }
+
+    @Test
     public void shouldDeserializeArray() {
         StepVerifier.withVirtualTime(() -> {
             Flux<Pojo> toEncode = Flux.range(0, 3)
                     .delayElements(Duration.ofMillis(1000))
                     .map(i -> new Pojo("test", "value_" + i));
-            Publisher<ByteBuf> byteBufFlux = Flux.from(tested.encode("test", toEncode))
-                    .doOnNext(byteBuf -> System.out.println("new bytebuf"));
-            return tested.decode("test", byteBufFlux, new TypeToken<Pojo>() {
+            Publisher<ByteBuf> byteBufFlux = Flux.from(tested.encode("application/json", toEncode))
+                    .doOnNext(byteBuf -> LoggerFactory.getLogger(JsonCodecTest.class).info("new bytebuf to send : {}", byteBuf.toString(UTF_8)));
+            return tested.decodeFlux("application/json", byteBufFlux, new TypeToken<Pojo>() {
             });
         })
                 .expectSubscription()

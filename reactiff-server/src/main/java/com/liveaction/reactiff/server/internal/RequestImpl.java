@@ -40,12 +40,12 @@ public final class RequestImpl implements Request {
 
     @Override
     public <T> Mono<T> bodyToMono(TypeToken<T> typeToken) {
-        return Mono.from(codecManager.decodeAs(httpServerRequest, typeToken));
+        return codecManager.decodeAsMono(httpServerRequest, typeToken);
     }
 
     @Override
     public <T> Flux<T> bodyToFlux(TypeToken<T> typeToken) {
-        return Flux.from(codecManager.decodeAs(httpServerRequest, typeToken));
+        return codecManager.decodeAsFlux(httpServerRequest, typeToken);
     }
 
     @Override

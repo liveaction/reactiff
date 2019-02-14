@@ -24,6 +24,8 @@ public final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Build
 
     private Collection<ReactiveHandler> handlers = Sets.newHashSet();
 
+    private boolean wiretap = false;
+
     @Nullable
     private CodecManager codecManager;
 
@@ -70,11 +72,17 @@ public final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Build
     }
 
     @Override
+    public ReactiveHttpServer.Builder wiretap(boolean wiretap) {
+        this.wiretap = wiretap;
+        return this;
+    }
+
+    @Override
     public ReactiveHttpServerImpl build() {
         if (codecManager == null) {
             codecManager = new CodecManagerImpl();
         }
-        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager);
+        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, wiretap);
         filters.forEach(reactiveHttpServer::addReactiveFilter);
         handlers.forEach(reactiveHttpServer::addReactiveHandler);
         return reactiveHttpServer;

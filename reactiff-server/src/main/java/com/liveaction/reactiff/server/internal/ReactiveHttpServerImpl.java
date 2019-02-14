@@ -35,12 +35,12 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     ReactiveHttpServerImpl(String host,
                            int port,
                            Collection<HttpProtocol> protocols,
-                           CodecManager codecManager) {
+                           CodecManager codecManager, boolean wiretap) {
         this.host = host;
         this.port = port;
         this.protocols = protocols;
         this.router = new Router(codecManager, this::chain);
-        this.httpServer = createServer();
+        this.httpServer = createServer(wiretap);
     }
 
     @Override
@@ -81,8 +81,12 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
         router.removeReactiveHander(reactiveHandler);
     }
 
-    private HttpServer createServer() {
-        HttpServer httpServer = HttpServer.create()
+    private HttpServer createServer(boolean wiretap) {
+        HttpServer httpServer = HttpServer.create();
+        if (wiretap) {
+            httpServer = httpServer.wiretap(true);
+        }
+        httpServer = httpServer
                 .protocol(protocols.toArray(new HttpProtocol[0]))
                 .host(host);
         if (port != -1) {
