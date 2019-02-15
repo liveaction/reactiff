@@ -11,8 +11,6 @@ import reactor.netty.ByteBufFlux;
 
 public final class TextPlainCodec implements Codec {
 
-    public static final String TEXT_PLAIN = "text/plain";
-
     @Override
     public int rank() {
         return 0;
@@ -20,7 +18,7 @@ public final class TextPlainCodec implements Codec {
 
     @Override
     public boolean supports(String contentType) {
-        return TEXT_PLAIN.equals(contentType);
+        return contentType.toUpperCase().startsWith("TEXT/");
     }
 
     @Override
@@ -38,7 +36,7 @@ public final class TextPlainCodec implements Codec {
         if (String.class.equals(typeToken.getRawType())) {
             return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux).asString();
         } else {
-            throw new IllegalArgumentException(TEXT_PLAIN + " deserialization is only compatible with Type String. Type " + typeToken + " is not supported");
+            throw new IllegalArgumentException("TextPlainCodec is only compatible with Type String. Type " + typeToken + " is not supported");
         }
     }
 
