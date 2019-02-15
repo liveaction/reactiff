@@ -65,6 +65,7 @@ public class ReactiveHttpServerTest {
         });
         tested = ReactiveHttpServer.create()
                 .wiretap(true)
+                .compress(true)
                 .protocols(HttpProtocol.HTTP11)
                 .codecManager(codecManager)
                 .build();
@@ -170,6 +171,25 @@ public class ReactiveHttpServerTest {
         Flux<Pojo> just = Flux.just(new Pojo("haroun", "tazieff"),
                 new Pojo("haroun", "tazieff2"));
         Flux<Pojo> actual = httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .post()
+                .uri("/yes")
+                .send(codecManager.send("application/json", just))
+                .response(decodeAsFlux(Pojo.class));
+
+        StepVerifier.create(actual)
+                .expectNext(new Pojo("haroun", "tazieff from server"))
+                .expectNext(new Pojo("haroun", "tazieff2 from server"))
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldPostAndReceivePojo_flux_withCompression() {
+        Flux<Pojo> just = Flux.just(new Pojo("haroun", "tazieff"),
+                new Pojo("haroun", "tazieff2"));
+        Flux<Pojo> actual = httpClient()
+                .compress(true)
                 .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
                 .post()
                 .uri("/yes")

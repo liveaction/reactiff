@@ -28,6 +28,8 @@ public interface ReactiveHttpServer extends Closeable {
 
         Builder wiretap(boolean wiretap);
 
+        Builder compress(boolean compress);
+
         ReactiveHttpServer build();
     }
 
