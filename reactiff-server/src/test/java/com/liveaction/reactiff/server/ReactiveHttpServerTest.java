@@ -82,7 +82,6 @@ public class ReactiveHttpServerTest {
             }
         });
         tested = ReactiveHttpServer.create()
-                .wiretap(true)
                 .compress(true)
                 .protocols(HttpProtocol.HTTP11)
                 .codecManager(codecManager)
@@ -206,7 +205,6 @@ public class ReactiveHttpServerTest {
     public void shouldPostAndReceiveXMLFileAsByteArray() {
         Body<byte[]> body = readFileAsFlux("/test-xml-file.xml");
         Flux<byte[]> actual = httpClient()
-                .wiretap(true)
                 .post()
                 .uri("/upload")
                 .send(codecManager.send("text/xml", body))
@@ -252,7 +250,6 @@ public class ReactiveHttpServerTest {
         Body<File> body = readFile("/sample.pdf");
         Mono<File> actual = Mono.from(
                 httpClient()
-                        .wiretap(true)
                         .compress(true)
                         .post()
                         .uri("/upload")
@@ -333,7 +330,6 @@ public class ReactiveHttpServerTest {
     public void shouldHandlerWebSocket() {
         Flux<WebSocketFrame> frames = httpClient()
                 .baseUrl("ws://localhost:" + tested.port())
-                .wiretap(true)
                 .websocket()
                 .uri("/websocket")
                 .handle((websocketInbound, websocketOutbound) -> websocketInbound.receiveFrames());
