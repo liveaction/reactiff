@@ -1,10 +1,16 @@
 package com.liveaction.reactiff.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Files;
+import com.google.common.reflect.TypeToken;
+import com.liveaction.reactiff.api.codec.Body;
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
+import com.liveaction.reactiff.codec.RawBinaryCodec;
 import com.liveaction.reactiff.codec.TextPlainCodec;
 import com.liveaction.reactiff.codec.json.JsonCodec;
 import com.liveaction.reactiff.server.example.AuthFilter;
@@ -14,6 +20,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
+import org.apache.commons.io.IOUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,9 +32,18 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientResponse;
 import reactor.test.StepVerifier;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.time.Duration;
 import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 public class ReactiveHttpServerTest {
 
@@ -41,10 +57,10 @@ public class ReactiveHttpServerTest {
         JsonCodec jsonCodec = new JsonCodec();
         jsonCodec.setObjectMapper(objectMapper);
 
-        TextPlainCodec plainCodec = new TextPlainCodec();
         codecManager = new CodecManagerImpl();
         codecManager.addCodec(jsonCodec);
-        codecManager.addCodec(plainCodec);
+        codecManager.addCodec(new TextPlainCodec());
+        codecManager.addCodec(new RawBinaryCodec());
 
         ReactiveFilter corsFilter = DefaultFilters.cors(
                 ImmutableSet.of("http://localhost"),
@@ -185,6 +201,52 @@ public class ReactiveHttpServerTest {
     }
 
     @Test
+    public void shouldPostAndReceiveXMLFile() {
+        Body<byte[]> body = readFileAsFlux("/test-xml-file.xml");
+        Flux<byte[]> actual = httpClient()
+                .wiretap(true)
+                .post()
+                .uri("/upload")
+                .send(codecManager.send("text/xml", body))
+                .response(decodeAsFlux(byte[].class));
+
+        File expected = new File(getClass().getResource("/test-xml-file.xml").getFile());
+        StepVerifier.create(asString(actual))
+                .assertNext(content -> {
+                    try {
+                        assertThat(content).isEqualTo(Files.toString(expected, Charsets.UTF_8));
+                    } catch (IOException e) {
+                        fail("Unable to read expected file : " + e);
+                    }
+                })
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldPostAndReceiveBianryFile() {
+        Body<byte[]> body = readFileAsFlux("/sample.pdf");
+        Flux<byte[]> actual = httpClient()
+                .wiretap(true)
+                .post()
+                .uri("/upload")
+                .send(codecManager.send("application/pdf", body))
+                .response(decodeAsFlux(byte[].class));
+
+        File expected = new File(getClass().getResource("/sample.pdf").getFile());
+        StepVerifier.create(asBinary(actual))
+                .assertNext(content -> {
+                    try {
+                        assertThat(content).isEqualTo(Files.toByteArray(expected));
+                    } catch (IOException e) {
+                        fail("Unable to read expected file : " + e);
+                    }
+                })
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
     public void shouldPostAndReceivePojo_flux_withCompression() {
         Flux<Pojo> just = Flux.just(new Pojo("haroun", "tazieff"),
                 new Pojo("haroun", "tazieff2"));
@@ -303,4 +365,45 @@ public class ReactiveHttpServerTest {
                 .headers(httpHeaders -> httpHeaders.set(HttpHeaderNames.ACCEPT, "application/json"));
     }
 
+
+    private Body<byte[]> readFileAsFlux(String filename) {
+        Flux<byte[]> flux = Flux.create(fluxSink -> {
+            try {
+                RandomAccessFile aFile = new RandomAccessFile(getClass().getResource(filename).getFile(), "r");
+                FileChannel inChannel = aFile.getChannel();
+                ByteBuffer buffer = ByteBuffer.allocate(1024);
+                while (inChannel.read(buffer) > 0) {
+                    buffer.flip();
+                    int len = buffer.limit();
+                    byte[] bytes = new byte[len];
+                    System.arraycopy(buffer.array(), buffer.arrayOffset(), bytes, 0, len);
+                    buffer.clear(); // do something with the data and clear/compact it.
+                    fluxSink.next(bytes);
+                }
+                inChannel.close();
+                aFile.close();
+                fluxSink.complete();
+            } catch (IOException e) {
+                fluxSink.error(e);
+            }
+        });
+        return new Body<>(flux, TypeToken.of(byte[].class));
+    }
+
+    private Mono<byte[]> asBinary(Flux<byte[]> data) {
+        return ByteBufFlux.fromInbound(data).aggregate().asInputStream()
+                .map(inputStream -> {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    try {
+                        IOUtils.copy(inputStream, out);
+                    } catch (IOException e) {
+                        throw Throwables.propagate(e);
+                    }
+                    return out.toByteArray();
+                });
+    }
+
+    private Mono<String> asString(Flux<byte[]> data) {
+        return asBinary(data).map(b -> new String(b, Charsets.UTF_8));
+    }
 }

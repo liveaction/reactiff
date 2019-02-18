@@ -9,14 +9,14 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
 
-import java.nio.Buffer;
+import java.nio.ByteBuffer;
 
 public final class RawBinaryCodec implements Codec {
 
     private static final TypeToken<byte[]> BYTE_ARRAY = TypeToken.of(byte[].class);
     private static final TypeToken<ByteBuf> BYTE_BUFF = TypeToken.of(ByteBuf.class);
-    private static final TypeToken<Buffer> BUFFER_TYPE_TOKEN = TypeToken.of(Buffer.class);
-    private static final ImmutableSet<TypeToken<?>> BINARY_DATA = ImmutableSet.of(BYTE_ARRAY, BYTE_BUFF, BUFFER_TYPE_TOKEN);
+    private static final TypeToken<ByteBuffer> BYTE_BUFFER_TYPE_TOKEN = TypeToken.of(ByteBuffer.class);
+    private static final ImmutableSet<TypeToken<?>> BINARY_DATA = ImmutableSet.of(BYTE_ARRAY, BYTE_BUFF, BYTE_BUFFER_TYPE_TOKEN);
 
     @Override
     public int rank() {
@@ -41,11 +41,12 @@ public final class RawBinaryCodec implements Codec {
     @SuppressWarnings("unchecked")
     private <T> Publisher<T> decode(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         if (BYTE_ARRAY.isAssignableFrom(typeToken)) {
-            return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux).map(ByteBuf::array);
+            return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux).asByteArray();
         } else if (BYTE_BUFF.isAssignableFrom(typeToken)) {
             return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux);
-        } else if (BUFFER_TYPE_TOKEN.isAssignableFrom(typeToken)) {
-            return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux).map(ByteBuf::nioBuffer);
+        } else if (BYTE_BUFFER_TYPE_TOKEN.isAssignableFrom(typeToken)) {
+            return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux)
+                    .map(ByteBuf::nioBuffer);
         } else {
             throw new IllegalArgumentException("Unable to encode to type '" + typeToken + "'");
         }
@@ -57,8 +58,12 @@ public final class RawBinaryCodec implements Codec {
             return ByteBufFlux.fromInbound(data);
         } else if (BYTE_BUFF.isAssignableFrom(typeToken)) {
             return ByteBufFlux.fromInbound(data);
-        } else if (BUFFER_TYPE_TOKEN.isAssignableFrom(typeToken)) {
-            return ByteBufFlux.fromInbound(data);
+        } else if (BYTE_BUFFER_TYPE_TOKEN.isAssignableFrom(typeToken)) {
+            return ByteBufFlux.fromInbound(Flux.from(data)
+                    .map(t -> {
+                        ByteBuffer buffer = (ByteBuffer) t;
+                        return buffer.duplicate().array();
+                    }));
         } else {
             throw new IllegalArgumentException("Unable to encode type '" + typeToken + "'");
         }

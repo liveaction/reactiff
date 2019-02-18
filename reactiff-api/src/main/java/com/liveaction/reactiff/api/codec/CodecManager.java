@@ -34,8 +34,16 @@ public interface CodecManager {
     }
 
 
+    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(Body<T> body) {
+        return send(body.data, body.type);
+    }
+
     default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(String contentType, Publisher<T> data, Class<T> clazz) {
         return send(contentType, data, TypeToken.of(clazz));
+    }
+
+    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(String contentType, Body<T> body) {
+        return send(contentType, body.data, body.type);
     }
 
     default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(String contentType, Publisher<T> data, TypeToken<T> typeToken) {

@@ -57,4 +57,10 @@ public class TestController implements ReactiveHandler {
         return Mono.just("non");
     }
 
+    @RequestMapping(method = HttpMethod.POST, path = "/upload")
+    public Flux<byte[]> upload(Request request) {
+        return request.bodyToFlux(new TypeToken<byte[]>() {
+        });
+    }
+
 }
