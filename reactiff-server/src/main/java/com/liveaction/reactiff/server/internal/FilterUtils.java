@@ -4,7 +4,9 @@ import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.FilterChain;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.Request;
+import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.Route;
+import io.netty.buffer.ByteBuf;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.netty.NettyPipeline;
@@ -33,9 +35,13 @@ public final class FilterUtils {
                     } else {
                         return Mono.from(httpServerResponse
                                 .options(NettyPipeline.SendOptions::flushOnEach)
-                                .send(codecManager.encode(req.requestHeaders(), res.responseHeaders(), data)));
+                                .send(encodeResult(req, res, codecManager, filteredResult)));
                     }
                 });
+    }
+
+    private static <T> Publisher<ByteBuf> encodeResult(HttpServerRequest req, HttpServerResponse res, CodecManager codecManager, Result<T> filteredResult) {
+        return codecManager.encode(req.requestHeaders(), res.responseHeaders(), filteredResult.data(), filteredResult.type());
     }
 
     static FilterChain chain(ReactiveFilter element, FilterChain filterChain) {

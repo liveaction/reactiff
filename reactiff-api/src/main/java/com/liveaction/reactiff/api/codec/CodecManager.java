@@ -33,20 +33,25 @@ public interface CodecManager {
         return (response, byteBufFlux) -> decodeAsFlux(response, byteBufFlux, typeToken);
     }
 
-    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(String contentType, Publisher<T> data) {
+
+    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(String contentType, Publisher<T> data, Class<T> clazz) {
+        return send(contentType, data, TypeToken.of(clazz));
+    }
+
+    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
         return (httpClientRequest, nettyOutbound) ->
                 nettyOutbound.withConnection(connection -> connection.channel().config().setAutoRead(true))
                         .options(NettyPipeline.SendOptions::flushOnEach)
-                        .send(encodeAs(contentType, httpClientRequest.requestHeaders(), data));
+                        .send(encodeAs(contentType, httpClientRequest.requestHeaders(), data, typeToken));
     }
 
-    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(Publisher<T> data) {
+    default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(Publisher<T> data, TypeToken<T> typeToken) {
         return (httpClientRequest, nettyOutbound) -> {
             String contentType = httpClientRequest.requestHeaders().get("Content-Type");
             if (contentType == null) {
                 throw new IllegalArgumentException("No content-type set in http headers. Unable to determine one, please specify one to encode the body");
             }
-            return nettyOutbound.send(encodeAs(contentType, data));
+            return nettyOutbound.send(encodeAs(contentType, data, typeToken));
         };
     }
 
@@ -67,10 +72,10 @@ public interface CodecManager {
      * Read 'Accept' header from the requestHttpHeaders.
      * Writes the matching 'Content-Type' to the responseHttpHeaders and returns the data produced by this codec.
      */
-    <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data);
+    <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data, TypeToken<T> typeToken);
 
-    <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders responseHttpHeaders, Publisher<T> data);
+    <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders responseHttpHeaders, Publisher<T> data, TypeToken<T> typeToken);
 
-    <T> Publisher<ByteBuf> encodeAs(String contentType, Publisher<T> data);
+    <T> Publisher<ByteBuf> encodeAs(String contentType, Publisher<T> data, TypeToken<T> typeToken);
 
 }

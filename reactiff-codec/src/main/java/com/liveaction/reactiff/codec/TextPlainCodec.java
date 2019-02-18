@@ -17,8 +17,8 @@ public final class TextPlainCodec implements Codec {
     }
 
     @Override
-    public boolean supports(String contentType) {
-        return contentType.toUpperCase().startsWith("TEXT/");
+    public boolean supports(String contentType, TypeToken<?> typeToken) {
+        return String.class.equals(typeToken.getRawType()) && contentType.toUpperCase().startsWith("TEXT/");
     }
 
     @Override
@@ -36,13 +36,17 @@ public final class TextPlainCodec implements Codec {
         if (String.class.equals(typeToken.getRawType())) {
             return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux).asString();
         } else {
-            throw new IllegalArgumentException("TextPlainCodec is only compatible with Type String. Type " + typeToken + " is not supported");
+            throw new IllegalArgumentException("Unable to decode to type '" + typeToken + "'. Only string supported");
         }
     }
 
     @Override
-    public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data) {
-        return ByteBufFlux.fromInbound(Flux.from(data).map(t -> t.toString().getBytes(Charsets.UTF_8)));
+    public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
+        if (String.class.equals(typeToken.getRawType())) {
+            return ByteBufFlux.fromInbound(Flux.from(data).map(t -> t.toString().getBytes(Charsets.UTF_8)));
+        } else {
+            throw new IllegalArgumentException("Unable to encode from type '" + typeToken + "'. Only string supported");
+        }
     }
 
 }

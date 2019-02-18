@@ -1,33 +1,44 @@
 package com.liveaction.reactiff.api.server;
 
 import com.google.common.collect.Maps;
+import com.google.common.reflect.TypeToken;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.reactivestreams.Publisher;
 
 import java.util.Collection;
 import java.util.Map;
 
-public abstract class Result {
+public abstract class Result<T> {
 
     public static Result withStatus(int status, String reasonPhrase) {
-        return new Result() {
+        return new Result<Void>() {
             @Override
             public HttpResponseStatus status() {
                 return HttpResponseStatus.valueOf(status, reasonPhrase);
             }
 
             @Override
-            public Publisher<?> data() {
+            public Publisher<Void> data() {
                 return null;
+            }
+
+            @Override
+            public TypeToken<Void> type() {
+                return TypeToken.of(Void.class);
             }
         };
     }
 
-    public static Result ok(Publisher<?> publisher) {
-        return new Result() {
+    public static <T> Result<T> ok(Publisher<T> publisher, TypeToken<T> type) {
+        return new Result<T>() {
             @Override
-            public Publisher<?> data() {
+            public Publisher<T> data() {
                 return publisher;
+            }
+
+            @Override
+            public TypeToken<T> type() {
+                return type;
             }
         };
     }
@@ -37,17 +48,18 @@ public abstract class Result {
     }
 
     public Builder copy() {
-        Builder builder = new Builder();
+        Builder<T> builder = new Builder<>();
         builder.status(status());
-        builder.data(data());
+        builder.data(data(), type());
         headers().forEach(builder::header);
         return builder;
     }
 
-    public static final class Builder {
+    public static final class Builder<T> {
 
         private HttpResponseStatus status = HttpResponseStatus.valueOf(200);
-        private Publisher data;
+        private Publisher<T> data;
+        private TypeToken<T> type;
         private final Map<String, String> httpHeaders = Maps.newHashMap();
 
         public Builder status(int status, String reasonPhrase) {
@@ -60,8 +72,9 @@ public abstract class Result {
             return this;
         }
 
-        public Builder data(Publisher data) {
+        public Builder data(Publisher<T> data, TypeToken<T> type) {
             this.data = data;
+            this.type = type;
             return this;
         }
 
@@ -75,8 +88,8 @@ public abstract class Result {
             return this;
         }
 
-        public Result build() {
-            return new Result() {
+        public Result<T> build() {
+            return new Result<T>() {
 
                 @Override
                 public HttpResponseStatus status() {
@@ -84,8 +97,13 @@ public abstract class Result {
                 }
 
                 @Override
-                public Publisher data() {
+                public Publisher<T> data() {
                     return data;
+                }
+
+                @Override
+                public TypeToken<T> type() {
+                    return type;
                 }
 
                 @Override
@@ -105,6 +123,8 @@ public abstract class Result {
         return Headers.empty();
     }
 
-    public abstract Publisher<?> data();
+    public abstract Publisher<T> data();
+
+    public abstract TypeToken<T> type();
 
 }

@@ -19,23 +19,27 @@ public final class ResultUtils {
                 return (Mono<Result>) result;
             }
             Mono<?> publisher = (Mono) result;
-            return publisher.flatMap(mono -> Mono.just(Result.ok(Mono.just(mono))));
+            return publisher.flatMap(mono -> Mono.just(toTypedResult(publisher, paramType)));
 
         } else if (PUBLISHER_TYPE_TOKEN.isAssignableFrom(returnType)) {
             TypeToken<?> paramType = returnType.resolveType(Publisher.class.getTypeParameters()[0]);
             if (RESULT_TYPE_TOKEN.isAssignableFrom(paramType)) {
                 return Mono.from((Publisher<Result>) result);
             }
-            Publisher<?> publisher = (Publisher) result;
-            return Mono.just(Result.ok(publisher));
+            return Mono.just(toTypedResult(result, paramType));
 
         } else if (RESULT_TYPE_TOKEN.isAssignableFrom(returnType)) {
             Result httpResult = (Result) result;
             return Mono.just(httpResult);
 
         } else {
-            return Mono.just(Result.ok(Mono.just(result)));
+            return Mono.just(toTypedResult(Mono.just(result), returnType));
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> Result<T> toTypedResult(Object result, TypeToken<T> typeToken) {
+        return Result.ok((Publisher<T>) result, typeToken);
     }
 
 }

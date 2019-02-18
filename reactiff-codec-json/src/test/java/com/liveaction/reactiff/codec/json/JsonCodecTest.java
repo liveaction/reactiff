@@ -34,7 +34,7 @@ public class JsonCodecTest {
             Flux<Pojo> toEncode = Flux.range(0, 3)
                     .delayElements(Duration.ofMillis(1000))
                     .map(i -> new Pojo("test", "value_" + i));
-            Publisher<ByteBuf> byteBufFlux = Flux.from(tested.encode("application/stream+json", toEncode))
+            Publisher<ByteBuf> byteBufFlux = Flux.from(tested.encode("application/stream+json", toEncode, TypeToken.of(Pojo.class)))
                     .doOnNext(byteBuf -> LOGGER.info("new bytebuf to send : {}", byteBuf.toString(UTF_8)));
             return tested.decodeFlux("application/stream+json", byteBufFlux, new TypeToken<Pojo>() {
             });
@@ -56,7 +56,7 @@ public class JsonCodecTest {
             Flux<Pojo> toEncode = Flux.range(0, 3)
                     .delayElements(Duration.ofMillis(1000))
                     .map(i -> new Pojo("test", "value_" + i));
-            Publisher<ByteBuf> byteBufFlux = Flux.from(tested.encode("application/json", toEncode))
+            Publisher<ByteBuf> byteBufFlux = Flux.from(tested.encode("application/json", toEncode, TypeToken.of(Pojo.class)))
                     .doOnNext(byteBuf -> LoggerFactory.getLogger(JsonCodecTest.class).info("new bytebuf to send : {}", byteBuf.toString(UTF_8)));
             return tested.decodeFlux("application/json", byteBufFlux, new TypeToken<Pojo>() {
             });
@@ -97,11 +97,9 @@ public class JsonCodecTest {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("Pojo{");
-            sb.append("type='").append(type).append('\'');
-            sb.append(", value='").append(value).append('\'');
-            sb.append('}');
-            return sb.toString();
+            return "Pojo{" + "type='" + type + '\'' +
+                    ", value='" + value + '\'' +
+                    '}';
         }
     }
 }

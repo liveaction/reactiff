@@ -122,7 +122,7 @@ public class ReactiveHttpServerTest {
                         .headers(httpHeaders -> httpHeaders.set("Accept", "application/stream+json"))
                         .post()
                         .uri("/yes")
-                        .send(codecManager.send("application/stream+json", Mono.just(new Pojo("haroun", "tazieff"))))
+                        .send(codecManager.send("application/stream+json", Mono.just(new Pojo("haroun", "tazieff")), Pojo.class))
                         .response(decodeAsFlux(Pojo.class)))
                 .expectNext(new Pojo("haroun", "tazieff from server"))
                 .expectComplete()
@@ -140,7 +140,7 @@ public class ReactiveHttpServerTest {
                     .headers(httpHeaders -> httpHeaders.set("Accept", "application/stream+json"))
                     .post()
                     .uri("/yes")
-                    .send(codecManager.send("application/stream+json", just))
+                    .send(codecManager.send("application/stream+json", just, Pojo.class))
                     .response(decodeAsFlux(Pojo.class));
         })
                 .expectSubscription()
@@ -159,7 +159,7 @@ public class ReactiveHttpServerTest {
                         .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
                         .post()
                         .uri("/yes")
-                        .send(codecManager.send("application/json", Flux.just(new Pojo("haroun", "tazieff"))))
+                        .send(codecManager.send("application/json", Flux.just(new Pojo("haroun", "tazieff")), Pojo.class))
                         .response(decodeAsFlux(Pojo.class)))
                 .expectNext(new Pojo("haroun", "tazieff from server"))
                 .expectComplete()
@@ -174,7 +174,7 @@ public class ReactiveHttpServerTest {
                 .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
                 .post()
                 .uri("/yes")
-                .send(codecManager.send("application/json", just))
+                .send(codecManager.send("application/json", just, Pojo.class))
                 .response(decodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual)
@@ -193,7 +193,7 @@ public class ReactiveHttpServerTest {
                 .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
                 .post()
                 .uri("/yes")
-                .send(codecManager.send("application/json", just))
+                .send(codecManager.send("application/json", just, Pojo.class))
                 .response(decodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual)

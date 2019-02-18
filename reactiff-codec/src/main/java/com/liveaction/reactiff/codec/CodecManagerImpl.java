@@ -41,7 +41,7 @@ public final class CodecManagerImpl implements CodecManager {
     @Override
     public <T> Mono<T> decodeAsMono(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         String contentType = findContentType(response.responseHeaders());
-        Codec codec = findCodec(contentType);
+        Codec codec = findCodec(contentType, typeToken);
         return codec.decodeMono(contentType, byteBufFlux, typeToken);
     }
 
@@ -53,53 +53,53 @@ public final class CodecManagerImpl implements CodecManager {
     @Override
     public <T> Mono<T> decodeAsMono(HttpServerRequest request, TypeToken<T> typeToken) {
         String contentType = findContentType(request.requestHeaders());
-        Codec codec = findCodec(contentType);
+        Codec codec = findCodec(contentType, typeToken);
         return codec.decodeMono(contentType, request.receive(), typeToken);
     }
 
     @Override
     public <T> Flux<T> decodeAsFlux(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         String contentType = findContentType(response.responseHeaders());
-        Codec codec = findCodec(contentType);
+        Codec codec = findCodec(contentType, typeToken);
         return codec.decodeFlux(contentType, byteBufFlux, typeToken);
     }
 
     @Override
     public <T> Flux<T> decodeAsFlux(HttpServerRequest request, TypeToken<T> typeToken) {
         String contentType = findContentType(request.requestHeaders());
-        Codec codec = findCodec(contentType);
+        Codec codec = findCodec(contentType, typeToken);
         return codec.decodeFlux(contentType, request.receive(), typeToken);
     }
 
     @Override
-    public <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data) {
+    public <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         String acceptHeader = requestHttpHeaders.get(HttpHeaderNames.ACCEPT);
-        String contentType = negociateContentType(acceptHeader);
-        return encodeAs(contentType, responseHttpHeaders, data);
+        String contentType = negociateContentType(acceptHeader, typeToken);
+        return encodeAs(contentType, responseHttpHeaders, data, typeToken);
     }
 
     @Override
-    public <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders httpHeaders, Publisher<T> data) {
+    public <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders httpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         LOGGER.debug("Found an encoder for Content-Type='{}'", contentType);
         httpHeaders.set(HttpHeaderNames.CONTENT_TYPE, contentType);
-        return encodeAs(contentType, data);
+        return encodeAs(contentType, data, typeToken);
     }
 
     @Override
-    public <T> Publisher<ByteBuf> encodeAs(String contentType, Publisher<T> data) {
+    public <T> Publisher<ByteBuf> encodeAs(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
         Codec codec = codecs.stream()
-                .filter(myCodec -> myCodec.supports(contentType))
+                .filter(myCodec -> myCodec.supports(contentType, typeToken))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unable to found an encoder that supports Content-Type '" + contentType + "'"));
-        return codec.encode(contentType, data);
+        return codec.encode(contentType, data, typeToken);
     }
 
-    private String negociateContentType(String acceptHeader) {
+    private String negociateContentType(String acceptHeader, TypeToken<?> typeToken) {
         for (String contentType : acceptHeader.split(",")) {
             String trim = contentType.trim();
             Optional<String> matches = codecs.stream()
                     .map(codec -> {
-                        if (codec.supports(trim)) {
+                        if (codec.supports(trim, typeToken)) {
                             return trim;
                         } else {
                             return null;
@@ -114,9 +114,9 @@ public final class CodecManagerImpl implements CodecManager {
         return HttpHeaderValues.TEXT_PLAIN.toString();
     }
 
-    private Codec findCodec(String contentType) {
+    private Codec findCodec(String contentType, TypeToken<?> typeToken) {
         Codec codec = codecs.stream()
-                .filter(myCodec -> myCodec.supports(contentType))
+                .filter(myCodec -> myCodec.supports(contentType, typeToken))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unable to found a decoder that supports Content-Type '" + contentType + "'"));
         LOGGER.debug("Found a decoder for Content-Type='{}'", contentType);

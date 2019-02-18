@@ -51,7 +51,7 @@ public final class JsonCodec implements Codec {
     }
 
     @Override
-    public boolean supports(String contentType) {
+    public boolean supports(String contentType, TypeToken<?> typeToken) {
         return contentType.contains(APPLICATION_JSON) || contentType.equals(APPLICATION_STREAM_JSON);
     }
 
@@ -189,7 +189,7 @@ public final class JsonCodec implements Codec {
     }
 
     @Override
-    public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data) {
+    public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
         if (APPLICATION_JSON.equalsIgnoreCase(contentType) || APPLICATION_STREAM_JSON.equalsIgnoreCase(contentType)) {
             if (MONO_TYPE_TOKEN.isAssignableFrom(data.getClass())) {
                 return Mono.from(data)

@@ -10,12 +10,12 @@ public interface Codec {
 
     int rank();
 
-    boolean supports(String contentType);
+    boolean supports(String contentType, TypeToken<?> typeToken);
 
     <T> Mono<T> decodeMono(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken);
 
     <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken);
 
-    <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data);
+    <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken);
 
 }
