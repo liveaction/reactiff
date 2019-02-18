@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.json.async.NonBlockingJsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
@@ -22,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Charsets.UTF_8;
@@ -90,29 +92,23 @@ public final class JsonCodec implements Codec {
             this.parser = (NonBlockingJsonParser) objectMapper.getFactory().createNonBlockingByteArrayParser();
         }
 
-        Flux<T> parse(byte[] bytes) {
+        Collection<T> parse(byte[] bytes) {
             try {
                 TokenBuffer tokenBuffer = parseTokens(parser, bytes);
                 if (tokenBuffer.firstToken() != null) {
-                    try {
-                        JsonParser jsonParser = tokenBuffer.asParser(objectMapper);
-                        ImmutableList<T> objects = ImmutableList.copyOf(() -> {
-                            try {
-                                return jsonParser.readValuesAs(toTypeReference(typeToken));
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
-                        return Flux.fromIterable(objects);
-                    } catch (Throwable e) {
-                        return Flux.error(e);
-                    }
+                    JsonParser jsonParser = tokenBuffer.asParser(objectMapper);
+                    return ImmutableList.copyOf(() -> {
+                        try {
+                            return jsonParser.readValuesAs(toTypeReference(typeToken));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
                 } else {
-                    return Flux.empty();
+                    return ImmutableList.of();
                 }
-
             } catch (IOException e) {
-                return Flux.error(e);
+                throw Throwables.propagate(e);
             }
         }
 
@@ -168,7 +164,7 @@ public final class JsonCodec implements Codec {
                 JsonAsyncParser<T> jsonAsyncParser = JsonAsyncParser.of(objectMapper, true, typeToken);
                 return ByteBufFlux.fromInbound(byteBufFlux)
                         .asByteArray()
-                        .flatMap(jsonAsyncParser::parse)
+                        .flatMapIterable(jsonAsyncParser::parse)
                         .doOnTerminate(jsonAsyncParser::close);
             } catch (IOException e) {
                 return Flux.error(e);

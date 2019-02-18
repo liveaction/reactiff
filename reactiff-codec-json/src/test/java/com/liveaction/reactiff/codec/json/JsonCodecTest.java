@@ -15,8 +15,6 @@ import reactor.test.StepVerifier;
 import java.time.Duration;
 import java.util.Objects;
 
-import static com.google.common.base.Charsets.UTF_8;
-
 public class JsonCodecTest {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(JsonCodecTest.class);
@@ -34,8 +32,7 @@ public class JsonCodecTest {
             Flux<Pojo> toEncode = Flux.range(0, 3)
                     .delayElements(Duration.ofMillis(1000))
                     .map(i -> new Pojo("test", "value_" + i));
-            Publisher<ByteBuf> byteBufFlux = Flux.from(tested.encode("application/stream+json", toEncode, TypeToken.of(Pojo.class)))
-                    .doOnNext(byteBuf -> LOGGER.info("new bytebuf to send : {}", byteBuf.toString(UTF_8)));
+            Publisher<ByteBuf> byteBufFlux = Flux.from(tested.encode("application/stream+json", toEncode, TypeToken.of(Pojo.class)));
             return tested.decodeFlux("application/stream+json", byteBufFlux, new TypeToken<Pojo>() {
             });
         })
@@ -56,8 +53,7 @@ public class JsonCodecTest {
             Flux<Pojo> toEncode = Flux.range(0, 3)
                     .delayElements(Duration.ofMillis(1000))
                     .map(i -> new Pojo("test", "value_" + i));
-            Publisher<ByteBuf> byteBufFlux = Flux.from(tested.encode("application/json", toEncode, TypeToken.of(Pojo.class)))
-                    .doOnNext(byteBuf -> LoggerFactory.getLogger(JsonCodecTest.class).info("new bytebuf to send : {}", byteBuf.toString(UTF_8)));
+            Publisher<ByteBuf> byteBufFlux = Flux.from(tested.encode("application/json", toEncode, TypeToken.of(Pojo.class)));
             return tested.decodeFlux("application/json", byteBufFlux, new TypeToken<Pojo>() {
             });
         })
