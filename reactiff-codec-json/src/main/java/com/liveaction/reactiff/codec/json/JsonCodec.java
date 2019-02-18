@@ -202,7 +202,13 @@ public final class JsonCodec implements Codec {
                                         }
                                     },
                                     Mono::error,
-                                    () -> Mono.just(Unpooled.wrappedBuffer(END_ARRAY)));
+                                    () -> {
+                                        if (!first.get()) {
+                                            return Mono.just(Unpooled.wrappedBuffer(END_ARRAY));
+                                        } else {
+                                            return Mono.empty();
+                                        }
+                                    });
 
                 } else {
                     return Flux.from(data)

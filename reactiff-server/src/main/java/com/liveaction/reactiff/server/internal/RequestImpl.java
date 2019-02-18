@@ -60,7 +60,12 @@ public final class RequestImpl implements Request {
 
     @Override
     public ImmutableList<String> uriParams(String name) {
-        return ImmutableList.copyOf(parameters.get(name));
+        List<String> values = parameters.get(name);
+        if (values != null) {
+            return ImmutableList.copyOf(values);
+        } else {
+            return ImmutableList.of();
+        }
     }
 
     @Override
