@@ -1,6 +1,7 @@
 package com.liveaction.reactiff.api.server;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpVersion;
@@ -25,6 +26,8 @@ public interface Request {
     ImmutableList<String> uriParams(String name);
 
     String pathParam(String name);
+
+    ImmutableMap<String, List<String>> uriParams();
 
     String header(String name);
 

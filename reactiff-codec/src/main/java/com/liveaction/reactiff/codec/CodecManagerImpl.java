@@ -30,7 +30,10 @@ public final class CodecManagerImpl implements CodecManager {
 
     @Override
     public void addCodec(Codec codec) {
-        codecs.add(codec);
+        boolean add = codecs.add(codec);
+        if (!add) {
+            LOGGER.warn("Codec rank conflict : {} (rank = {}). It has not been added. Fix this !", codec, codec.rank());
+        }
     }
 
     @Override
@@ -90,7 +93,7 @@ public final class CodecManagerImpl implements CodecManager {
         Codec codec = codecs.stream()
                 .filter(myCodec -> myCodec.supports(contentType, typeToken))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unable to found an encoder that supports Content-Type '" + contentType + "'"));
+                .orElseThrow(() -> new IllegalArgumentException("Unable to found an encoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'"));
         return codec.encode(contentType, data, typeToken);
     }
 

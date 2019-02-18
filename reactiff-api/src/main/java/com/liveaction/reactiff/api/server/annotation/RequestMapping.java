@@ -22,7 +22,8 @@ public @interface RequestMapping {
             HttpMethod.DELETE
     };
 
-    int rank() default 0;
+    String accept() default "*";
 
+    int rank() default 0;
 
 }

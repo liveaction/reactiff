@@ -64,6 +64,11 @@ public final class RequestImpl implements Request {
     }
 
     @Override
+    public ImmutableMap<String, List<String>> uriParams() {
+        return parameters;
+    }
+
+    @Override
     public String pathParam(String name) {
         return httpServerRequest.param(name);
     }

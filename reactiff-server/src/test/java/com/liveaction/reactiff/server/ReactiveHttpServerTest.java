@@ -11,6 +11,7 @@ import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
 import com.liveaction.reactiff.codec.RawBinaryCodec;
+import com.liveaction.reactiff.codec.RawFileCodec;
 import com.liveaction.reactiff.codec.TextPlainCodec;
 import com.liveaction.reactiff.codec.json.JsonCodec;
 import com.liveaction.reactiff.server.example.AuthFilter;
@@ -61,6 +62,7 @@ public class ReactiveHttpServerTest {
         codecManager.addCodec(jsonCodec);
         codecManager.addCodec(new TextPlainCodec());
         codecManager.addCodec(new RawBinaryCodec());
+        codecManager.addCodec(new RawFileCodec());
 
         ReactiveFilter corsFilter = DefaultFilters.cors(
                 ImmutableSet.of("http://localhost"),
@@ -201,7 +203,7 @@ public class ReactiveHttpServerTest {
     }
 
     @Test
-    public void shouldPostAndReceiveXMLFile() {
+    public void shouldPostAndReceiveXMLFileAsByteArray() {
         Body<byte[]> body = readFileAsFlux("/test-xml-file.xml");
         Flux<byte[]> actual = httpClient()
                 .wiretap(true)
@@ -224,10 +226,9 @@ public class ReactiveHttpServerTest {
     }
 
     @Test
-    public void shouldPostAndReceiveBianryFile() {
+    public void shouldPostAndReceiveBinaryFileAsByteArray() {
         Body<byte[]> body = readFileAsFlux("/sample.pdf");
         Flux<byte[]> actual = httpClient()
-                .wiretap(true)
                 .post()
                 .uri("/upload")
                 .send(codecManager.send("application/pdf", body))
@@ -244,6 +245,36 @@ public class ReactiveHttpServerTest {
                 })
                 .expectComplete()
                 .verify();
+    }
+
+    @Test
+    public void shouldPostAndReceiveBinaryFile() {
+        Body<File> body = readFile("/sample.pdf");
+        Mono<File> actual = Mono.from(
+                httpClient()
+                        .wiretap(true)
+                        .compress(true)
+                        .post()
+                        .uri("/upload")
+                        .send(codecManager.send("application/pdf", body))
+                        .response(decodeAsMono(File.class))
+        );
+
+        File expected = new File(getClass().getResource("/sample.pdf").getFile());
+        StepVerifier.create(actual)
+                .assertNext(content -> {
+                    try {
+                        assertThat(content).hasBinaryContent(Files.toByteArray(expected));
+                    } catch (IOException e) {
+                        fail("Unable to read expected file : " + e);
+                    }
+                })
+                .expectComplete()
+                .verify();
+    }
+
+    private Body<File> readFile(String fileName) {
+        return new Body<>(Mono.just(new File(getClass().getResource(fileName).getFile())), TypeToken.of(File.class));
     }
 
     @Test
@@ -364,7 +395,6 @@ public class ReactiveHttpServerTest {
                 .baseUrl("http://localhost:" + tested.port())
                 .headers(httpHeaders -> httpHeaders.set(HttpHeaderNames.ACCEPT, "application/json"));
     }
-
 
     private Body<byte[]> readFileAsFlux(String filename) {
         Flux<byte[]> flux = Flux.create(fluxSink -> {

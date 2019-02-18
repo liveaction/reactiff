@@ -29,6 +29,10 @@ public abstract class Result<T> {
         };
     }
 
+    public static <T> Result<T> ok(Publisher<T> publisher, Class<T> clazz) {
+        return ok(publisher, TypeToken.of(clazz));
+    }
+
     public static <T> Result<T> ok(Publisher<T> publisher, TypeToken<T> type) {
         return new Result<T>() {
             @Override
@@ -43,8 +47,8 @@ public abstract class Result<T> {
         };
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static <T> Builder<T> builder() {
+        return new Builder<>();
     }
 
     public Builder copy() {
@@ -55,41 +59,45 @@ public abstract class Result<T> {
         return builder;
     }
 
-    public static final class Builder<T> {
+    public static final class Builder<BT> {
 
         private HttpResponseStatus status = HttpResponseStatus.valueOf(200);
-        private Publisher<T> data;
-        private TypeToken<T> type;
+        private Publisher<BT> data;
+        private TypeToken<BT> type;
         private final Map<String, String> httpHeaders = Maps.newHashMap();
 
-        public Builder status(int status, String reasonPhrase) {
+        public Builder<BT> status(int status, String reasonPhrase) {
             this.status = HttpResponseStatus.valueOf(status, reasonPhrase);
             return this;
         }
 
-        public Builder status(HttpResponseStatus status) {
+        public Builder<BT> status(HttpResponseStatus status) {
             this.status = status;
             return this;
         }
 
-        public Builder data(Publisher<T> data, TypeToken<T> type) {
+        public Builder<BT> data(Publisher<BT> data, Class<BT> clazz) {
+            return data(data, TypeToken.of(clazz));
+        }
+
+        public Builder<BT> data(Publisher<BT> data, TypeToken<BT> type) {
             this.data = data;
             this.type = type;
             return this;
         }
 
-        public Builder header(String name, String value) {
+        public Builder<BT> header(String name, String value) {
             httpHeaders.put(name, value);
             return this;
         }
 
-        public Builder headers(String name, Collection<String> values) {
+        public Builder<BT> headers(String name, Collection<String> values) {
             httpHeaders.put(name, String.join(",", values));
             return this;
         }
 
-        public Result<T> build() {
-            return new Result<T>() {
+        public Result<BT> build() {
+            return new Result<BT>() {
 
                 @Override
                 public HttpResponseStatus status() {
@@ -97,12 +105,12 @@ public abstract class Result<T> {
                 }
 
                 @Override
-                public Publisher<T> data() {
+                public Publisher<BT> data() {
                     return data;
                 }
 
                 @Override
-                public TypeToken<T> type() {
+                public TypeToken<BT> type() {
                     return type;
                 }
 
