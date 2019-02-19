@@ -10,7 +10,11 @@ public interface ReactiveFilter extends Comparable<ReactiveFilter> {
 
     @Override
     default int compareTo(ReactiveFilter o) {
-        return filterRank() - o.filterRank();
+        int res = this.filterRank() - o.filterRank();
+        if (res == 0) {
+            res = this.getClass().getName().compareTo(o.getClass().getName());
+        }
+        return res;
     }
 
     Mono<Result> filter(Request request, FilterChain chain);

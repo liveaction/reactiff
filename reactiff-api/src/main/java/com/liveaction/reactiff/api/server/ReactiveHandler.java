@@ -8,7 +8,11 @@ public interface ReactiveHandler extends Comparable<ReactiveHandler> {
 
     @Override
     default int compareTo(ReactiveHandler o) {
-        return this.handlerRank() - o.handlerRank();
+        int res = this.handlerRank() - o.handlerRank();
+        if (res == 0) {
+            res = this.getClass().getName().compareTo(o.getClass().getName());
+        }
+        return res;
     }
 
 }

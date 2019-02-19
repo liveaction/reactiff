@@ -74,11 +74,13 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     @Override
     public void addReactiveHandler(ReactiveHandler reactiveHandler) {
         router.addReactiveHander(reactiveHandler);
+        LOGGER.info("ReactiveHandler {}(rank={}) added", reactiveHandler, reactiveHandler.handlerRank());
     }
 
     @Override
     public void removeReactiveHandler(ReactiveHandler reactiveHandler) {
         router.removeReactiveHander(reactiveHandler);
+        LOGGER.info("ReactiveHandler {}(rank={}) removed", reactiveHandler, reactiveHandler.handlerRank());
     }
 
     private HttpServer createServer(boolean wiretap, boolean compress) {
