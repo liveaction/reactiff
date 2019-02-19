@@ -294,6 +294,38 @@ public class ReactiveHttpServerTest {
     }
 
     @Test
+    public void shouldPostAndReceiveEmptyFlux() {
+        Flux<Pojo> just = Flux.just();
+        Flux<Pojo> actual = httpClient()
+                .compress(true)
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .post()
+                .uri("/yes")
+                .send(codecManager.send("application/json", just, Pojo.class))
+                .response(decodeAsFlux(Pojo.class));
+
+        StepVerifier.create(actual)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldPostAndReceiveEmptyFluxAsJsonStream() {
+        Flux<Pojo> just = Flux.just();
+        Flux<Pojo> actual = httpClient()
+                .compress(true)
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/stream+json"))
+                .post()
+                .uri("/yes")
+                .send(codecManager.send("application/stream+json", just, Pojo.class))
+                .response(decodeAsFlux(Pojo.class));
+
+        StepVerifier.create(actual)
+                .expectComplete()
+                .verify();
+    }
+    
+    @Test
     public void shouldReceiveNotFoundWhenNoRouteMatch() {
         StepVerifier.create(httpClient()
                 .get()
