@@ -18,20 +18,19 @@ import com.fasterxml.jackson.dataformat.protobuf.schema.ProtobufSchema;
 import com.fasterxml.jackson.dataformat.protobuf.schema.ProtobufSchemaLoader;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import org.apache.avro.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.nustaq.serialization.FSTConfiguration;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -43,6 +42,12 @@ import java.util.stream.IntStream;
 public class BinaryCodecTest {
 
     private Kryo kryo;
+    private ObjectMapper jsonMapper = new ObjectMapper().registerModules(new GuavaModule(), new ParameterNamesModule());
+    private ObjectMapper smileMapper = new ObjectMapper(new SmileFactory()).registerModules(new GuavaModule(), new ParameterNamesModule());
+    private ObjectMapper avroMapper = new ObjectMapper(new AvroFactory()).registerModules(new GuavaModule(), new ParameterNamesModule());
+    private ObjectMapper protobufMapper = new ObjectMapper(new ProtobufFactory()).registerModules(new GuavaModule(), new ParameterNamesModule());
+    private ObjectMapper cborMapper = new ObjectMapper(new CBORFactory()).registerModules(new GuavaModule(), new ParameterNamesModule());
+    private ObjectMapper ionMapper = new ObjectMapper(new IonFactory()).registerModules(new GuavaModule(), new ParameterNamesModule());
 
     @Before
     public void setUp() throws Exception {
@@ -53,6 +58,7 @@ public class BinaryCodecTest {
     }
 
     @Test
+    @Ignore
     public void shouldSerializePojo() throws IOException {
         Object object = new Pojo("typo", "value");
 
@@ -64,7 +70,7 @@ public class BinaryCodecTest {
         }
         try (Input intput = new Input(fileInputStream)) {
             Pojo readed = kryo.readObject(intput, Pojo.class);
-            System.out.println("readed : " +readed);
+//            System.out.println("readed : " + readed);
         }
     }
 
@@ -73,73 +79,84 @@ public class BinaryCodecTest {
         FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
         Object test = "test_string";
         byte[] barray = conf.asByteArray(test);
-        String object = (String)conf.asObject(barray);
+        String object = (String) conf.asObject(barray);
         Assertions.assertThat(object).isEqualTo(test);
     }
 
     @Test
+    @Ignore
     public void shouldSerializePojo_FST() {
         FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
         Object test = new Pojo("typo", "value");
         byte[] barray = conf.asByteArray(test);
-        String object = (String)conf.asObject(barray);
+        String object = (String) conf.asObject(barray);
         Assertions.assertThat(object).isEqualTo(test);
     }
 
     @Test
     public void shouldSerializeString_Smile() throws IOException {
-        ObjectMapper mapper = new ObjectMapper(new SmileFactory());
         Object test = "test_string";
-        byte[] smileData = mapper.writeValueAsBytes(test);
-        Files.write(Paths.get("/tmp/test-smile"), smileData);
-        String otherValue = mapper.readValue(smileData, String.class);
+        byte[] smileData = smileMapper.writeValueAsBytes(test);
+        String otherValue = smileMapper.readValue(smileData, String.class);
         Assertions.assertThat(otherValue).isEqualTo(test);
     }
 
     @Test
     public void shouldSerializeString_PojoList() throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new ParameterNamesModule());
         PojoList data = new PojoList(ImmutableList.of(new Pojo("type", "val")));
-        byte[] bytes = mapper.writeValueAsBytes(data);
-        System.out.println(new String(bytes));
-        PojoList otherValue = mapper.readValue(bytes, PojoList.class);
+        byte[] bytes = jsonMapper.writeValueAsBytes(data);
+//        System.out.println(new String(bytes));
+        PojoList otherValue = jsonMapper.readValue(bytes, PojoList.class);
         Assertions.assertThat(otherValue).isEqualTo(data);
     }
 
     @Test
     public void shouldSerializePojo_Smile() throws IOException {
-        ObjectMapper mapper = new ObjectMapper(new SmileFactory());
-        mapper.registerModule(new ParameterNamesModule());
         Object test = new Pojo("typo", "value");
-        byte[] smileData = mapper.writeValueAsBytes(test);
-        Files.write(Paths.get("/tmp/test-smile"), smileData);
-        Pojo otherValue = mapper.readValue(smileData, Pojo.class);
+        byte[] smileData = smileMapper.writeValueAsBytes(test);
+        Pojo otherValue = smileMapper.readValue(smileData, Pojo.class);
+        Assertions.assertThat(otherValue).isEqualTo(test);
+    }
+
+    @Test
+    public void shouldSerializePojo_Ion() throws IOException {
+        Object test = new Pojo("typo", "value");
+        byte[] data = ionMapper.writeValueAsBytes(test);
+//        System.out.println(new String(data));
+        Pojo otherValue = ionMapper.readValue(data, Pojo.class);
+        Assertions.assertThat(otherValue).isEqualTo(test);
+    }
+
+    @Test
+    public void shouldSerializePojoList_Ion() throws IOException {
+        Object test = new PojoList(ImmutableList.of(new Pojo("typo", "value"), new Pojo("typo", "value2")));
+        byte[] data = ionMapper.writeValueAsBytes(test);
+//        System.out.println(new String(data));
+        PojoList otherValue = ionMapper.readValue(data, PojoList.class);
+        Assertions.assertThat(otherValue).isEqualTo(test);
+    }
+    @Test
+    public void shouldSerializePojoList_Smile() throws IOException {
+        Object test = new PojoList(ImmutableList.of(new Pojo("typo", "value"), new Pojo("typo", "value2")));
+        byte[] data = smileMapper.writeValueAsBytes(test);
+//        System.out.println(new String(data));
+        PojoList otherValue = smileMapper.readValue(data, PojoList.class);
         Assertions.assertThat(otherValue).isEqualTo(test);
     }
 
     @Test
     public void shouldSerializePojo_Smile_List() throws IOException {
-        ObjectMapper mapper = new ObjectMapper(new SmileFactory());
-        mapper.registerModules(new GuavaModule(), new ParameterNamesModule());
-        Object test = ImmutableList.of(new Pojo("typo", "value"),new Pojo("typo", "value2"));
-        byte[] smileData = mapper.writeValueAsBytes(test);
-        System.out.println(new String(smileData));
-        Files.write(Paths.get("/tmp/test-smile"), smileData);
-        ImmutableList<Pojo> otherValue = mapper.readValue(smileData, new TypeReference<ImmutableList<Pojo>>(){});
+        Object test = ImmutableList.of(new Pojo("typo", "value"), new Pojo("typo", "value2"));
+        byte[] smileData = smileMapper.writeValueAsBytes(test);
+//        System.out.println(new String(smileData));
+        ImmutableList<Pojo> otherValue = smileMapper.readValue(smileData, new TypeReference<ImmutableList<Pojo>>() {
+        });
         Assertions.assertThat(otherValue).isEqualTo(test);
     }
 
     @Test
+    @Ignore
     public void testBinaryPerf() throws IOException {
-        ObjectMapper jsonMapper = new ObjectMapper();
-        jsonMapper.registerModules(new GuavaModule(), new ParameterNamesModule(), new Jdk8Module());
-
-        ObjectMapper smileMapper = new ObjectMapper(new SmileFactory());
-        smileMapper.registerModules(new GuavaModule(), new ParameterNamesModule());
-
-        ObjectMapper avroMapper = new ObjectMapper(new AvroFactory());
-        avroMapper.registerModules(new GuavaModule(), new ParameterNamesModule());
         String SCHEMA_JSON = "{\n" +
                 "  \"name\": \"PojoList\",\n" +
                 "  \"type\": \"record\",\n" +
@@ -159,6 +176,38 @@ public class BinaryCodecTest {
                 "            {\n" +
                 "              \"name\": \"value\",\n" +
                 "              \"type\": \"string\"\n" +
+                "            },\n" +
+                "            {\n" +
+                "              \"name\": \"value2\",\n" +
+                "              \"type\": \"string\"\n" +
+                "            },\n" +
+                "            {\n" +
+                "              \"name\": \"value3\",\n" +
+                "              \"type\": \"string\"\n" +
+                "            },\n" +
+                "            {\n" +
+                "              \"name\": \"value4\",\n" +
+                "              \"type\": \"string\"\n" +
+                "            },\n" +
+                "            {\n" +
+                "              \"name\": \"value5\",\n" +
+                "              \"type\": \"string\"\n" +
+                "            },\n" +
+                "            {\n" +
+                "              \"name\": \"value6\",\n" +
+                "              \"type\": \"string\"\n" +
+                "            },\n" +
+                "            {\n" +
+                "              \"name\": \"value7\",\n" +
+                "              \"type\": \"string\"\n" +
+                "            },\n" +
+                "            {\n" +
+                "              \"name\": \"value8\",\n" +
+                "              \"type\": \"string\"\n" +
+                "            },\n" +
+                "            {\n" +
+                "              \"name\": \"value9\",\n" +
+                "              \"type\": \"string\"\n" +
                 "            }\n" +
                 "          ]\n" +
                 "        }\n" +
@@ -176,21 +225,19 @@ public class BinaryCodecTest {
                 "message Pojo {\n" +
                 "  required string type = 1;\n" +
                 "  required string value = 2;\n" +
+                "  required string value2 = 3;\n" +
+                "  required string value3 = 4;\n" +
+                "  required string value4 = 5;\n" +
+                "  required string value5 = 6;\n" +
+                "  required string value6 = 7;\n" +
+                "  required string value7 = 8;\n" +
+                "  required string value8 = 9;\n" +
+                "  required string value9 = 10;\n" +
                 "}";
         ProtobufSchema protobufSchema = ProtobufSchemaLoader.std.parse(protobuf_str);
-        ObjectMapper protobufMapper = new ObjectMapper(new ProtobufFactory());
-
-        protobufMapper.registerModules(new GuavaModule(), new ParameterNamesModule());
-
-        ObjectMapper cborMapper = new ObjectMapper(new CBORFactory());
-        cborMapper.registerModules(new GuavaModule(), new ParameterNamesModule());
-
-        ObjectMapper ionMapper = new ObjectMapper(new IonFactory());
-        ionMapper.registerModules(new GuavaModule(), new ParameterNamesModule());
-
 
         perf(jsonMapper.writer(), jsonMapper.reader(), "json");
-        perf(smileMapper.writer(),smileMapper.reader(), "smile");
+        perf(smileMapper.writer(), smileMapper.reader(), "smile");
         perf(avroMapper.writer(avroSchema), avroMapper.reader(avroSchema), "avro");
         perf(protobufMapper.writer(protobufSchema), protobufMapper.reader(protobufSchema), "protobuf");
         perf(cborMapper.writer(), cborMapper.reader(), "cbor");
@@ -198,7 +245,7 @@ public class BinaryCodecTest {
     }
 
     public void perf(ObjectWriter writer, ObjectReader mapper, String name) throws IOException {
-        int count = 100_000;
+        int count = 10_000;
         List<Pojo> data = IntStream.range(0, count)
                 .mapToObj(i -> new Pojo("type_" + i, "value_" + i))
                 .collect(Collectors.toList());
@@ -207,61 +254,78 @@ public class BinaryCodecTest {
         writer.writeValueAsBytes(input);  // warmup ?
         Stopwatch timer = Stopwatch.createStarted();
         byte[] bytes = writer.writeValueAsBytes(input);
+        for (int i = 0; i < 100; i++) {
+            writer.writeValueAsBytes(input);
+        }
         long serializationDuration = timer.elapsed(TimeUnit.MILLISECONDS);
         mapper.forType(new TypeReference<PojoList>() {
         }).readValue(bytes); // warmup ?
         timer.reset().start();
         PojoList otherValue = mapper.forType(new TypeReference<PojoList>() {
         }).readValue(bytes); // warmup ?
+        for (int i = 0; i < 100; i++) {
+            mapper.forType(new TypeReference<PojoList>() {
+            }).readValue(bytes); // warmup ?
+
+        }
         long deserializationDuration = timer.elapsed(TimeUnit.MILLISECONDS);
         Assertions.assertThat(otherValue).isEqualTo(input);
         System.out.println(name);
-        System.out.println("serialization "+serializationDuration+" ms");
-        System.out.println("deserialization "+deserializationDuration+" ms");
-        System.out.println("data.lenght "+(bytes.length/1000) + "k");
+        System.out.println("serialization " + serializationDuration + " ms");
+        System.out.println("deserialization " + deserializationDuration + " ms");
+        System.out.println("data.lenght " + (bytes.length / 1000) + "k");
         System.out.println();
     }
 
     @Test
     public void shouldSerializeString_Cbor() throws IOException {
-        ObjectMapper mapper = new ObjectMapper(new CBORFactory());
         Object test = "test_string";
-        byte[] smileData = mapper.writeValueAsBytes(test);
-        Files.write(Paths.get("/tmp/test-smile"), smileData);
-        String otherValue = mapper.readValue(smileData, String.class);
+        byte[] smileData = cborMapper.writeValueAsBytes(test);
+        String otherValue = cborMapper.readValue(smileData, String.class);
         Assertions.assertThat(otherValue).isEqualTo(test);
     }
 
     @Test
     public void shouldSerializePojo_Cbor() throws IOException {
-        ObjectMapper mapper = new ObjectMapper(new CBORFactory());
-        mapper.registerModules(new GuavaModule(), new ParameterNamesModule());
         Object test = new Pojo("typo", "value");
-        byte[] smileData = mapper.writeValueAsBytes(test);
-        Files.write(Paths.get("/tmp/test-smile"), smileData);
-        Pojo otherValue = mapper.readValue(smileData, Pojo.class);
+        byte[] smileData = cborMapper.writeValueAsBytes(test);
+        Pojo otherValue = cborMapper.readValue(smileData, Pojo.class);
         Assertions.assertThat(otherValue).isEqualTo(test);
     }
 
     @Test
     public void shouldSerializePojo_Cbor_List() throws IOException {
-        ObjectMapper mapper = new ObjectMapper(new CBORFactory());
-        mapper.registerModules(new GuavaModule(), new ParameterNamesModule());
-        Object test = ImmutableList.of(new Pojo("typo", "value"),new Pojo("typo", "value2"));
-        byte[] smileData = mapper.writeValueAsBytes(test);
-        System.out.println(new String(smileData));
-        Files.write(Paths.get("/tmp/test-cbor"), smileData);
-        ImmutableList<Pojo> otherValue = mapper.readValue(smileData, new TypeReference<ImmutableList<Pojo>>(){});
+        Object test = ImmutableList.of(new Pojo("typo", "value"), new Pojo("typo", "value2"));
+        byte[] smileData = cborMapper.writeValueAsBytes(test);
+//        System.out.println(new String(smileData));
+        ImmutableList<Pojo> otherValue = cborMapper.readValue(smileData, new TypeReference<ImmutableList<Pojo>>() {
+        });
         Assertions.assertThat(otherValue).isEqualTo(test);
     }
 
     public final static class Pojo {
         public final String type;
         public final String value;
+        public final String value2;
+        public final String value3;
+        public final String value4;
+        public final String value5;
+        public final String value6;
+        public final String value7;
+        public final String value8;
+        public final String value9;
 
         public Pojo(String type, String value) {
             this.type = type;
             this.value = value;
+            this.value2 = value;
+            this.value3 = value;
+            this.value4 = value;
+            this.value5 = value;
+            this.value6 = value;
+            this.value7 = value;
+            this.value8 = value;
+            this.value9 = value;
         }
 
         @Override
