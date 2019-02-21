@@ -6,11 +6,14 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.avro.AvroFactory;
 import com.fasterxml.jackson.dataformat.avro.AvroMapper;
 import com.fasterxml.jackson.dataformat.avro.AvroModule;
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
+import com.fasterxml.jackson.dataformat.ion.IonFactory;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.assertj.core.api.Assertions;
@@ -27,6 +30,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class BinaryCodecTest {
 
@@ -106,6 +112,48 @@ public class BinaryCodecTest {
         Files.write(Paths.get("/tmp/test-smile"), smileData);
         ImmutableList<Pojo> otherValue = mapper.readValue(smileData, new TypeReference<ImmutableList<Pojo>>(){});
         Assertions.assertThat(otherValue).isEqualTo(test);
+    }
+
+    @Test
+    public void testBinaryPerf() throws IOException {
+        ObjectMapper jsonMapper = new ObjectMapper();
+        jsonMapper.registerModule(new GuavaModule());
+        ObjectMapper smileMapper = new ObjectMapper(new SmileFactory());
+        smileMapper.registerModule(new GuavaModule());
+        ObjectMapper avroMapper = new ObjectMapper(new AvroFactory());
+        avroMapper.registerModule(new GuavaModule());
+        ObjectMapper cborMapper = new ObjectMapper(new CBORFactory());
+        cborMapper.registerModule(new GuavaModule());
+        ObjectMapper ionMapper = new ObjectMapper(new IonFactory());
+        ionMapper.registerModule(new GuavaModule());
+
+
+        perf(jsonMapper, "json");
+        perf(smileMapper, "smile");
+//        perf(avroMapper, "avro");
+        perf(cborMapper, "cbor");
+        perf(ionMapper, "ion");
+    }
+
+    public void perf(ObjectMapper mapper, String name) throws IOException {
+        int count = 100_000;
+        List<Pojo> data = IntStream.range(0, count)
+                .mapToObj(i -> new Pojo("type_" + i, "value_" + i))
+                .collect(Collectors.toList());
+        mapper.writeValueAsBytes(data);  // warmup ?
+        Stopwatch timer = Stopwatch.createStarted();
+        byte[] bytes = mapper.writeValueAsBytes(data);
+        long serializationDuration = timer.elapsed(TimeUnit.MILLISECONDS);
+        mapper.readValue(bytes, new TypeReference<ImmutableList<Pojo>>(){}); // warmup ?
+        timer.reset().start();
+        ImmutableList<Pojo> otherValue = mapper.readValue(bytes, new TypeReference<ImmutableList<Pojo>>(){});
+        long deserializationDuration = timer.elapsed(TimeUnit.MILLISECONDS);
+        Assertions.assertThat(otherValue).isEqualTo(data);
+        System.out.println(name);
+        System.out.println("serialization "+serializationDuration+" ms");
+        System.out.println("deserialization "+deserializationDuration+" ms");
+        System.out.println("data.lenght "+(bytes.length/1000) + "k");
+        System.out.println();
     }
 
     @Test
