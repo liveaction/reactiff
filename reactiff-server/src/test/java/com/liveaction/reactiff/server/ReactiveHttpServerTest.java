@@ -13,6 +13,7 @@ import com.liveaction.reactiff.codec.CodecManagerImpl;
 import com.liveaction.reactiff.codec.RawBinaryCodec;
 import com.liveaction.reactiff.codec.RawFileCodec;
 import com.liveaction.reactiff.codec.TextPlainCodec;
+import com.liveaction.reactiff.codec.binary.SmileBinaryCodec;
 import com.liveaction.reactiff.codec.json.JsonCodec;
 import com.liveaction.reactiff.server.example.AuthFilter;
 import com.liveaction.reactiff.server.example.TestController;
@@ -63,6 +64,7 @@ public class ReactiveHttpServerTest {
         codecManager.addCodec(new TextPlainCodec());
         codecManager.addCodec(new RawBinaryCodec());
         codecManager.addCodec(new RawFileCodec());
+        codecManager.addCodec(new SmileBinaryCodec());
 
         ReactiveFilter corsFilter = DefaultFilters.cors(
                 ImmutableSet.of("http://localhost"),
@@ -193,6 +195,24 @@ public class ReactiveHttpServerTest {
                 .uri("/yes")
                 .send(codecManager.send("application/json", just, Pojo.class))
                 .response(checkErrorAndDecodeAsFlux(Pojo.class));
+
+        StepVerifier.create(actual)
+                .expectNext(new Pojo("haroun", "tazieff from server"))
+                .expectNext(new Pojo("haroun", "tazieff2 from server"))
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldPostAndReceivePojo_flux_binary() {
+        Flux<Pojo> just = Flux.just(new Pojo("haroun", "tazieff"),
+                new Pojo("haroun", "tazieff2"));
+        Flux<Pojo> actual = httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/octet-stream"))
+                .post()
+                .uri("/yes")
+                .send(codecManager.send("application/octet-stream", just, Pojo.class))
+                .response(decodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual)
                 .expectNext(new Pojo("haroun", "tazieff from server"))

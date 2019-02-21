@@ -49,7 +49,7 @@ public final class JsonCodec implements Codec {
 
     @Override
     public int rank() {
-        return 1;
+        return 5;
     }
 
     @Override

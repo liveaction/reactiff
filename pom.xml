@@ -84,6 +84,11 @@
             </dependency>
             <dependency>
                 <groupId>com.liveaction</groupId>
+                <artifactId>reactiff-codec-binary</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.liveaction</groupId>
                 <artifactId>reactiff-server</artifactId>
                 <version>${project.version}</version>
             </dependency>

@@ -29,7 +29,7 @@ public final class SmileBinaryCodec implements Codec {
 
     @Override
     public int rank() {
-        return 0;
+        return 2;
     }
 
     @Override
