@@ -12,6 +12,10 @@
     <artifactId>reactiff-codec-binary</artifactId>
     <packaging>bundle</packaging>
 
+    <properties>
+        <javac.compiler.argument>-parameters</javac.compiler.argument>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.liveaction</groupId>
@@ -50,6 +54,11 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-ion</artifactId>
+            <version>2.9.8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-protobuf</artifactId>
             <version>2.9.8</version>
         </dependency>
         <dependency>
@@ -93,6 +102,31 @@
             <version>2.9.7</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+            <version>2.9.7</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-parameter-names</artifactId>
+            <version>2.9.7</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.3</version>
+                <configuration>
+                    <compilerArgument>${javac.compiler.argument}</compilerArgument>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
