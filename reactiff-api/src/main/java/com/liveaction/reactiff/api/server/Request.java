@@ -17,6 +17,14 @@ import java.util.Set;
 
 public interface Request {
 
+    default <T> Mono<T> bodyToMono(Class<T> clazz) {
+        return bodyToMono(TypeToken.of(clazz));
+    }
+
+    default <T> Flux<T> bodyToFlux(Class<T> clazz) {
+        return bodyToFlux(TypeToken.of(clazz));
+    }
+
     <T> Mono<T> bodyToMono(TypeToken<T> typeToken);
 
     <T> Flux<T> bodyToFlux(TypeToken<T> typeToken);

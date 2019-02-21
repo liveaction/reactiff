@@ -324,7 +324,7 @@ public class ReactiveHttpServerTest {
                 .expectComplete()
                 .verify();
     }
-    
+
     @Test
     public void shouldReceiveNotFoundWhenNoRouteMatch() {
         StepVerifier.create(httpClient()
