@@ -17,19 +17,19 @@ import java.util.function.BiFunction;
 
 public interface CodecManager {
 
-    default <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> decodeAsMono(Class<T> clazz) {
+    default <T> BiFunction<HttpClientResponse, Publisher<ByteBuf>, Mono<T>> decodeAsMono(Class<T> clazz) {
         return decodeAsMono(TypeToken.of(clazz));
     }
 
-    default <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> decodeAsMono(TypeToken<T> typeToken) {
+    default <T> BiFunction<HttpClientResponse, Publisher<ByteBuf>, Mono<T>> decodeAsMono(TypeToken<T> typeToken) {
         return (response, byteBufFlux) -> decodeAsMono(response, byteBufFlux, typeToken);
     }
 
-    default <T> BiFunction<HttpClientResponse, ByteBufFlux, Flux<T>> decodeAsFlux(Class<T> clazz) {
+    default <T> BiFunction<HttpClientResponse, Publisher<ByteBuf>, Flux<T>> decodeAsFlux(Class<T> clazz) {
         return decodeAsFlux(TypeToken.of(clazz));
     }
 
-    default <T> BiFunction<HttpClientResponse, ByteBufFlux, Flux<T>> decodeAsFlux(TypeToken<T> typeToken) {
+    default <T> BiFunction<HttpClientResponse, Publisher<ByteBuf>, Flux<T>> decodeAsFlux(TypeToken<T> typeToken) {
         return (response, byteBufFlux) -> decodeAsFlux(response, byteBufFlux, typeToken);
     }
 

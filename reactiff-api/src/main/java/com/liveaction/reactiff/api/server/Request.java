@@ -3,6 +3,7 @@ package com.liveaction.reactiff.api.server;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
+import com.liveaction.reactiff.api.server.route.Route;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -11,6 +12,7 @@ import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -37,12 +39,12 @@ public interface Request {
 
     ImmutableMap<String, List<String>> uriParams();
 
-    String header(String name);
+    String header(CharSequence name);
 
     /**
      * The list of values for this header, empty if no header found with this name.
      */
-    List<String> headers(String name);
+    List<String> headers(CharSequence name);
 
     // delegates methods
 
@@ -69,5 +71,9 @@ public interface Request {
     HttpVersion version();
 
     Optional<Route> matchingRoute();
+
+    Locale getLocale();
+
+    ImmutableList<Locale.LanguageRange> getLanguageRanges();
 
 }

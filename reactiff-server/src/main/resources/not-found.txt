@@ -1,0 +1,6 @@
+Route not found: [(${request.method})] [(${request.uri})]
+
+Available routes:
+[# th:each="route : ${routes}" ]
+    [(${route})]
+[/]

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Route not found</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+
+<p>
+
+<p>Route not found : <strong th:text="${request.uri}"></strong></p>
+
+<h4>Available routes :</h4>
+
+<table>
+    <tr th:each="route : ${routes}">
+        <td th:text="${route.descriptor}"></td>
+        <td><strong th:text="${route.path}"></strong></td>
+        <td th:text="${route.handlerMethod}"></td>
+    </tr>
+</table>
+
+</body>
+
+</html>

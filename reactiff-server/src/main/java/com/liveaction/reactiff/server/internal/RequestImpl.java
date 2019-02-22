@@ -6,7 +6,8 @@ import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.Request;
-import com.liveaction.reactiff.api.server.Route;
+import com.liveaction.reactiff.api.server.route.Route;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
@@ -17,6 +18,7 @@ import reactor.netty.http.server.HttpServerRequest;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -79,12 +81,12 @@ public final class RequestImpl implements Request {
     }
 
     @Override
-    public String header(String name) {
+    public String header(CharSequence name) {
         return httpServerRequest.requestHeaders().get(name);
     }
 
     @Override
-    public List<String> headers(String name) {
+    public List<String> headers(CharSequence name) {
         return httpServerRequest.requestHeaders().getAll(name);
     }
 
@@ -146,6 +148,25 @@ public final class RequestImpl implements Request {
     @Override
     public Optional<Route> matchingRoute() {
         return Optional.ofNullable(matchingRoute);
+    }
+
+    @Override
+    public Locale getLocale() {
+        ImmutableList<Locale.LanguageRange> languageRanges = getLanguageRanges();
+        List<Locale> locales = Locale.filter(languageRanges, ImmutableList.copyOf(Locale.getAvailableLocales()));
+        if (locales.isEmpty()) {
+            return Locale.getDefault();
+        } else {
+            return locales.get(0);
+        }
+    }
+
+    @Override
+    public ImmutableList<Locale.LanguageRange> getLanguageRanges() {
+        return Optional.ofNullable(header(HttpHeaderNames.ACCEPT_LANGUAGE))
+                .map(Locale.LanguageRange::parse)
+                .map(ImmutableList::copyOf)
+                .orElseGet(ImmutableList::of);
     }
 
 }

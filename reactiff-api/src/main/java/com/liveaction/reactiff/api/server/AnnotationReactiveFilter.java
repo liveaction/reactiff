@@ -12,7 +12,7 @@ public interface AnnotationReactiveFilter<T extends Annotation> extends Reactive
     default Mono<Result> filter(Request request, FilterChain chain) {
         return request.matchingRoute()
                 .map(route -> {
-                    T annotation = route.handlerMethod.getDeclaredAnnotation(annotation());
+                    T annotation = route.handlerMethod().getDeclaredAnnotation(annotation());
                     if (annotation != null) {
                         return annotatedFilter(request, chain, annotation);
                     } else {

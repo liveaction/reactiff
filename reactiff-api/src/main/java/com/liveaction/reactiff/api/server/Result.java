@@ -86,13 +86,13 @@ public abstract class Result<T> {
             return this;
         }
 
-        public Builder<BT> header(String name, String value) {
-            httpHeaders.put(name, value);
+        public Builder<BT> header(CharSequence name, String value) {
+            httpHeaders.put(name.toString(), value);
             return this;
         }
 
-        public Builder<BT> headers(String name, Collection<String> values) {
-            httpHeaders.put(name, String.join(",", values));
+        public Builder<BT> headers(CharSequence name, Collection<String> values) {
+            httpHeaders.put(name.toString(), String.join(",", values));
             return this;
         }
 

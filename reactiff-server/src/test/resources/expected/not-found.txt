@@ -1,0 +1,12 @@
+Route not found: GET /yes_not_exists
+
+Available routes:
+
+    GET    /non                                               : public reactor.core.publisher.Mono com.liveaction.reactiff.server.example.TestController.unauthorized()
+    GET    /oui                                               : public reactor.core.publisher.Mono com.liveaction.reactiff.server.example.TestController.authorized()
+    GET    /yes/nosuch                                        : public reactor.core.publisher.Mono com.liveaction.reactiff.server.example.TestController.noSuchElementException(com.liveaction.reactiff.api.server.Request)
+    GET    /yes/unauthorized                                  : public reactor.core.publisher.Mono com.liveaction.reactiff.server.example.TestController.unauthorizedException(com.liveaction.reactiff.api.server.Request)
+    GET    /yes/{name}                                        : public reactor.core.publisher.Flux com.liveaction.reactiff.server.example.TestController.yes(com.liveaction.reactiff.api.server.Request)
+    POST   /upload                                            : public reactor.core.publisher.Flux com.liveaction.reactiff.server.example.TestController.upload(com.liveaction.reactiff.api.server.Request)
+    POST   /yes                                               : public reactor.core.publisher.Flux com.liveaction.reactiff.server.example.TestController.postPojo(com.liveaction.reactiff.api.server.Request)
+    WS     /websocket                                         : public org.reactivestreams.Publisher com.liveaction.reactiff.server.example.TestController.yesWebSocket(reactor.netty.http.websocket.WebsocketInbound,reactor.netty.http.websocket.WebsocketOutbound)

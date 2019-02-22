@@ -5,7 +5,7 @@ import com.liveaction.reactiff.api.server.FilterChain;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
-import com.liveaction.reactiff.api.server.Route;
+import com.liveaction.reactiff.api.server.route.Route;
 import io.netty.buffer.ByteBuf;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
@@ -22,7 +22,13 @@ public final class FilterUtils {
 
     }
 
-    public static Publisher<Void> applyFilters(HttpServerRequest req, HttpServerResponse res, CodecManager codecManager, Function<FilterChain, FilterChain> chainFunction, FilterChain chain, Optional<Route> matchingRoute) {
+    @SuppressWarnings("unchecked")
+    public static Publisher<Void> applyFilters(HttpServerRequest req,
+                                               HttpServerResponse res,
+                                               CodecManager codecManager,
+                                               Function<FilterChain, FilterChain> chainFunction,
+                                               FilterChain chain,
+                                               Optional<Route> matchingRoute) {
         Request request = new RequestImpl(req, codecManager, matchingRoute);
         FilterChain filterChain = chainFunction.apply(chain);
         return filterChain.chain(request)

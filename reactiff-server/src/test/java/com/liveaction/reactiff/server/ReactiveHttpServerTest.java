@@ -117,7 +117,7 @@ public class ReactiveHttpServerTest {
         StepVerifier.create(httpClient()
                 .get()
                 .uri("/yes/nosuch")
-                .response(decodeAsFlux(String.class)))
+                .response(checkErrorAndDecodeAsFlux(String.class)))
                 .expectErrorMessage("404 : Not Found")
                 .verify();
     }
@@ -127,7 +127,7 @@ public class ReactiveHttpServerTest {
         StepVerifier.create(httpClient()
                 .get()
                 .uri("/yes/unauthorized")
-                .response(decodeAsFlux(String.class)))
+                .response(checkErrorAndDecodeAsFlux(String.class)))
                 .expectErrorMessage("401 : Unauthorized")
                 .verify();
     }
@@ -140,7 +140,7 @@ public class ReactiveHttpServerTest {
                         .post()
                         .uri("/yes")
                         .send(codecManager.send("application/stream+json", Mono.just(new Pojo("haroun", "tazieff")), Pojo.class))
-                        .response(decodeAsFlux(Pojo.class)))
+                        .response(checkErrorAndDecodeAsFlux(Pojo.class)))
                 .expectNext(new Pojo("haroun", "tazieff from server"))
                 .expectComplete()
                 .verify();
@@ -158,7 +158,7 @@ public class ReactiveHttpServerTest {
                     .post()
                     .uri("/yes")
                     .send(codecManager.send("application/stream+json", just, Pojo.class))
-                    .response(decodeAsFlux(Pojo.class));
+                    .response(checkErrorAndDecodeAsFlux(Pojo.class));
         })
                 .expectSubscription()
                 .expectNoEvent(Duration.ofMillis(1000))
@@ -177,7 +177,7 @@ public class ReactiveHttpServerTest {
                         .post()
                         .uri("/yes")
                         .send(codecManager.send("application/json", Flux.just(new Pojo("haroun", "tazieff")), Pojo.class))
-                        .response(decodeAsFlux(Pojo.class)))
+                        .response(checkErrorAndDecodeAsFlux(Pojo.class)))
                 .expectNext(new Pojo("haroun", "tazieff from server"))
                 .expectComplete()
                 .verify();
@@ -192,7 +192,7 @@ public class ReactiveHttpServerTest {
                 .post()
                 .uri("/yes")
                 .send(codecManager.send("application/json", just, Pojo.class))
-                .response(decodeAsFlux(Pojo.class));
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual)
                 .expectNext(new Pojo("haroun", "tazieff from server"))
@@ -208,7 +208,7 @@ public class ReactiveHttpServerTest {
                 .post()
                 .uri("/upload")
                 .send(codecManager.send("text/xml", body))
-                .response(decodeAsFlux(byte[].class));
+                .response(checkErrorAndDecodeAsFlux(byte[].class));
 
         File expected = new File(getClass().getResource("/test-xml-file.xml").getFile());
         StepVerifier.create(asString(actual))
@@ -230,7 +230,7 @@ public class ReactiveHttpServerTest {
                 .post()
                 .uri("/upload")
                 .send(codecManager.send("application/pdf", body))
-                .response(decodeAsFlux(byte[].class));
+                .response(checkErrorAndDecodeAsFlux(byte[].class));
 
         File expected = new File(getClass().getResource("/sample.pdf").getFile());
         StepVerifier.create(asBinary(actual))
@@ -254,7 +254,7 @@ public class ReactiveHttpServerTest {
                         .post()
                         .uri("/upload")
                         .send(codecManager.send("application/pdf", body))
-                        .response(decodeAsMono(File.class))
+                        .response(checkErrorAndDecodeAsMono(File.class))
         );
 
         File expected = new File(getClass().getResource("/sample.pdf").getFile());
@@ -284,7 +284,7 @@ public class ReactiveHttpServerTest {
                 .post()
                 .uri("/yes")
                 .send(codecManager.send("application/json", just, Pojo.class))
-                .response(decodeAsFlux(Pojo.class));
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual)
                 .expectNext(new Pojo("haroun", "tazieff from server"))
@@ -302,7 +302,7 @@ public class ReactiveHttpServerTest {
                 .post()
                 .uri("/yes")
                 .send(codecManager.send("application/json", just, Pojo.class))
-                .response(decodeAsFlux(Pojo.class));
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual)
                 .expectComplete()
@@ -318,7 +318,7 @@ public class ReactiveHttpServerTest {
                 .post()
                 .uri("/yes")
                 .send(codecManager.send("application/stream+json", just, Pojo.class))
-                .response(decodeAsFlux(Pojo.class));
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual)
                 .expectComplete()
@@ -330,9 +330,37 @@ public class ReactiveHttpServerTest {
         StepVerifier.create(httpClient()
                 .get()
                 .uri("/yes_not_exists")
-                .response(decodeAsFlux(String.class)))
+                .response(checkErrorAndDecodeAsFlux(String.class)))
                 .expectErrorMessage("404 : Not Found")
                 .verify();
+    }
+
+    @Test
+    public void shouldListAllRoutesWhenNoRouteMatchInHtml() throws IOException {
+        String actual = httpClient()
+                .headers(httpHeaders -> httpHeaders.set(HttpHeaderNames.ACCEPT, "text/html"))
+                .get()
+                .uri("/yes_not_exists")
+                .responseSingle((httpClientResponse, byteBufFlux) -> {
+                    assertThat(httpClientResponse.status().code()).isEqualTo(404);
+                    return codecManager.decodeAsMono(String.class).apply(httpClientResponse, byteBufFlux);
+                })
+                .block();
+        assertThat(actual).isEqualTo(Files.toString(new File(getClass().getResource("/expected/not-found.html").getFile()), Charsets.UTF_8));
+    }
+
+    @Test
+    public void shouldListAllRoutesWhenNoRouteMatch() throws IOException {
+        String actual = httpClient()
+                .headers(httpHeaders -> httpHeaders.set(HttpHeaderNames.ACCEPT, "text/plain"))
+                .get()
+                .uri("/yes_not_exists")
+                .responseSingle((httpClientResponse, byteBufFlux) -> {
+                    assertThat(httpClientResponse.status().code()).isEqualTo(404);
+                    return codecManager.decodeAsMono(String.class).apply(httpClientResponse, byteBufFlux);
+                })
+                .block();
+        assertThat(actual).isEqualTo(Files.toString(new File(getClass().getResource("/expected/not-found.txt").getFile()), Charsets.UTF_8));
     }
 
     @Test
@@ -379,7 +407,7 @@ public class ReactiveHttpServerTest {
         StepVerifier.create(httpClient()
                 .get()
                 .uri("/oui")
-                .response(decodeAsFlux(String.class)))
+                .response(checkErrorAndDecodeAsFlux(String.class)))
                 .expectNext("oui")
                 .expectComplete()
                 .verify();
@@ -390,12 +418,12 @@ public class ReactiveHttpServerTest {
         StepVerifier.create(httpClient()
                 .get()
                 .uri("/non")
-                .response(decodeAsFlux(String.class)))
+                .response(checkErrorAndDecodeAsFlux(String.class)))
                 .expectErrorMessage("401 : Unauthorized")
                 .verify();
     }
 
-    private <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> decodeAsMono(Class<T> clazz) {
+    private <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> checkErrorAndDecodeAsMono(Class<T> clazz) {
         return (response, flux) -> {
             HttpResponseStatus status = response.status();
             if (status.code() == 200) {
@@ -406,7 +434,7 @@ public class ReactiveHttpServerTest {
         };
     }
 
-    private <T> BiFunction<HttpClientResponse, ByteBufFlux, Flux<T>> decodeAsFlux(Class<T> clazz) {
+    private <T> BiFunction<HttpClientResponse, ByteBufFlux, Flux<T>> checkErrorAndDecodeAsFlux(Class<T> clazz) {
         return (response, flux) -> {
             HttpResponseStatus status = response.status();
             if (status.code() == 200) {
