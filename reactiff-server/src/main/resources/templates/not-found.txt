@@ -4,9 +4,7 @@
  | | |  __/ (_| | (__| |_| |  _|  _|_____/ / / /
  |_|  \___|\__,_|\___|\__|_|_| |_|      /_/_/_/
 
-Route not found: [(${request.method})] [(${request.uri})]
+Route not found: {{ requestMethod }} {{ requestUri }}
 
 Available routes:
-[# th:each="route : ${routes}" ]
-    [(${route})]
-[/]
+{{ routes }}

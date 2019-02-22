@@ -33,6 +33,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+
 public class Router implements BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> {
 
     private static final Comparator<Route> ROUTE_ORDER = Comparator.comparingInt(Route::rank)
@@ -40,7 +43,7 @@ public class Router implements BiFunction<HttpServerRequest, HttpServerResponse,
             .thenComparing(Route::path)
             .thenComparing(r -> r.handlerMethod().getName());
 
-    private static final String NOT_FOUND_TEMPLATE = "/templates/not-found.";
+    private static final String NOT_FOUND_TEMPLATE = "/templates/not-found.txt";
     private static final TemplateEngineImpl TEMPLATE_ENGINE = new TemplateEngineImpl();
 
     private final ImmutableSet<HandlerSupportFunction<? extends Annotation, ? extends Route>> handlerSupportFunctions;
@@ -118,24 +121,29 @@ public class Router implements BiFunction<HttpServerRequest, HttpServerResponse,
         List<Route> routes = reactiveHandlers.stream()
                 .flatMap(reactiveHandler -> handlerSupportFunctions.stream()
                         .flatMap(handlerSupportFunction -> getAnnotatedRoutes(reactiveHandler, handlerSupportFunction)))
-                .collect(Collectors.toList());
-        String accept = request.header(HttpHeaderNames.ACCEPT);
-        String contentExtension;
-        String contentType;
-        if (accept != null && accept.contains("text/html")) {
-            contentExtension = "html";
-            contentType = "text/html";
-        } else {
-            contentExtension = "txt";
-            contentType = "text/plain";
-        }
-        String file = NOT_FOUND_TEMPLATE + contentExtension;
-        return TEMPLATE_ENGINE.process(file, contentType, request, ImmutableMap.of("routes", routes))
+                .collect(toList());
+
+        ImmutableMap<String, String> parameters = ImmutableMap.of("requestMethod", request.method().name(), "requestUri", request.uri(), "routes", formatRoutes(routes));
+        return TEMPLATE_ENGINE.process(NOT_FOUND_TEMPLATE, parameters)
                 .map(page -> Result.<String>builder()
                         .status(404, String.format("'%s' not found", request.uri()))
-                        .header(HttpHeaderNames.CONTENT_TYPE, contentType)
+                        .header(HttpHeaderNames.CONTENT_TYPE, "text/plain")
                         .data(Mono.just(page), String.class)
                         .build());
+    }
+
+    private String formatRoutes(List<Route> routes) {
+        int maxDescriptorLength = routes.stream().map(Route::descriptor).map(String::length).max(Comparator.naturalOrder()).orElse(0);
+        int maxPathLength = routes.stream().map(Route::path).map(String::length).max(Comparator.naturalOrder()).orElse(0);
+        int maxMethodName = routes.stream().map(this::formatMethodName).map(String::length).max(Comparator.naturalOrder()).orElse(0);
+        return routes.stream()
+                .map(r -> String.format("\t%-" + maxDescriptorLength + "s %-" + maxPathLength + "s => %-" + maxMethodName + "s : %s", r.descriptor(), r.path(), formatMethodName(r), r.handlerMethod().getGenericReturnType()))
+                .collect(Collectors.joining("\n"));
+    }
+
+    private String formatMethodName(Route r) {
+        String args = Stream.of(r.handlerMethod().getParameterTypes()).map(Class::getSimpleName).collect(joining(", "));
+        return r.handlerMethod().getDeclaringClass().getSimpleName() + "." + r.handlerMethod().getName() + "(" + args + ")";
     }
 
 }

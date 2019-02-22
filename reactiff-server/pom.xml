@@ -79,12 +79,6 @@
             <artifactId>reactor-core</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.thymeleaf</groupId>
-            <artifactId>thymeleaf</artifactId>
-            <version>${thymeleaf.version}</version>
-        </dependency>
-
         <!-- Tests -->
         <dependency>
             <groupId>com.liveaction</groupId>

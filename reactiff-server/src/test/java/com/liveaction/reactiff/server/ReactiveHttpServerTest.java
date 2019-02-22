@@ -336,20 +336,6 @@ public class ReactiveHttpServerTest {
     }
 
     @Test
-    public void shouldListAllRoutesWhenNoRouteMatchInHtml() throws IOException {
-        String actual = httpClient()
-                .headers(httpHeaders -> httpHeaders.set(HttpHeaderNames.ACCEPT, "text/html"))
-                .get()
-                .uri("/yes_not_exists")
-                .responseSingle((httpClientResponse, byteBufFlux) -> {
-                    assertThat(httpClientResponse.status().code()).isEqualTo(404);
-                    return codecManager.decodeAsMono(String.class).apply(httpClientResponse, byteBufFlux);
-                })
-                .block();
-        assertThat(actual).isEqualTo(Files.toString(new File(getClass().getResource("/expected/not-found.html").getFile()), Charsets.UTF_8));
-    }
-
-    @Test
     public void shouldListAllRoutesWhenNoRouteMatch() throws IOException {
         String actual = httpClient()
                 .headers(httpHeaders -> httpHeaders.set(HttpHeaderNames.ACCEPT, "text/plain"))
