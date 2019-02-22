@@ -17,6 +17,7 @@ import com.liveaction.reactiff.server.internal.support.WsMappingSupport;
 import com.liveaction.reactiff.server.internal.template.TemplateContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.TemplateSpec;
@@ -47,6 +48,8 @@ public class Router implements BiFunction<HttpServerRequest, HttpServerResponse,
             .thenComparing(Route::descriptor)
             .thenComparing(Route::path)
             .thenComparing(r -> r.handlerMethod().getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(Router.class);
+    private static final String NOT_FOUND_TEMPLATE = "/templates/not-found.";
     private final ImmutableSet<HandlerSupportFunction<? extends Annotation, ? extends Route>> handlerSupportFunctions;
 
     private final Set<ReactiveHandler> reactiveHandlers = Collections.synchronizedSortedSet(new TreeSet<>());
@@ -130,7 +133,7 @@ public class Router implements BiFunction<HttpServerRequest, HttpServerResponse,
             contentExtension = "html";
             contentType = "text/html";
         }
-        URL resource = getClass().getResource("/not-found." + contentExtension);
+        URL resource = getClass().getResource(NOT_FOUND_TEMPLATE + contentExtension);
         try {
             String template = Files.toString(new File(resource.getFile()), Charsets.UTF_8);
             String page = TEMPLATE_ENGINE.process(new TemplateSpec(template, contentType), new TemplateContext(request, ImmutableMap.of(
@@ -144,7 +147,7 @@ public class Router implements BiFunction<HttpServerRequest, HttpServerResponse,
                             .build()
             );
         } catch (IOException e) {
-            LoggerFactory.getLogger(Router.class).error("Unable to find Not Found template", e);
+            LOGGER.error("Unable to find not-found template", e);
             return Mono.just(Result.withStatus(404, String.format("'%s' not found", request.uri())));
         }
     }
