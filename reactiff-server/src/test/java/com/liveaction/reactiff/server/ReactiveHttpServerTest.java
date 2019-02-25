@@ -14,6 +14,7 @@ import com.liveaction.reactiff.codec.RawBinaryCodec;
 import com.liveaction.reactiff.codec.RawFileCodec;
 import com.liveaction.reactiff.codec.TextPlainCodec;
 import com.liveaction.reactiff.codec.json.JsonCodec;
+import com.liveaction.reactiff.codec.json.SmileBinaryCodec;
 import com.liveaction.reactiff.server.example.AuthFilter;
 import com.liveaction.reactiff.server.example.TestController;
 import com.liveaction.reactiff.server.example.api.Pojo;
@@ -55,11 +56,9 @@ public class ReactiveHttpServerTest {
     public static void setUp() {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        JsonCodec jsonCodec = new JsonCodec();
-        jsonCodec.setObjectMapper(objectMapper);
-
         codecManager = new CodecManagerImpl();
-        codecManager.addCodec(jsonCodec);
+        codecManager.addCodec(new JsonCodec(objectMapper));
+        codecManager.addCodec(new SmileBinaryCodec(objectMapper));
         codecManager.addCodec(new TextPlainCodec());
         codecManager.addCodec(new RawBinaryCodec());
         codecManager.addCodec(new RawFileCodec());
@@ -108,6 +107,31 @@ public class ReactiveHttpServerTest {
                 .asString())
                 .expectNext("Hey Augustin")
                 .expectNext("Hey baby !")
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldReceiveBoolean() {
+        StepVerifier.create(httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .get()
+                .uri("/boolean")
+                .response(checkErrorAndDecodeAsMono(Boolean.class)))
+                .expectNext(true)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldReceiveBooleans() {
+        StepVerifier.create(httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .get()
+                .uri("/booleans")
+                .response(checkErrorAndDecodeAsFlux(Boolean.class)))
+                .expectNext(true)
+                .expectNext(false)
                 .expectComplete()
                 .verify();
     }
@@ -192,6 +216,66 @@ public class ReactiveHttpServerTest {
                 .post()
                 .uri("/yes")
                 .send(codecManager.send("application/json", just, Pojo.class))
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
+
+        StepVerifier.create(actual)
+                .expectNext(new Pojo("haroun", "tazieff from server"))
+                .expectNext(new Pojo("haroun", "tazieff2 from server"))
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldPostAndReceivePojoHeavy_json() {
+        Flux<Pojo> actual = httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .post()
+                .uri("/yes/heavy?count=1000")
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
+
+        StepVerifier.create(actual.count())
+                .expectNext(1000L)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldPostAndReceivePojoHeavy_stream_json() {
+        Flux<Pojo> actual = httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/stream+json"))
+                .post()
+                .uri("/yes/heavy?count=1000")
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
+
+        StepVerifier.create(actual.count())
+                .expectNext(1000L)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldPostAndReceivePojoHeavy_binary() {
+        Flux<Pojo> actual = httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/octet-stream"))
+                .post()
+                .uri("/yes/heavy?count=1000")
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
+
+        StepVerifier.create(actual.count())
+                .expectNext(1000L)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldPostAndReceivePojo_flux_binary() {
+        Flux<Pojo> just = Flux.just(new Pojo("haroun", "tazieff"),
+                new Pojo("haroun", "tazieff2"));
+        Flux<Pojo> actual = httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/octet-stream"))
+                .post()
+                .uri("/yes")
+                .send(codecManager.send("application/octet-stream", just, Pojo.class))
                 .response(checkErrorAndDecodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual)

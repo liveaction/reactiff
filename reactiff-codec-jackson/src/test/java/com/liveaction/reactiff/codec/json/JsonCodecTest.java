@@ -22,8 +22,7 @@ public class JsonCodecTest {
 
     @Before
     public void setUp() throws Exception {
-        tested = new JsonCodec();
-        tested.setObjectMapper(new ObjectMapper());
+        tested = new JsonCodec(new ObjectMapper());
     }
 
     @Test
