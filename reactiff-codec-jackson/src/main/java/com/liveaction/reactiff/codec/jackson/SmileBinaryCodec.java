@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.codec.json;
+package com.liveaction.reactiff.codec.jackson;
 
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;

@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.codec.json;
+package com.liveaction.reactiff.codec.jackson;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
