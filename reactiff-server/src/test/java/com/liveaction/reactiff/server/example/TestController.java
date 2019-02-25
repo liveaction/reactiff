@@ -45,6 +45,13 @@ public class TestController implements ReactiveHandler {
                 .map(pojo -> new Pojo(pojo.id, pojo.name + " from server"));
     }
 
+    @RequestMapping(method = HttpMethod.POST, path = "/yes/heavy")
+    public Flux<Pojo> postHeavyPojo(Request request) {
+        int count = Integer.valueOf(request.uriParam("count"));
+        return Flux.range(0, count)
+                .map(i -> new Pojo("id", "value_" + i));
+    }
+
     @RequiresAuth(authorized = true)
     @RequestMapping(method = HttpMethod.GET, path = "/oui")
     public Mono<String> authorized() {

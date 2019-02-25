@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.codec.binary;
+package com.liveaction.reactiff.codec.json;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.SerializerFactory;
