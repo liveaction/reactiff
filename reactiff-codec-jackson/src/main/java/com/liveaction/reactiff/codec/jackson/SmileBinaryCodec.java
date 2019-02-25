@@ -36,7 +36,7 @@ public final class SmileBinaryCodec implements Codec {
 
     @Override
     public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return jacksonCodec.decodeFlux(byteBufFlux, typeToken);
+        return jacksonCodec.decodeFlux(byteBufFlux, typeToken, false);
     }
 
     @Override

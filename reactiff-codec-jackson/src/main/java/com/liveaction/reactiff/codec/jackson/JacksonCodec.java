@@ -59,9 +59,9 @@ public final class JacksonCodec {
                 });
     }
 
-    public <T> Flux<T> decodeFlux(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
+    public <T> Flux<T> decodeFlux(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken, boolean readTopLevelArray) {
         try {
-            JsonAsyncParser<T> jsonAsyncParser = new JsonAsyncParser<>(objectCodec, jsonFactory, true, typeToken);
+            JsonAsyncParser<T> jsonAsyncParser = new JsonAsyncParser<>(objectCodec, jsonFactory, readTopLevelArray, typeToken);
             return ByteBufFlux.fromInbound(byteBufFlux)
                     .asByteArray()
                     .flatMap(jsonAsyncParser::parse)
@@ -214,13 +214,13 @@ public final class JacksonCodec {
                 updateDepth(token);
 
                 if (token == JsonToken.START_ARRAY) {
-                    if (readTopLevelArray && !rootLevelArrayStarted) {
+                    if (readTopLevelArray && !rootLevelArrayStarted && objectDepth == 0) {
                         rootLevelArrayStarted = true;
                         parser.clearCurrentToken();
                         continue;
                     }
                 } else if (token == JsonToken.END_ARRAY) {
-                    if (readTopLevelArray && rootLevelArrayStarted && !rootLevelArrayClosed && arrayDepth == 0) {
+                    if (readTopLevelArray && rootLevelArrayStarted && !rootLevelArrayClosed && arrayDepth == 0 && objectDepth == 0) {
                         rootLevelArrayClosed = true;
                         parser.clearCurrentToken();
                         break;

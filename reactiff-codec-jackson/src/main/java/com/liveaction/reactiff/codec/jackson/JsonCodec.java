@@ -41,7 +41,11 @@ public final class JsonCodec implements Codec {
 
     @Override
     public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return jacksonCodec.decodeFlux(byteBufFlux, typeToken);
+        if (APPLICATION_JSON.equalsIgnoreCase(contentType) || APPLICATION_STREAM_JSON.equalsIgnoreCase(contentType)) {
+            return jacksonCodec.decodeFlux(byteBufFlux, typeToken, APPLICATION_JSON.equalsIgnoreCase(contentType));
+        } else {
+            return Flux.error(new IllegalArgumentException("Unsupported ContentType '" + contentType + "'"));
+        }
     }
 
     @Override
@@ -49,8 +53,9 @@ public final class JsonCodec implements Codec {
         if (APPLICATION_JSON.equalsIgnoreCase(contentType) || APPLICATION_STREAM_JSON.equalsIgnoreCase(contentType)) {
             return jacksonCodec.encode(data, APPLICATION_JSON.equalsIgnoreCase(contentType));
         } else {
-            throw new IllegalArgumentException("Unsupported ContentType '" + contentType + "'");
+            return Flux.error(new IllegalArgumentException("Unsupported ContentType '" + contentType + "'"));
         }
+
     }
 
 }
