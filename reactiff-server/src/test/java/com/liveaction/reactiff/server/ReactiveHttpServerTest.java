@@ -112,6 +112,31 @@ public class ReactiveHttpServerTest {
     }
 
     @Test
+    public void shouldReceiveBoolean() {
+        StepVerifier.create(httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .get()
+                .uri("/boolean")
+                .response(checkErrorAndDecodeAsMono(Boolean.class)))
+                .expectNext(true)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldReceiveBooleans() {
+        StepVerifier.create(httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .get()
+                .uri("/booleans")
+                .response(checkErrorAndDecodeAsFlux(Boolean.class)))
+                .expectNext(true)
+                .expectNext(false)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
     public void shouldReceiveNoSuchElementException() {
         StepVerifier.create(httpClient()
                 .get()
@@ -206,7 +231,7 @@ public class ReactiveHttpServerTest {
                 .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
                 .post()
                 .uri("/yes/heavy?count=1000")
-                .response(decodeAsFlux(Pojo.class));
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual.count())
                 .expectNext(1000L)
@@ -220,7 +245,7 @@ public class ReactiveHttpServerTest {
                 .headers(httpHeaders -> httpHeaders.set("Accept", "application/stream+json"))
                 .post()
                 .uri("/yes/heavy?count=1000")
-                .response(decodeAsFlux(Pojo.class));
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual.count())
                 .expectNext(1000L)
@@ -234,7 +259,7 @@ public class ReactiveHttpServerTest {
                 .headers(httpHeaders -> httpHeaders.set("Accept", "application/octet-stream"))
                 .post()
                 .uri("/yes/heavy?count=1000")
-                .response(decodeAsFlux(Pojo.class));
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual.count())
                 .expectNext(1000L)
@@ -251,7 +276,7 @@ public class ReactiveHttpServerTest {
                 .post()
                 .uri("/yes")
                 .send(codecManager.send("application/octet-stream", just, Pojo.class))
-                .response(decodeAsFlux(Pojo.class));
+                .response(checkErrorAndDecodeAsFlux(Pojo.class));
 
         StepVerifier.create(actual)
                 .expectNext(new Pojo("haroun", "tazieff from server"))

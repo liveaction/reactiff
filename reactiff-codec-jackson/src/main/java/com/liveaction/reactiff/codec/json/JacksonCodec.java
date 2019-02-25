@@ -46,7 +46,20 @@ public final class JacksonCodec {
         this.streamSeparator = streamSeparator;
     }
 
-    public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
+    public <T> Mono<T> decodeMono(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
+        return ByteBufFlux.fromInbound(byteBufFlux)
+                .aggregate()
+                .asInputStream()
+                .map(inputStream -> {
+                    try {
+                        return objectCodec.readValue(jsonFactory.createParser(inputStream), toTypeReference(typeToken));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
+    public <T> Flux<T> decodeFlux(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         try {
             JsonAsyncParser<T> jsonAsyncParser = new JsonAsyncParser<>(objectCodec, jsonFactory, true, typeToken);
             return ByteBufFlux.fromInbound(byteBufFlux)

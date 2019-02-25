@@ -31,12 +31,12 @@ public final class SmileBinaryCodec implements Codec {
 
     @Override
     public <T> Mono<T> decodeMono(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return decodeFlux(contentType, byteBufFlux, typeToken).next();
+        return jacksonCodec.decodeMono(byteBufFlux, typeToken);
     }
 
     @Override
     public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return jacksonCodec.decodeFlux(contentType, byteBufFlux, typeToken);
+        return jacksonCodec.decodeFlux(byteBufFlux, typeToken);
     }
 
     @Override
