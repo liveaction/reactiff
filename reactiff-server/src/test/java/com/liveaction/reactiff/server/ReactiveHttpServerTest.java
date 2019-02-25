@@ -493,6 +493,49 @@ public class ReactiveHttpServerTest {
                 .verify();
     }
 
+    @Test
+    public void shouldReceiveMono() {
+        StepVerifier.create(
+                httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/boolean/flux")
+                        .send(codecManager.send("application/json", Flux.just(false), Boolean.class))
+                        .response(checkErrorAndDecodeAsMono(Boolean.class)))
+                .expectNext(true)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldReceiveMono1() {
+        StepVerifier.create(
+                httpClient()
+                        .wiretap(true)
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/boolean/mono1")
+                        .send(codecManager.send("application/json", Flux.just(false), Boolean.class))
+                        .response(checkErrorAndDecodeAsMono(Boolean.class)))
+                .expectNext(true)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldSendMonoInBody() {
+        StepVerifier.create(
+                httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/boolean/mono")
+                        .send(codecManager.send("application/json", Mono.just(false), Boolean.class))
+                        .response(checkErrorAndDecodeAsFlux(Boolean.class)))
+                .expectNext(true)
+                .expectComplete()
+                .verify();
+    }
+
     private <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> checkErrorAndDecodeAsMono(Class<T> clazz) {
         return (response, flux) -> {
             HttpResponseStatus status = response.status();

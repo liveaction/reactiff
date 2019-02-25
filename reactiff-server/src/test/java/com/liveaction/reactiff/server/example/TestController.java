@@ -68,6 +68,33 @@ public class TestController implements ReactiveHandler {
         return Mono.just("oui");
     }
 
+    @RequestMapping(method = HttpMethod.POST, path = "/boolean/flux")
+    public Mono<Boolean> booleanFlux(Request request) {
+        return request.bodyToFlux(Boolean.class)
+                .collectList()
+                .map(ignored -> true);
+    }
+
+    @RequestMapping(method = HttpMethod.POST, path = "/boolean/mono")
+    public Flux<Boolean> booleanMono(Request request) {
+        return Flux.from(request.bodyToMono(Boolean.class)
+                .map(ignored -> true));
+    }
+
+    @RequestMapping(method = HttpMethod.POST, path = "/boolean/mono1")
+    public Mono<Boolean> booleanMono1(Request request) {
+        return request.bodyToFlux(Boolean.class)
+                .then(Mono.just(true));
+    }
+
+    @RequestMapping(method = HttpMethod.POST, path = "/boolean/flux1")
+    public Flux<Boolean> booleanFlux1(Request request) {
+        return request.bodyToFlux(Boolean.class).map(x -> {
+            System.out.println(x);
+            return x;
+        });
+    }
+
     @RequiresAuth(authorized = false)
     @RequestMapping(method = HttpMethod.GET, path = "/non")
     public Mono<String> unauthorized() {
