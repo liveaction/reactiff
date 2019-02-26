@@ -4,6 +4,7 @@ import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
+import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.annotation.WsMapping;
 import com.liveaction.reactiff.server.example.api.Pojo;
@@ -19,6 +20,11 @@ public class TestController implements ReactiveHandler {
 
     @RequestMapping(method = HttpMethod.GET, path = "/yes/nosuch")
     public Mono<Void> noSuchElementException(Request request) {
+        return Mono.error(new NoSuchElementException("Element untel not found"));
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/yes/nosuchflux")
+    public Mono<Result<Void>> noSuchElementExceptionFlux(Request request) {
         return Mono.error(new NoSuchElementException("Element untel not found"));
     }
 

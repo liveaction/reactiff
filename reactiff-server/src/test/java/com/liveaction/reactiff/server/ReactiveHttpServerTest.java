@@ -147,6 +147,16 @@ public class ReactiveHttpServerTest {
     }
 
     @Test
+    public void shouldReceiveNoSuchElementExceptionFlux() {
+        StepVerifier.create(httpClient()
+                .get()
+                .uri("/yes/nosuchflux")
+                .response(checkErrorAndDecodeAsFlux(String.class)))
+                .expectErrorMessage("404 : Not Found")
+                .verify();
+    }
+
+    @Test
     public void shouldReceiveUnauthorized() {
         StepVerifier.create(httpClient()
                 .get()
