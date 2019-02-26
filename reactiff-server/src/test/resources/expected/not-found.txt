@@ -12,8 +12,13 @@ Available routes:
 	GET  /non              => TestController.unauthorized()                                    : reactor.core.publisher.Mono<java.lang.String>
 	GET  /oui              => TestController.authorized()                                      : reactor.core.publisher.Mono<java.lang.String>
 	GET  /yes/nosuch       => TestController.noSuchElementException(Request)                   : reactor.core.publisher.Mono<java.lang.Void>
+	GET  /yes/nosuchflux   => TestController.noSuchElementExceptionFlux(Request)               : reactor.core.publisher.Mono<com.liveaction.reactiff.api.server.Result<java.lang.Void>>
 	GET  /yes/unauthorized => TestController.unauthorizedException(Request)                    : reactor.core.publisher.Mono<java.lang.Void>
 	GET  /yes/{name}       => TestController.yes(Request)                                      : reactor.core.publisher.Flux<java.lang.String>
+	POST /boolean/flux     => TestController.booleanFlux(Request)                              : reactor.core.publisher.Mono<java.lang.Boolean>
+	POST /boolean/flux1    => TestController.booleanFlux1(Request)                             : reactor.core.publisher.Flux<java.lang.Boolean>
+	POST /boolean/mono     => TestController.booleanMono(Request)                              : reactor.core.publisher.Flux<java.lang.Boolean>
+	POST /boolean/mono1    => TestController.booleanMono1(Request)                             : reactor.core.publisher.Mono<java.lang.Boolean>
 	POST /upload           => TestController.upload(Request)                                   : reactor.core.publisher.Flux<byte[]>
 	POST /yes              => TestController.postPojo(Request)                                 : reactor.core.publisher.Flux<com.liveaction.reactiff.server.example.api.Pojo>
 	POST /yes/heavy        => TestController.postHeavyPojo(Request)                            : reactor.core.publisher.Flux<com.liveaction.reactiff.server.example.api.Pojo>
