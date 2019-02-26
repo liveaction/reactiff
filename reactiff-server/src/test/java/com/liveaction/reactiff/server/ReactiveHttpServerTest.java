@@ -147,6 +147,16 @@ public class ReactiveHttpServerTest {
     }
 
     @Test
+    public void shouldReceiveNoSuchElementExceptionFlux() {
+        StepVerifier.create(httpClient()
+                .get()
+                .uri("/yes/nosuchflux")
+                .response(checkErrorAndDecodeAsFlux(String.class)))
+                .expectErrorMessage("404 : Not Found")
+                .verify();
+    }
+
+    @Test
     public void shouldReceiveUnauthorized() {
         StepVerifier.create(httpClient()
                 .get()
@@ -490,6 +500,49 @@ public class ReactiveHttpServerTest {
                 .uri("/non")
                 .response(checkErrorAndDecodeAsFlux(String.class)))
                 .expectErrorMessage("401 : Unauthorized")
+                .verify();
+    }
+
+    @Test
+    public void shouldReceiveMono() {
+        StepVerifier.create(
+                httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/boolean/flux")
+                        .send(codecManager.send("application/json", Flux.just(false), Boolean.class))
+                        .response(checkErrorAndDecodeAsMono(Boolean.class)))
+                .expectNext(true)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldReceiveMono1() {
+        StepVerifier.create(
+                httpClient()
+                        .wiretap(true)
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/boolean/mono1")
+                        .send(codecManager.send("application/json", Flux.just(false), Boolean.class))
+                        .response(checkErrorAndDecodeAsMono(Boolean.class)))
+                .expectNext(true)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldSendMonoInBody() {
+        StepVerifier.create(
+                httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/boolean/mono")
+                        .send(codecManager.send("application/json", Mono.just(false), Boolean.class))
+                        .response(checkErrorAndDecodeAsFlux(Boolean.class)))
+                .expectNext(true)
+                .expectComplete()
                 .verify();
     }
 

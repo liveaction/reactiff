@@ -4,6 +4,7 @@ import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
+import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.annotation.WsMapping;
 import com.liveaction.reactiff.server.example.api.Pojo;
@@ -19,6 +20,11 @@ public class TestController implements ReactiveHandler {
 
     @RequestMapping(method = HttpMethod.GET, path = "/yes/nosuch")
     public Mono<Void> noSuchElementException(Request request) {
+        return Mono.error(new NoSuchElementException("Element untel not found"));
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/yes/nosuchflux")
+    public Mono<Result<Void>> noSuchElementExceptionFlux(Request request) {
         return Mono.error(new NoSuchElementException("Element untel not found"));
     }
 
@@ -66,6 +72,33 @@ public class TestController implements ReactiveHandler {
     @RequestMapping(method = HttpMethod.GET, path = "/oui")
     public Mono<String> authorized() {
         return Mono.just("oui");
+    }
+
+    @RequestMapping(method = HttpMethod.POST, path = "/boolean/flux")
+    public Mono<Boolean> booleanFlux(Request request) {
+        return request.bodyToFlux(Boolean.class)
+                .collectList()
+                .map(ignored -> true);
+    }
+
+    @RequestMapping(method = HttpMethod.POST, path = "/boolean/mono")
+    public Flux<Boolean> booleanMono(Request request) {
+        return Flux.from(request.bodyToMono(Boolean.class)
+                .map(ignored -> true));
+    }
+
+    @RequestMapping(method = HttpMethod.POST, path = "/boolean/mono1")
+    public Mono<Boolean> booleanMono1(Request request) {
+        return request.bodyToFlux(Boolean.class)
+                .then(Mono.just(true));
+    }
+
+    @RequestMapping(method = HttpMethod.POST, path = "/boolean/flux1")
+    public Flux<Boolean> booleanFlux1(Request request) {
+        return request.bodyToFlux(Boolean.class).map(x -> {
+            System.out.println(x);
+            return x;
+        });
     }
 
     @RequiresAuth(authorized = false)
