@@ -1,27 +1,23 @@
 package com.liveaction.reactiff.codec.jackson;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.reflect.TypeToken;
+import com.liveaction.reactiff.codec.jackson.model.Pojo;
 import io.netty.buffer.ByteBuf;
 import org.junit.Before;
 import org.junit.Test;
 import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
-import java.util.Objects;
 
 public class JsonCodecTest {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(JsonCodecTest.class);
     private JsonCodec tested;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         tested = new JsonCodec(new ObjectMapper());
     }
 
@@ -67,34 +63,4 @@ public class JsonCodecTest {
                 .verify(Duration.ofMillis(200));
     }
 
-    public final static class Pojo {
-        public final String type;
-        public final String value;
-
-        public Pojo(@JsonProperty("type") String type, @JsonProperty("value") String value) {
-            this.type = type;
-            this.value = value;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Pojo pojo = (Pojo) o;
-            return Objects.equals(type, pojo.type) &&
-                    Objects.equals(value, pojo.value);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(type, value);
-        }
-
-        @Override
-        public String toString() {
-            return "Pojo{" + "type='" + type + '\'' +
-                    ", value='" + value + '\'' +
-                    '}';
-        }
-    }
 }
