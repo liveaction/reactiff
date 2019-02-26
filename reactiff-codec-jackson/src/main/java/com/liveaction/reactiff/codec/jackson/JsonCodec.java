@@ -6,8 +6,6 @@ import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
 import io.netty.buffer.ByteBuf;
 import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -15,8 +13,6 @@ public final class JsonCodec implements Codec {
 
     public static final String APPLICATION_STREAM_JSON = "application/stream+json";
     public static final String APPLICATION_JSON = "application/json";
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonCodec.class);
 
     private final JacksonCodec jacksonCodec;
 

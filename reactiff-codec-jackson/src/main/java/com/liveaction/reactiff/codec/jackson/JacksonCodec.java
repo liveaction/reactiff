@@ -41,6 +41,7 @@ public final class JacksonCodec {
     private final byte[] streamSeparator;
 
     public JacksonCodec(ObjectCodec objectCodec, JsonFactory jsonFactory, byte[] streamSeparator) {
+        jsonFactory.setCodec(objectCodec);
         this.objectCodec = objectCodec;
         this.jsonFactory = jsonFactory;
         this.streamSeparator = streamSeparator;

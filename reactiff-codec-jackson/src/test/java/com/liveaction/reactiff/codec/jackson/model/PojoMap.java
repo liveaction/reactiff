@@ -2,15 +2,16 @@ package com.liveaction.reactiff.codec.jackson.model;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
-import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.annotate.JsonCreator;
 
 import java.util.Objects;
 
 public final class PojoMap {
 
-    public final ImmutableMap<String, ImmutableMap<String, Pojo>> mapOfMap;
+    public final ImmutableMap<MapKey, ImmutableMap<String, Pojo>> mapOfMap;
 
-    public PojoMap(@JsonProperty("mapOfMap") ImmutableMap<String, ImmutableMap<String, Pojo>> mapOfMap) {
+    @JsonCreator
+    public PojoMap(ImmutableMap<MapKey, ImmutableMap<String, Pojo>> mapOfMap) {
         this.mapOfMap = mapOfMap;
     }
 

@@ -36,6 +36,7 @@
                 <configuration>
                     <source>8</source>
                     <target>8</target>
+                    <compilerArgs>-parameters</compilerArgs>
                 </configuration>
                 <version>3.6.0</version>
             </plugin>
