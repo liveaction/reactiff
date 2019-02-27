@@ -18,6 +18,11 @@ import java.util.NoSuchElementException;
 
 public class TestController implements ReactiveHandler {
 
+    @RequestMapping(method = HttpMethod.GET, path = "/failed")
+    public Mono<Result<String>> failed() {
+        throw new IllegalArgumentException("Always fail");
+    }
+
     @RequestMapping(method = HttpMethod.GET, path = "/yes/nosuch")
     public Mono<Void> noSuchElementException(Request request) {
         return Mono.error(new NoSuchElementException("Element untel not found"));

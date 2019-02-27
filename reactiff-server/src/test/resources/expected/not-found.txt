@@ -9,6 +9,7 @@ Route not found: GET /yes_not_exists
 Available routes:
 	GET  /boolean          => TestController.getBoolean(Request)                               : reactor.core.publisher.Mono<java.lang.Boolean>
 	GET  /booleans         => TestController.getBooleans(Request)                              : reactor.core.publisher.Flux<java.lang.Boolean>
+	GET  /failed           => TestController.failed()                                          : reactor.core.publisher.Mono<com.liveaction.reactiff.api.server.Result<java.lang.String>>
 	GET  /non              => TestController.unauthorized()                                    : reactor.core.publisher.Mono<java.lang.String>
 	GET  /oui              => TestController.authorized()                                      : reactor.core.publisher.Mono<java.lang.String>
 	GET  /yes/nosuch       => TestController.noSuchElementException(Request)                   : reactor.core.publisher.Mono<java.lang.Void>

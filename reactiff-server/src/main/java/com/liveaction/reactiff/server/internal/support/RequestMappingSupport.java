@@ -81,8 +81,10 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
             }
             Object rawResult = method.invoke(reactiveHandler, args.toArray());
             return ResultUtils.toResult(returnType, rawResult);
-        } catch (IllegalAccessException | InvocationTargetException error) {
-            return Mono.error(error);
+        } catch (IllegalAccessException e) {
+            return Mono.error(e);
+        } catch (InvocationTargetException e) {
+            return Mono.error(e.getTargetException());
         }
     }
 

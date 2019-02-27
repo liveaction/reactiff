@@ -137,6 +137,16 @@ public class ReactiveHttpServerTest {
     }
 
     @Test
+    public void shouldCatchErrorWhenHandlerThrowAnException() {
+        StepVerifier.create(httpClient()
+                .get()
+                .uri("/failed")
+                .response(checkErrorAndDecodeAsMono(String.class)))
+                .expectErrorMessage("500 : Internal Server Error")
+                .verify();
+    }
+
+    @Test
     public void shouldReceiveNoSuchElementException() {
         StepVerifier.create(httpClient()
                 .get()

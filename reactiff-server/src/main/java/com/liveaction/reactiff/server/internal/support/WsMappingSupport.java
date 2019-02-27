@@ -34,8 +34,10 @@ public class WsMappingSupport implements HandlerSupportFunction<WsMapping, WebSo
         httpServerRoutes.ws(route.path(), (req, res) -> {
             try {
                 return (Publisher<Void>) route.handlerMethod.invoke(reactiveHandler, req, res);
-            } catch (IllegalAccessException | InvocationTargetException error) {
-                return Mono.error(error);
+            } catch (IllegalAccessException e) {
+                return Mono.error(e);
+            } catch (InvocationTargetException e) {
+                return Mono.error(e.getTargetException());
             }
         });
         LOGGER.trace("Registered route {}", route);
