@@ -5,7 +5,6 @@ import com.liveaction.reactiff.api.codec.Codec;
 import com.liveaction.reactiff.api.codec.CodecManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -28,6 +27,8 @@ public final class CodecManagerImpl implements CodecManager {
 
     private final Set<Codec> codecs = new ConcurrentSkipListSet<>(Comparator.comparingInt(Codec::rank));
 
+    private String defaultContentType = DEFAULT;
+
     @Override
     public void addCodec(Codec codec) {
         boolean add = codecs.add(codec);
@@ -42,6 +43,11 @@ public final class CodecManagerImpl implements CodecManager {
     }
 
     @Override
+    public void setDefaultContentType(String defaultContentType) {
+        this.defaultContentType = defaultContentType;
+    }
+
+    @Override
     public <T> Mono<T> decodeAsMono(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         String contentType = findContentType(response.responseHeaders());
         Codec codec = findCodec(contentType, typeToken);
@@ -50,7 +56,7 @@ public final class CodecManagerImpl implements CodecManager {
 
     private String findContentType(HttpHeaders httpHeaders) {
         return Optional.ofNullable(httpHeaders.get(HttpHeaderNames.CONTENT_TYPE))
-                .orElse(DEFAULT);
+                .orElse(defaultContentType);
     }
 
     @Override
@@ -117,7 +123,7 @@ public final class CodecManagerImpl implements CodecManager {
                 return matches.get();
             }
         }
-        return HttpHeaderValues.TEXT_PLAIN.toString();
+        return defaultContentType;
     }
 
     private Codec findCodec(String contentType, TypeToken<?> typeToken) {

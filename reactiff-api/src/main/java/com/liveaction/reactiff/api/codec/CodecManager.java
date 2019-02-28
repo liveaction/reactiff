@@ -74,6 +74,8 @@ public interface CodecManager {
 
     void removeCodec(Codec codec);
 
+    void setDefaultContentType(String defaultContentType);
+
     <T> Mono<T> decodeAsMono(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken);
 
     <T> Mono<T> decodeAsMono(HttpServerRequest request, TypeToken<T> typeToken);
