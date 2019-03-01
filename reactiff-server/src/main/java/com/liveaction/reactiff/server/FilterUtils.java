@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.internal;
+package com.liveaction.reactiff.server;
 
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.FilterChain;

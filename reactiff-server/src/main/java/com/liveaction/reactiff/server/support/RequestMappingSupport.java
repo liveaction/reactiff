@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.internal.support;
+package com.liveaction.reactiff.server.support;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -12,8 +12,8 @@ import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.route.HttpRoute;
 import com.liveaction.reactiff.api.server.route.Route;
-import com.liveaction.reactiff.server.internal.FilterUtils;
-import com.liveaction.reactiff.server.internal.ResultUtils;
+import com.liveaction.reactiff.server.FilterUtils;
+import com.liveaction.reactiff.server.ResultUtils;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

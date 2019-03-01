@@ -1,11 +1,10 @@
-package com.liveaction.reactiff.server.internal;
+package com.liveaction.reactiff.server;
 
 import com.google.common.collect.Sets;
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
-import com.liveaction.reactiff.server.ReactiveHttpServer;
 import reactor.netty.http.HttpProtocol;
 import reactor.util.annotation.Nullable;
 

@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.internal.support;
+package com.liveaction.reactiff.server.support;
 
 import com.google.common.collect.ImmutableSet;
 import com.liveaction.reactiff.api.server.ReactiveHandler;

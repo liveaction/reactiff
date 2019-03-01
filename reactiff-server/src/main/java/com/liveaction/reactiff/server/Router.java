@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.internal;
+package com.liveaction.reactiff.server;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -9,10 +9,10 @@ import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.route.Route;
-import com.liveaction.reactiff.server.internal.support.HandlerSupportFunction;
-import com.liveaction.reactiff.server.internal.support.RequestMappingSupport;
-import com.liveaction.reactiff.server.internal.support.WsMappingSupport;
-import com.liveaction.reactiff.server.internal.template.TemplateEngineImpl;
+import com.liveaction.reactiff.server.support.HandlerSupportFunction;
+import com.liveaction.reactiff.server.support.RequestMappingSupport;
+import com.liveaction.reactiff.server.support.WsMappingSupport;
+import com.liveaction.reactiff.server.template.TemplateEngineImpl;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
 import org.slf4j.LoggerFactory;
