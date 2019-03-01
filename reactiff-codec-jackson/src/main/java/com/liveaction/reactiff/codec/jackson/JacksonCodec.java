@@ -207,9 +207,14 @@ public final class JacksonCodec {
             while (true) {
                 JsonToken token = this.parser.nextToken();
 
-                if ((token == JsonToken.NOT_AVAILABLE) ||
-                        (token == null && (token = this.parser.nextToken()) == null)) {
+                if (token == JsonToken.NOT_AVAILABLE) {
                     break;
+                }
+                if (token == null) {
+                    token = this.parser.nextToken();
+                    if (token == null || token == JsonToken.NOT_AVAILABLE) {
+                        break;
+                    }
                 }
                 updateDepth(token);
 
