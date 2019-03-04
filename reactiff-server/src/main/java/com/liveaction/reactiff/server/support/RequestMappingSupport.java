@@ -38,10 +38,12 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
 
     private final CodecManager codecManager;
     private final Function<FilterChain, FilterChain> filterChainer;
+    private final boolean writeErrorStacktrace;
 
-    public RequestMappingSupport(CodecManager codecManager, Function<FilterChain, FilterChain> chainFunction) {
+    public RequestMappingSupport(CodecManager codecManager, Function<FilterChain, FilterChain> chainFunction, boolean writeErrorStacktrace) {
         this.codecManager = codecManager;
         this.filterChainer = chainFunction;
+        this.writeErrorStacktrace = writeErrorStacktrace;
     }
 
     @Override
@@ -62,7 +64,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
         FilterChain routeChain = (request) -> invokeHandlerMethod(reactiveHandler, method, request);
         BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> {
             Optional<Route> matchingRoute = Optional.of(Route.http(0, HttpMethod.valueOf(req.method().name()), route.path(), method));
-            return FilterUtils.applyFilters(req, res, codecManager, filterChainer, routeChain, matchingRoute);
+            return FilterUtils.applyFilters(req, res, codecManager, filterChainer, routeChain, matchingRoute, writeErrorStacktrace);
         };
         route.method.route(httpServerRoutes, route.path(), onRequest);
         LOGGER.trace("Registered route {}", route);

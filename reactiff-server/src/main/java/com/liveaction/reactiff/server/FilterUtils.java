@@ -7,19 +7,25 @@ import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.route.Route;
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import reactor.netty.NettyPipeline;
 import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Optional;
 import java.util.function.Function;
 
 public final class FilterUtils {
 
-    private FilterUtils() {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FilterUtils.class);
 
+    private FilterUtils() {
     }
 
     @SuppressWarnings("unchecked")
@@ -28,10 +34,30 @@ public final class FilterUtils {
                                                CodecManager codecManager,
                                                Function<FilterChain, FilterChain> chainFunction,
                                                FilterChain chain,
-                                               Optional<Route> matchingRoute) {
+                                               Optional<Route> matchingRoute,
+                                               boolean writeErrorStacktrace) {
         Request request = new RequestImpl(req, codecManager, matchingRoute);
         FilterChain filterChain = chainFunction.apply(chain);
         return filterChain.chain(request)
+                .onErrorResume(throwable -> {
+                    int status = 500;
+                    LOGGER.error("Unexpected error", throwable);
+                    String output;
+                    if (writeErrorStacktrace) {
+                        StringWriter stringWriter = new StringWriter();
+                        throwable.printStackTrace(new PrintWriter(stringWriter));
+                        output = stringWriter.toString();
+                    } else {
+                        output = throwable.getMessage();
+                    }
+                    return Mono.just(
+                            Result.<String>builder()
+                                    .status(status, throwable.getMessage())
+                                    .header(HttpHeaderNames.CONTENT_TYPE, "text/plain")
+                                    .data(Mono.just(output), String.class)
+                                    .build()
+                    );
+                })
                 .flatMap(filteredResult -> {
                     filteredResult.headers().forEach(res::header);
                     HttpServerResponse httpServerResponse = res.status(filteredResult.status());

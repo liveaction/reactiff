@@ -56,13 +56,16 @@ public class Router implements BiFunction<HttpServerRequest, HttpServerResponse,
     private final Function<FilterChain, FilterChain> filterFunction;
     private HttpServerRoutes httpServerRoutes = HttpServerRoutes.newRoutes();
 
-    public Router(CodecManager codecManager, Function<FilterChain, FilterChain> filterFunction) {
+    private final boolean writeErrorStacktrace;
+
+    public Router(CodecManager codecManager, Function<FilterChain, FilterChain> filterFunction, boolean writeErrorStacktrace) {
         this.codecManager = codecManager;
         this.filterFunction = filterFunction;
         this.handlerSupportFunctions = ImmutableSet.of(
-                new RequestMappingSupport(codecManager, filterFunction),
+                new RequestMappingSupport(codecManager, filterFunction, writeErrorStacktrace),
                 new WsMappingSupport()
         );
+        this.writeErrorStacktrace = writeErrorStacktrace;
     }
 
     public void addReactiveHander(ReactiveHandler reactiveHandler) {
@@ -85,7 +88,7 @@ public class Router implements BiFunction<HttpServerRequest, HttpServerResponse,
     private void updateRoutes() {
         HttpServerRoutes httpServerRoutes = HttpServerRoutes.newRoutes();
         handlerSupportFunctions.forEach(handlerSupportFunction -> reactiveHandlers.forEach(rh -> registerMethod(httpServerRoutes, rh, handlerSupportFunction)));
-        httpServerRoutes.route(httpServerRequest -> true, (req, res) -> FilterUtils.applyFilters(req, res, codecManager, filterFunction, this::notFound, Optional.empty()));
+        httpServerRoutes.route(httpServerRequest -> true, (req, res) -> FilterUtils.applyFilters(req, res, codecManager, filterFunction, this::notFound, Optional.empty(), writeErrorStacktrace));
         this.httpServerRoutes = httpServerRoutes;
     }
 

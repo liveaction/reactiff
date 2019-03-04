@@ -27,6 +27,8 @@ public final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Build
 
     private boolean compress = false;
 
+    private boolean writeErrorStacktrace = true;
+
     @Nullable
     private CodecManager codecManager;
 
@@ -89,7 +91,7 @@ public final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Build
         if (codecManager == null) {
             codecManager = new CodecManagerImpl();
         }
-        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, wiretap, compress);
+        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, wiretap, compress, writeErrorStacktrace);
         filters.forEach(reactiveHttpServer::addReactiveFilter);
         handlers.forEach(reactiveHttpServer::addReactiveHandler);
         return reactiveHttpServer;
