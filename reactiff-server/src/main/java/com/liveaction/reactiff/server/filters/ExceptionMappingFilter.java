@@ -29,7 +29,7 @@ public class ExceptionMappingFilter implements ReactiveFilter {
                                         .build()
                         );
                     } else {
-                        return null;
+                        return Mono.error(throwable);
                     }
                 });
     }
