@@ -3,6 +3,7 @@ package com.liveaction.reactiff.server;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.FilterChain;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
@@ -22,6 +23,7 @@ import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.HttpServerRoutes;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -137,8 +139,25 @@ public class Router implements BiFunction<HttpServerRequest, HttpServerResponse,
         int maxPathLength = routes.stream().map(Route::path).map(String::length).max(Comparator.naturalOrder()).orElse(0);
         int maxMethodName = routes.stream().map(this::formatMethodName).map(String::length).max(Comparator.naturalOrder()).orElse(0);
         return routes.stream()
-                .map(r -> String.format("\t%-" + maxDescriptorLength + "s %-" + maxPathLength + "s => %-" + maxMethodName + "s : %s", r.descriptor(), r.path(), formatMethodName(r), r.handlerMethod().getGenericReturnType()))
+                .map(r -> String.format("\t%-" + maxDescriptorLength + "s %-" + maxPathLength + "s => %-" + maxMethodName + "s : %s", r.descriptor(), r.path(), formatMethodName(r), formatReturnType(r.handlerMethod().getGenericReturnType())))
                 .collect(Collectors.joining("\n"));
+    }
+
+    private String formatReturnType(Type genericReturnType) {
+        return formatClass(TypeToken.of(genericReturnType));
+    }
+
+    private String formatClass(TypeToken<?> typeToken) {
+        Class<?> clazz = typeToken.getRawType();
+        String types = Stream.of(clazz.getTypeParameters())
+                .map(typeToken::resolveType)
+                .map(this::formatClass)
+                .collect(joining(", "));
+        if (types.length() > 0) {
+            return clazz.getSimpleName() + '<' + types + '>';
+        } else {
+            return clazz.getSimpleName();
+        }
     }
 
     private String formatMethodName(Route r) {
