@@ -7,7 +7,6 @@ import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.route.Route;
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,13 +49,7 @@ public final class FilterUtils {
                     } else {
                         output = throwable.getMessage();
                     }
-                    return Mono.just(
-                            Result.<String>builder()
-                                    .status(status, throwable.getMessage())
-                                    .header(HttpHeaderNames.CONTENT_TYPE, "text/plain")
-                                    .data(Mono.just(output), String.class)
-                                    .build()
-                    );
+                    return Mono.just(Result.withStatus(status, output));
                 })
                 .flatMap(filteredResult -> {
                     filteredResult.headers().forEach(res::header);

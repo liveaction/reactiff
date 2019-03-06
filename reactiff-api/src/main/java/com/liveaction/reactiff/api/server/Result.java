@@ -2,31 +2,27 @@ package com.liveaction.reactiff.api.server;
 
 import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 import java.util.Map;
 
 public abstract class Result<T> {
 
-    public static Result withStatus(int status, String reasonPhrase) {
-        return new Result<Void>() {
-            @Override
-            public HttpResponseStatus status() {
-                return HttpResponseStatus.valueOf(status, reasonPhrase);
-            }
+    public static Result<String> withStatus(int status, String reasonPhrase) {
+        return withStatus(status, reasonPhrase, reasonPhrase);
+    }
 
-            @Override
-            public Publisher<Void> data() {
-                return null;
-            }
-
-            @Override
-            public TypeToken<Void> type() {
-                return TypeToken.of(Void.class);
-            }
-        };
+    public static Result<String> withStatus(int status, String reasonPhrase, String message) {
+        return Result.<String>builder()
+                .status(status, reasonPhrase)
+                .data(Mono.just(message), String.class)
+                .header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN.toString())
+                .build();
     }
 
     public static <T> Result<T> ok(Publisher<T> publisher, Class<T> clazz) {
@@ -49,6 +45,14 @@ public abstract class Result<T> {
 
     public static <T> Builder<T> builder() {
         return new Builder<>();
+    }
+
+    public static Result unauthorized(String reasonPhrase) {
+        return Result.withStatus(HttpResponseStatus.UNAUTHORIZED.code(), reasonPhrase);
+    }
+
+    public static Result forbidden(String reasonPhrase) {
+        return Result.withStatus(HttpResponseStatus.FORBIDDEN.code(), reasonPhrase);
     }
 
     public Builder copy() {

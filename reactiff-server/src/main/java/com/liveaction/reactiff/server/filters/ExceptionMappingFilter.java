@@ -22,12 +22,7 @@ public class ExceptionMappingFilter implements ReactiveFilter {
                 .onErrorResume(throwable -> {
                     Integer mappedStatus = mapping.apply(throwable);
                     if (mappedStatus != null) {
-                        return Mono.just(
-                                Result.<String>builder()
-                                        .status(mappedStatus, throwable.getMessage())
-                                        .data(Mono.just(throwable.getMessage()), String.class)
-                                        .build()
-                        );
+                        return Mono.just(Result.withStatus(mappedStatus, throwable.getMessage()));
                     } else {
                         return Mono.error(throwable);
                     }
