@@ -5,6 +5,7 @@ import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
+import com.liveaction.reactiff.api.server.annotation.PathParam;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.annotation.WsMapping;
 import com.liveaction.reactiff.server.example.api.Pojo;
@@ -79,31 +80,17 @@ public class TestController implements ReactiveHandler {
         return Mono.just("oui");
     }
 
-    @RequestMapping(method = HttpMethod.POST, path = "/boolean/flux")
-    public Mono<Boolean> booleanFlux(Request request) {
+    @RequestMapping(method = HttpMethod.POST, path = "/boolean/mono/from/flux")
+    public Mono<Boolean> booleanMonoFromFlux(Request request) {
         return request.bodyToFlux(Boolean.class)
                 .collectList()
                 .map(ignored -> true);
     }
 
-    @RequestMapping(method = HttpMethod.POST, path = "/boolean/mono")
-    public Flux<Boolean> booleanMono(Request request) {
+    @RequestMapping(method = HttpMethod.POST, path = "/boolean/flux/from/mono")
+    public Flux<Boolean> booleanFluxFromMono(Request request) {
         return Flux.from(request.bodyToMono(Boolean.class)
                 .map(ignored -> true));
-    }
-
-    @RequestMapping(method = HttpMethod.POST, path = "/boolean/mono1")
-    public Mono<Boolean> booleanMono1(Request request) {
-        return request.bodyToFlux(Boolean.class)
-                .then(Mono.just(true));
-    }
-
-    @RequestMapping(method = HttpMethod.POST, path = "/boolean/flux1")
-    public Flux<Boolean> booleanFlux1(Request request) {
-        return request.bodyToFlux(Boolean.class).map(x -> {
-            System.out.println(x);
-            return x;
-        });
     }
 
     @RequiresAuth(authorized = false)
@@ -117,5 +104,4 @@ public class TestController implements ReactiveHandler {
         return request.bodyToFlux(new TypeToken<byte[]>() {
         });
     }
-
 }

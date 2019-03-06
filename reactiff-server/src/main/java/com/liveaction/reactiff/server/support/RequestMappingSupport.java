@@ -9,6 +9,7 @@ import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
+import com.liveaction.reactiff.api.server.annotation.PathParam;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.route.HttpRoute;
 import com.liveaction.reactiff.api.server.route.Route;
@@ -22,9 +23,10 @@ import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.HttpServerRoutes;
 
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
+import java.lang.reflect.Parameter;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -74,11 +76,15 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
         try {
             TypeToken<?> returnType = TypeToken.of(method.getGenericReturnType());
             List<Object> args = Lists.newArrayList();
+            Parameter[] parameters = method.getParameters();
             for (int i = 0; i < method.getParameterCount(); i++) {
-                Type[] genericParameterTypes = method.getGenericParameterTypes();
-                TypeToken<?> genericParameterType = TypeToken.of(genericParameterTypes[i]);
+                TypeToken<?> genericParameterType = TypeToken.of(parameters[i].getType());
                 if (genericParameterType.isAssignableFrom(Request.class)) {
                     args.add(request);
+                } else {
+                    if (parameters[i].getAnnotation(PathParam.class) != null) {
+                        args.add(request.pathParam(parameters[i].getAnnotation(PathParam.class).value()));
+                    }
                 }
             }
             Object rawResult = method.invoke(reactiveHandler, args.toArray());
