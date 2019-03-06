@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.example;
+package com.liveaction.reactiff.server.general.example;
 
 import com.liveaction.reactiff.api.server.AnnotationReactiveFilter;
 import com.liveaction.reactiff.api.server.FilterChain;

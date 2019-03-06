@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server;
+package com.liveaction.reactiff.server.general;
 
 public final class HttpException extends RuntimeException {
 

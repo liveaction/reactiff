@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.example;
+package com.liveaction.reactiff.server.general.example;
 
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.server.HttpMethod;
@@ -7,7 +7,7 @@ import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.annotation.WsMapping;
-import com.liveaction.reactiff.server.example.api.Pojo;
+import com.liveaction.reactiff.server.general.example.api.Pojo;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

@@ -3,8 +3,10 @@ package com.liveaction.reactiff.server.rules;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.server.ReactiveHttpServer;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import org.junit.rules.ExternalResource;
 import reactor.netty.http.HttpProtocol;
+import reactor.netty.http.client.HttpClient;
 
 public final class WithReactiveServer extends ExternalResource {
 
@@ -34,6 +36,13 @@ public final class WithReactiveServer extends ExternalResource {
 
     public void after() {
         server.close();
+    }
+
+    public HttpClient httpClient() {
+        return HttpClient.create()
+                .protocol(HttpProtocol.HTTP11)
+                .baseUrl("http://localhost:" + server.port())
+                .headers(httpHeaders -> httpHeaders.set(HttpHeaderNames.ACCEPT, "application/json"));
     }
 
 }

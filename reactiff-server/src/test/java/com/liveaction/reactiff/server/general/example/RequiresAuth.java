@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.example;
+package com.liveaction.reactiff.server.general.example;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

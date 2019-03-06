@@ -81,11 +81,18 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
             for (int i = 0; i < method.getParameterCount(); i++) {
                 TypeToken<?> genericParameterType = TypeToken.of(parameters[i].getParameterizedType());
                 TypeToken<?> of = TypeToken.of(parameters[i].getParameterizedType());
+                Parameter parameter = parameters[i];
+                TypeToken<?> genericParameterType = TypeToken.of(parameter.getType());
                 if (genericParameterType.isAssignableFrom(Request.class)) {
                     args.add(request);
                 } else {
-                    if (parameters[i].getAnnotation(PathParam.class) != null) {
-                        args.add(request.pathParam(parameters[i].getAnnotation(PathParam.class).value()));
+                    PathParam annotation = parameter.getAnnotation(PathParam.class);
+                    if (annotation != null) {
+                        String name = annotation.value();
+                        if (name.isEmpty()) {
+                            name = parameter.getName();
+                        }
+                        args.add(request.pathParam(name));
                     }
                     if (parameters[i].getAnnotation(RequestBody.class) != null) {
                         if (genericParameterType.isAssignableFrom(Mono.class)) {
