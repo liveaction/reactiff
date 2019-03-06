@@ -5,7 +5,6 @@ import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
-import com.liveaction.reactiff.api.server.annotation.PathParam;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.annotation.WsMapping;
 import com.liveaction.reactiff.server.example.api.Pojo;

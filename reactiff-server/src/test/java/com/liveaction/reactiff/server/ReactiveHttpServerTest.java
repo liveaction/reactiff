@@ -14,7 +14,6 @@ import com.liveaction.reactiff.codec.RawFileCodec;
 import com.liveaction.reactiff.codec.TextPlainCodec;
 import com.liveaction.reactiff.codec.jackson.JsonCodec;
 import com.liveaction.reactiff.codec.jackson.SmileBinaryCodec;
-import com.liveaction.reactiff.server.example.AnnotationTestController;
 import com.liveaction.reactiff.server.example.AuthFilter;
 import com.liveaction.reactiff.server.example.TestController;
 import com.liveaction.reactiff.server.example.api.Pojo;

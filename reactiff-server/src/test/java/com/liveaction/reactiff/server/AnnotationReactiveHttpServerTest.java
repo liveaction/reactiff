@@ -121,4 +121,18 @@ public class AnnotationReactiveHttpServerTest {
                 .expectComplete()
                 .verify();
     }
+
+    @Test
+    public void shouldSendBodyParameter() {
+        StepVerifier.create(
+                ReactiveHttpServerTestUtils.httpClient(tested)
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/annotated/body")
+                        .send(codecManager.send("application/json", Flux.just(new Pojo("haroun", "tazieff")), Pojo.class))
+                        .response(ReactiveHttpServerTestUtils.checkErrorAndDecodeAsFlux(Pojo.class)))
+                .expectNext(new Pojo("haroun", "tazieff from server"))
+                .expectComplete()
+                .verify();
+    }
 }

@@ -10,6 +10,7 @@ import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.annotation.PathParam;
+import com.liveaction.reactiff.api.server.annotation.RequestBody;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.route.HttpRoute;
 import com.liveaction.reactiff.api.server.route.Route;
@@ -22,8 +23,8 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.HttpServerRoutes;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -78,12 +79,20 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
             List<Object> args = Lists.newArrayList();
             Parameter[] parameters = method.getParameters();
             for (int i = 0; i < method.getParameterCount(); i++) {
-                TypeToken<?> genericParameterType = TypeToken.of(parameters[i].getType());
+                TypeToken<?> genericParameterType = TypeToken.of(parameters[i].getParameterizedType());
+                TypeToken<?> of = TypeToken.of(parameters[i].getParameterizedType());
                 if (genericParameterType.isAssignableFrom(Request.class)) {
                     args.add(request);
                 } else {
                     if (parameters[i].getAnnotation(PathParam.class) != null) {
                         args.add(request.pathParam(parameters[i].getAnnotation(PathParam.class).value()));
+                    }
+                    if (parameters[i].getAnnotation(RequestBody.class) != null) {
+                        if (genericParameterType.isAssignableFrom(Mono.class)) {
+                            args.add(request.bodyToMono(genericParameterType));
+                        } else {
+                            args.add(request.bodyToFlux(TypeToken.of(((ParameterizedTypeImpl) genericParameterType.getType()).getActualTypeArguments()[0])));
+                        }
                     }
                 }
             }
