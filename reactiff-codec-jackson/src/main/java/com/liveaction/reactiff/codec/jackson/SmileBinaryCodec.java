@@ -43,4 +43,9 @@ public final class SmileBinaryCodec implements Codec {
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
         return jacksonCodec.encode(data, false);
     }
+
+    @Override
+    public <T> T decodeEntity(String value, TypeToken<T> typeToken) {
+        throw new UnsupportedOperationException("String value cannot be decoded by SmileBinaryCodec");
+    }
 }

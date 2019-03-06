@@ -41,6 +41,29 @@ public final class AnnotationParamTest {
     }
 
     @Test
+    public void shouldParsePathParamWithBooleanType() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .get()
+                        .uri("/annotated/params/boolean/true")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(Boolean.class)))
+                .expectNext(true)
+                .expectComplete()
+                .verify();
+
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .get()
+                        .uri("/annotated/params/boolean/false")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(Boolean.class)))
+                .expectNext(false)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
     public void shouldInferParamName() {
         StepVerifier.create(
                 withReactiveServer.httpClient()
@@ -76,5 +99,7 @@ public final class AnnotationParamTest {
                 .expectComplete()
                 .verify();
     }
+
+
 
 }

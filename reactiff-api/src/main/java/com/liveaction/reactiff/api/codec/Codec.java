@@ -16,6 +16,8 @@ public interface Codec {
 
     <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken);
 
+    <T> T decodeEntity(String value, TypeToken<T> typeToken);
+
     <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken);
 
 }

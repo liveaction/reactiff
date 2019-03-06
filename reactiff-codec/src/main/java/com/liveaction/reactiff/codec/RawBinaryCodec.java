@@ -38,6 +38,11 @@ public final class RawBinaryCodec implements Codec {
         return Flux.from(decode(byteBufFlux, typeToken));
     }
 
+    @Override
+    public <T> T decodeEntity(String value, TypeToken<T> typeToken) {
+        throw new UnsupportedOperationException("String value cannot be decoded by RawBinaryCodec");
+    }
+
     @SuppressWarnings("unchecked")
     private <T> Publisher<T> decode(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         if (BYTE_ARRAY.isAssignableFrom(typeToken)) {

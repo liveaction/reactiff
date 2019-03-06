@@ -54,6 +54,7 @@ public final class JacksonCodec {
                     try {
                         return objectCodec.readValue(jsonFactory.createParser(inputStream), toTypeReference(typeToken));
                     } catch (IOException e) {
+                        LOGGER.error(String.format("Error while converting inputStream to %s", typeToken));
                         throw new RuntimeException(e);
                     }
                 });
@@ -68,6 +69,15 @@ public final class JacksonCodec {
                     .doOnTerminate(jsonAsyncParser::close);
         } catch (IOException e) {
             return Flux.error(e);
+        }
+    }
+
+    public <T> T decodeEntity(String value, TypeToken<T> typeToken) {
+        try {
+            return objectCodec.readValue(jsonFactory.createJsonParser(value), toTypeReference(typeToken));
+        } catch (IOException e) {
+            LOGGER.error(String.format("Error while converting value %s to %s", value, typeToken));
+            throw new RuntimeException(e);
         }
     }
 

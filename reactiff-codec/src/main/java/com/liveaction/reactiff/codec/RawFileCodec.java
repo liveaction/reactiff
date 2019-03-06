@@ -40,6 +40,11 @@ public final class RawFileCodec implements Codec {
         return Flux.from(decode(byteBufFlux, typeToken));
     }
 
+    @Override
+    public <T> T decodeEntity(String value, TypeToken<T> typeToken) {
+        throw new UnsupportedOperationException("String value cannot be decoded by RawFileCodec");
+    }
+
     @SuppressWarnings("unchecked")
     private <T> Publisher<T> decode(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         if (FILE.isAssignableFrom(typeToken)) {

@@ -45,6 +45,11 @@ public final class JsonCodec implements Codec {
     }
 
     @Override
+    public <T> T decodeEntity(String value, TypeToken<T> typeToken) {
+        return jacksonCodec.decodeEntity(value, typeToken);
+    }
+
+    @Override
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
         if (APPLICATION_JSON.equalsIgnoreCase(contentType) || APPLICATION_STREAM_JSON.equalsIgnoreCase(contentType)) {
             return jacksonCodec.encode(data, APPLICATION_JSON.equalsIgnoreCase(contentType));

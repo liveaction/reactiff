@@ -31,6 +31,11 @@ public final class TextPlainCodec implements Codec {
         return Flux.from(decode(byteBufFlux, typeToken));
     }
 
+    @Override
+    public <T> T decodeEntity(String value, TypeToken<T> typeToken) {
+        throw new UnsupportedOperationException("String value cannot be decoded by TextPlainCodec");
+    }
+
     @SuppressWarnings("unchecked")
     private <T> Publisher<T> decode(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         if (String.class.equals(typeToken.getRawType())) {
