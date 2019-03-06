@@ -26,7 +26,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.function.BiFunction;
 
-public class ReactiveHttpServerTestUtils {
+public class TestUtils {
+
     private static ObjectMapper objectMapper = new ObjectMapper();
     private static CodecManager codecManager;
 
@@ -84,4 +85,5 @@ public class ReactiveHttpServerTestUtils {
     public static Mono<String> asString(Flux<byte[]> data) {
         return asBinary(data).map(b -> new String(b, Charsets.UTF_8));
     }
+
 }

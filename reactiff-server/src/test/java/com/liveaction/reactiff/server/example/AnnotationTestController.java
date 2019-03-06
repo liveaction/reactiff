@@ -1,6 +1,5 @@
 package com.liveaction.reactiff.server.example;
 
-import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.annotation.PathParam;
