@@ -14,7 +14,9 @@ import java.util.Map;
 public abstract class Result<T> {
 
     public static Result<String> withStatus(int status, String reasonPhrase) {
-        return withStatus(status, reasonPhrase, reasonPhrase);
+        return Result.<String>builder()
+                .status(status, reasonPhrase)
+                .build();
     }
 
     public static Result<String> withStatus(int status, String reasonPhrase, String message) {

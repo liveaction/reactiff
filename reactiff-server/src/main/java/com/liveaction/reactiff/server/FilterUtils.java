@@ -41,15 +41,13 @@ public final class FilterUtils {
                 .onErrorResume(throwable -> {
                     int status = 500;
                     LOGGER.error("Unexpected error", throwable);
-                    String output;
                     if (writeErrorStacktrace) {
                         StringWriter stringWriter = new StringWriter();
                         throwable.printStackTrace(new PrintWriter(stringWriter));
-                        output = stringWriter.toString();
+                        return Mono.just(Result.withStatus(status, throwable.getMessage(), stringWriter.toString()));
                     } else {
-                        output = throwable.getMessage();
+                        return Mono.just(Result.withStatus(status, throwable.getMessage()));
                     }
-                    return Mono.just(Result.withStatus(status, output));
                 })
                 .flatMap(filteredResult -> {
                     filteredResult.headers().forEach(res::header);
