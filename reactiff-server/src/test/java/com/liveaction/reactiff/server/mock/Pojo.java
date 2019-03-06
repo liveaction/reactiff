@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.general.example.api;
+package com.liveaction.reactiff.server.mock;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;

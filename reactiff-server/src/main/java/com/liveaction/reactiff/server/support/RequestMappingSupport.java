@@ -19,11 +19,11 @@ import com.liveaction.reactiff.server.ResultUtils;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.HttpServerRoutes;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -79,8 +79,6 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
             List<Object> args = Lists.newArrayList();
             Parameter[] parameters = method.getParameters();
             for (int i = 0; i < method.getParameterCount(); i++) {
-                TypeToken<?> genericParameterType = TypeToken.of(parameters[i].getParameterizedType());
-                TypeToken<?> of = TypeToken.of(parameters[i].getParameterizedType());
                 Parameter parameter = parameters[i];
                 TypeToken<?> genericParameterType = TypeToken.of(parameter.getType());
                 if (genericParameterType.isAssignableFrom(Request.class)) {
@@ -93,12 +91,15 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                             name = parameter.getName();
                         }
                         args.add(request.pathParam(name));
-                    }
-                    if (parameters[i].getAnnotation(RequestBody.class) != null) {
+                    } else if (parameter.getAnnotation(RequestBody.class) != null) {
                         if (genericParameterType.isAssignableFrom(Mono.class)) {
-                            args.add(request.bodyToMono(genericParameterType));
+                            TypeToken<?> paramType = returnType.resolveType(Mono.class.getTypeParameters()[0]);
+                            args.add(request.bodyToMono(paramType));
+                        } else if (genericParameterType.isAssignableFrom(Flux.class)) {
+                            TypeToken<?> paramType = returnType.resolveType(Flux.class.getTypeParameters()[0]);
+                            args.add(request.bodyToFlux(paramType));
                         } else {
-                            args.add(request.bodyToFlux(TypeToken.of(((ParameterizedTypeImpl) genericParameterType.getType()).getActualTypeArguments()[0])));
+                            throw new IllegalArgumentException(RequestBody.class.getSimpleName() + " only support Mono<T> or Flux<T> type");
                         }
                     }
                 }

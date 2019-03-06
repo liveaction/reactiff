@@ -6,7 +6,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import reactor.test.StepVerifier;
 
-public class AnnotationParamTest {
+public final class AnnotationParamTest {
 
     @ClassRule
     public static WithCodecManager withCodecManager = new WithCodecManager();

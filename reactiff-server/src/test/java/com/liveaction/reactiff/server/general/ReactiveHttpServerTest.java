@@ -7,7 +7,7 @@ import com.liveaction.reactiff.api.codec.Body;
 import com.liveaction.reactiff.server.DefaultFilters;
 import com.liveaction.reactiff.server.general.example.AuthFilter;
 import com.liveaction.reactiff.server.general.example.TestController;
-import com.liveaction.reactiff.server.general.example.api.Pojo;
+import com.liveaction.reactiff.server.mock.Pojo;
 import com.liveaction.reactiff.server.rules.ReactorUtils;
 import com.liveaction.reactiff.server.rules.WithCodecManager;
 import com.liveaction.reactiff.server.rules.WithReactiveServer;
@@ -28,7 +28,7 @@ import java.util.NoSuchElementException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
-public class ReactiveHttpServerTest {
+public final class ReactiveHttpServerTest {
 
     @ClassRule
     public static WithCodecManager withCodecManager = new WithCodecManager();

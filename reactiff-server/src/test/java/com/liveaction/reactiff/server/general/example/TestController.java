@@ -7,7 +7,7 @@ import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.annotation.WsMapping;
-import com.liveaction.reactiff.server.general.example.api.Pojo;
+import com.liveaction.reactiff.server.mock.Pojo;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -16,7 +16,7 @@ import reactor.netty.http.websocket.WebsocketOutbound;
 
 import java.util.NoSuchElementException;
 
-public class TestController implements ReactiveHandler {
+public final class TestController implements ReactiveHandler {
 
     @RequestMapping(method = HttpMethod.GET, path = "/failed")
     public Mono<Result<String>> failed() {
@@ -103,4 +103,5 @@ public class TestController implements ReactiveHandler {
         return request.bodyToFlux(new TypeToken<byte[]>() {
         });
     }
+    
 }

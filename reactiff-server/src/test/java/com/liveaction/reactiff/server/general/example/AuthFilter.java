@@ -6,7 +6,7 @@ import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import reactor.core.publisher.Mono;
 
-public class AuthFilter implements AnnotationReactiveFilter<RequiresAuth> {
+public final class AuthFilter implements AnnotationReactiveFilter<RequiresAuth> {
 
     @Override
     public Class<RequiresAuth> annotation() {
