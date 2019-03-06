@@ -23,6 +23,7 @@ import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.HttpServerRoutes;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Comparator;
@@ -164,8 +165,19 @@ public class Router implements BiFunction<HttpServerRequest, HttpServerResponse,
     }
 
     private String formatMethodName(Route r) {
-        String args = Stream.of(r.handlerMethod().getParameterTypes()).map(Class::getSimpleName).collect(joining(", "));
-        return r.handlerMethod().getDeclaringClass().getSimpleName() + "." + r.handlerMethod().getName() + "(" + args + ")";
+        StringBuilder args = new StringBuilder();
+        Parameter[] parameters = r.handlerMethod().getParameters();
+        int parameterCount = r.handlerMethod().getParameterCount();
+        for (int i = 0; i < parameterCount; i++) {
+            Parameter parameter = parameters[i];
+            args.append(parameter.getType().getSimpleName());
+            args.append(" ");
+            args.append(parameter.getName());
+            if (i < (parameterCount - 1)) {
+                args.append(", ");
+            }
+        }
+        return r.handlerMethod().getDeclaringClass().getSimpleName() + "." + r.handlerMethod().getName() + "(" + args.toString() + ")";
     }
 
 }

@@ -103,5 +103,5 @@ public final class TestController implements ReactiveHandler {
         return request.bodyToFlux(new TypeToken<byte[]>() {
         });
     }
-    
+
 }

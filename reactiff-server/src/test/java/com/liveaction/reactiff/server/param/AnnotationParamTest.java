@@ -1,9 +1,11 @@
 package com.liveaction.reactiff.server.param;
 
+import com.liveaction.reactiff.server.mock.Pojo;
 import com.liveaction.reactiff.server.rules.WithCodecManager;
 import com.liveaction.reactiff.server.rules.WithReactiveServer;
 import org.junit.ClassRule;
 import org.junit.Test;
+import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 public final class AnnotationParamTest {
@@ -57,6 +59,20 @@ public final class AnnotationParamTest {
                         .uri("/annotated/infer-param-name/false")
                         .response(withCodecManager.checkErrorAndDecodeAsMono(Boolean.class)))
                 .expectNext(false)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldParseBodyParameter() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/annotated/body")
+                        .send(withCodecManager.codecManager.send("application/json", Flux.just(new Pojo("haroun", "lebody")), Pojo.class))
+                        .response(withCodecManager.checkErrorAndDecodeAsFlux(Pojo.class)))
+                .expectNext(new Pojo("haroun", "lebody from server"))
                 .expectComplete()
                 .verify();
     }
