@@ -4,7 +4,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Body;
-import com.liveaction.reactiff.server.ResultUtils;
+import com.liveaction.reactiff.server.utils.ResultUtils;
 import org.apache.commons.io.IOUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

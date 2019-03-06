@@ -1,6 +1,7 @@
 package com.liveaction.reactiff.api.server.route;
 
 import com.liveaction.reactiff.api.server.HttpMethod;
+import com.liveaction.reactiff.api.server.utils.FormatUtils;
 
 import java.lang.reflect.Method;
 
@@ -24,7 +25,7 @@ public abstract class Route {
 
     @Override
     public String toString() {
-        return String.format("%-6s %-50s : %s", descriptor(), path(), handlerMethod());
+        return String.format("%s %s => %s : %s", descriptor(), path(), FormatUtils.formatMethodName(handlerMethod()), FormatUtils.formatReturnType(handlerMethod().getGenericReturnType()));
     }
 
     Route() {

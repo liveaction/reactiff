@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server;
+package com.liveaction.reactiff.server.utils;
 
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.FilterChain;
@@ -6,6 +6,7 @@ import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.route.Route;
+import com.liveaction.reactiff.server.RequestImpl;
 import io.netty.buffer.ByteBuf;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -67,7 +68,7 @@ public final class FilterUtils {
         return codecManager.encode(req.requestHeaders(), res.responseHeaders(), filteredResult.data(), filteredResult.type());
     }
 
-    static FilterChain chain(ReactiveFilter element, FilterChain filterChain) {
+    public static FilterChain chain(ReactiveFilter element, FilterChain filterChain) {
         return (request) -> element.filter(request, filterChain);
     }
 

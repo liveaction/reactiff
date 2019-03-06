@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server;
+package com.liveaction.reactiff.server.utils;
 
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.server.Result;

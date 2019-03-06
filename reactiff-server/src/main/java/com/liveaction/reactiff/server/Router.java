@@ -3,7 +3,6 @@ package com.liveaction.reactiff.server;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.FilterChain;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
@@ -14,6 +13,7 @@ import com.liveaction.reactiff.server.support.HandlerSupportFunction;
 import com.liveaction.reactiff.server.support.RequestMappingSupport;
 import com.liveaction.reactiff.server.support.WsMappingSupport;
 import com.liveaction.reactiff.server.template.TemplateEngineImpl;
+import com.liveaction.reactiff.server.utils.FilterUtils;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
 import org.slf4j.LoggerFactory;
@@ -23,8 +23,6 @@ import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.HttpServerRoutes;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -33,10 +31,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.joining;
+import static com.liveaction.reactiff.api.server.utils.FormatUtils.formatRoutes;
 import static java.util.stream.Collectors.toList;
 
 public class Router implements BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> {
@@ -136,48 +133,6 @@ public class Router implements BiFunction<HttpServerRequest, HttpServerResponse,
                         .header(HttpHeaderNames.CONTENT_TYPE, "text/plain")
                         .data(Mono.just(page), String.class)
                         .build());
-    }
-
-    private String formatRoutes(List<Route> routes) {
-        int maxDescriptorLength = routes.stream().map(Route::descriptor).map(String::length).max(Comparator.naturalOrder()).orElse(0);
-        int maxPathLength = routes.stream().map(Route::path).map(String::length).max(Comparator.naturalOrder()).orElse(0);
-        int maxMethodName = routes.stream().map(this::formatMethodName).map(String::length).max(Comparator.naturalOrder()).orElse(0);
-        return routes.stream()
-                .map(r -> String.format("\t%-" + maxDescriptorLength + "s %-" + maxPathLength + "s => %-" + maxMethodName + "s : %s", r.descriptor(), r.path(), formatMethodName(r), formatReturnType(r.handlerMethod().getGenericReturnType())))
-                .collect(Collectors.joining("\n"));
-    }
-
-    private String formatReturnType(Type genericReturnType) {
-        return formatClass(TypeToken.of(genericReturnType));
-    }
-
-    private String formatClass(TypeToken<?> typeToken) {
-        Class<?> clazz = typeToken.getRawType();
-        String types = Stream.of(clazz.getTypeParameters())
-                .map(typeToken::resolveType)
-                .map(this::formatClass)
-                .collect(joining(", "));
-        if (types.length() > 0) {
-            return clazz.getSimpleName() + '<' + types + '>';
-        } else {
-            return clazz.getSimpleName();
-        }
-    }
-
-    private String formatMethodName(Route r) {
-        StringBuilder args = new StringBuilder();
-        Parameter[] parameters = r.handlerMethod().getParameters();
-        int parameterCount = r.handlerMethod().getParameterCount();
-        for (int i = 0; i < parameterCount; i++) {
-            Parameter parameter = parameters[i];
-            args.append(parameter.getType().getSimpleName());
-            args.append(" ");
-            args.append(parameter.getName());
-            if (i < (parameterCount - 1)) {
-                args.append(", ");
-            }
-        }
-        return r.handlerMethod().getDeclaringClass().getSimpleName() + "." + r.handlerMethod().getName() + "(" + args.toString() + ")";
     }
 
 }
