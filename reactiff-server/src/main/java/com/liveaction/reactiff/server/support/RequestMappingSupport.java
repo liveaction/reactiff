@@ -90,7 +90,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
-                        args.add(codecManager.decodeAsEntity(request.pathParam(name), genericParameterType));
+                        args.add(request.pathParam(name));
                     } else if (parameter.getAnnotation(RequestBody.class) != null) {
                         if (genericParameterType.isAssignableFrom(Mono.class)) {
                             TypeToken<?> paramType = returnType.resolveType(Mono.class.getTypeParameters()[0]);

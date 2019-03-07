@@ -81,12 +81,6 @@ public final class CodecManagerImpl implements CodecManager {
     }
 
     @Override
-    public <T> T decodeAsEntity(String value, TypeToken<T> typeToken) {
-        Codec codec = findCodec(DEFAULT, typeToken);
-        return codec.decodeEntity(value, typeToken);
-    }
-
-    @Override
     public <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         String contentType = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType == null) {

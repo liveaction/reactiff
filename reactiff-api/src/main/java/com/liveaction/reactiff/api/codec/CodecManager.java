@@ -84,8 +84,6 @@ public interface CodecManager {
 
     <T> Flux<T> decodeAsFlux(HttpServerRequest request, TypeToken<T> typeToken);
 
-    <T> T decodeAsEntity(String value, TypeToken<T> typeToken);
-
     /**
      * Negociate the best matching Content-Type between the requestHttpHeaders and the available codecs.
      * Read 'Accept' header from the requestHttpHeaders.
