@@ -90,7 +90,7 @@ public final class ParamUtils {
         if (rawType.isAssignableFrom(Set.class)) {
             return Sets.newLinkedHashSet();
         } else {
-            throw new IllegalArgumentException("Not supported collection type " + rawType);
+            throw new IllegalArgumentException(String.format("Not supported collection type %s", rawType));
         }
     }
 
@@ -146,6 +146,6 @@ public final class ParamUtils {
                 return (ParamConverter<T>) converter;
             }
         }
-        throw new NoSuchElementException("Cannot find a converter able to create instance of " + type.getName());
+        throw new NoSuchElementException(String.format("Cannot find a converter able to create instance of %s", type.getName()));
     }
 }
