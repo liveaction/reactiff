@@ -1,6 +1,10 @@
 package com.liveaction.reactiff.server.param;
 
 import com.liveaction.reactiff.server.mock.Pojo;
+import com.liveaction.reactiff.server.mock.PojoWithConstructor;
+import com.liveaction.reactiff.server.mock.PojoWithFrom;
+import com.liveaction.reactiff.server.mock.PojoWithFromString;
+import com.liveaction.reactiff.server.mock.PojoWithValueOf;
 import com.liveaction.reactiff.server.rules.WithCodecManager;
 import com.liveaction.reactiff.server.rules.WithReactiveServer;
 import org.junit.ClassRule;
@@ -87,6 +91,59 @@ public final class AnnotationParamTest {
     }
 
     @Test
+    public void shouldParsePathParamFromConstructor() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .get()
+                        .uri("/annotated/params/constructor/test-pojo")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(PojoWithConstructor.class)))
+                .expectNext(new PojoWithConstructor("test-pojo"))
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldParsePathParamFromFromMethod() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .get()
+                        .uri("/annotated/params/from/test-pojo")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(PojoWithFrom.class)))
+                .expectNext(PojoWithFrom.from("test-pojo"))
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldParsePathParamFromFromStringMethod() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .get()
+                        .uri("/annotated/params/fromstring/test-pojo")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(PojoWithFromString.class)))
+                .expectNext(PojoWithFromString.fromString("test-pojo"))
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldParsePathParamFromValueOfMethod() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .get()
+                        .uri("/annotated/params/valueof/test-pojo")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(PojoWithValueOf.class)))
+                .expectNext(PojoWithValueOf.valueOf("test-pojo"))
+                .expectComplete()
+                .verify();
+    }
+
+
+    @Test
     public void shouldInferParamName() {
         StepVerifier.create(
                 withReactiveServer.httpClient()
@@ -97,19 +154,9 @@ public final class AnnotationParamTest {
                 .expectNext(true)
                 .expectComplete()
                 .verify();
-
-        StepVerifier.create(
-                withReactiveServer.httpClient()
-                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
-                        .get()
-                        .uri("/annotated/infer-param-name/false")
-                        .response(withCodecManager.checkErrorAndDecodeAsMono(Boolean.class)))
-                .expectNext(false)
-                .expectComplete()
-                .verify();
     }
 
-    @Test
+        @Test
     public void shouldParseBodyParameter() {
         StepVerifier.create(
                 withReactiveServer.httpClient()

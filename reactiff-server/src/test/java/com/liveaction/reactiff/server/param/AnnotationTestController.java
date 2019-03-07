@@ -6,6 +6,10 @@ import com.liveaction.reactiff.api.server.annotation.PathParam;
 import com.liveaction.reactiff.api.server.annotation.RequestBody;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.server.mock.Pojo;
+import com.liveaction.reactiff.server.mock.PojoWithConstructor;
+import com.liveaction.reactiff.server.mock.PojoWithFrom;
+import com.liveaction.reactiff.server.mock.PojoWithFromString;
+import com.liveaction.reactiff.server.mock.PojoWithValueOf;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -24,6 +28,26 @@ public final class AnnotationTestController implements ReactiveHandler {
     @RequestMapping(method = HttpMethod.GET, path = "/annotated/params/primitive/boolean/{pathParam}")
     public Mono<Boolean> testPathParameterAsPrimitiveBoolean(@PathParam("pathParam") boolean value) {
         return Mono.just(value);
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/annotated/params/constructor/{pathParam}")
+    public Mono<PojoWithConstructor> testPathParameterConstructor(@PathParam("pathParam") PojoWithConstructor pojo) {
+        return Mono.just(pojo);
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/annotated/params/from/{pathParam}")
+    public Mono<PojoWithFrom> testPathParameterFrom(@PathParam("pathParam") PojoWithFrom pojo) {
+        return Mono.just(pojo);
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/annotated/params/fromstring/{pathParam}")
+    public Mono<PojoWithFromString> testPathParameterFromString(@PathParam("pathParam") PojoWithFromString pojo) {
+        return Mono.just(pojo);
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/annotated/params/valueof/{pathParam}")
+    public Mono<PojoWithValueOf> testPathParameterValueOf(@PathParam("pathParam") PojoWithValueOf pojo) {
+        return Mono.just(pojo);
     }
 
     @RequestMapping(method = HttpMethod.GET, path = "/annotated/infer-param-name/{pathParam}")
