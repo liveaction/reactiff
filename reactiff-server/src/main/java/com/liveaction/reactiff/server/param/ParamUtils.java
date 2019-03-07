@@ -7,6 +7,7 @@ import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.server.param.converters.BooleanConverter;
 import com.liveaction.reactiff.server.param.converters.CharacterConverter;
 import com.liveaction.reactiff.server.param.converters.ConstructorBasedConverter;
+import com.liveaction.reactiff.server.param.converters.InstantParamConverter;
 import com.liveaction.reactiff.server.param.converters.MethodBasedConverter;
 import com.liveaction.reactiff.server.param.converters.ParamConverter;
 import com.liveaction.reactiff.server.param.converters.StringConverter;
@@ -19,6 +20,13 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 public final class ParamUtils {
+
+    private static List<ParamConverter<?>> converters = Lists.newArrayList(
+            StringConverter.INSTANCE,
+            BooleanConverter.INSTANCE,
+            InstantParamConverter.INSTANCE,
+            CharacterConverter.INSTANCE
+    );
 
     private ParamUtils() {
     }
@@ -35,6 +43,10 @@ public final class ParamUtils {
         } else {
             return convertSingleValue(input, rawType);
         }
+    }
+
+    public static void addConverter(ParamConverter<?> converter) {
+        converters.add(converter);
     }
 
     private static List<String> getMultipleValues(String input) {
@@ -124,28 +136,15 @@ public final class ParamUtils {
 
     @SuppressWarnings("unchecked")
     private static <T> ParamConverter<T> getConverter(Class<T> type) {
-        // check for String first
-        if (type == String.class) {
-            return (ParamConverter<T>) StringConverter.INSTANCE;
-        }
+        ArrayList<ParamConverter<?>> paramConverters = Lists.newArrayList(converters);
+        converters.add(ConstructorBasedConverter.getFromType(type));
+        converters.add(MethodBasedConverter.getFromType(type));
 
-        if (type == Boolean.class) {
-            return (ParamConverter<T>) BooleanConverter.INSTANCE;
-        }
 
-        // Try default converters (constructor, and methods valueOf, from, fromString)
-        ParamConverter<T> converter = ConstructorBasedConverter.getFromType(type);
-        if (converter != null) {
-            return converter;
-        }
-        converter = MethodBasedConverter.getFromType(type);
-        if (converter != null) {
-            return converter;
-        }
-
-        // check Character last since they are unlikely to appear
-        if (type == Character.class) {
-            return (ParamConverter<T>) CharacterConverter.INSTANCE;
+        for (ParamConverter<?> converter : paramConverters) {
+            if (converter != null && converter.canConvertType(type)) {
+                return (ParamConverter<T>) converter;
+            }
         }
         throw new NoSuchElementException("Cannot find a converter able to create instance of " + type.getName());
     }

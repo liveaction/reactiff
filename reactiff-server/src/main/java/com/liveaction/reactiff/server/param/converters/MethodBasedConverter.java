@@ -7,9 +7,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public class MethodBasedConverter<T> implements ParamConverter<T> {
-    public static final String FROM = "from";
-    public static final String FROM_STRING = "fromString";
-    public static final String VALUE_OF = "valueOf";
+    private static final String FROM = "from";
+    private static final String FROM_STRING = "fromString";
+    private static final String VALUE_OF = "valueOf";
     private final Method method;
     private final Class<T> clazz;
 
@@ -35,6 +35,11 @@ public class MethodBasedConverter<T> implements ParamConverter<T> {
                 throw new IllegalArgumentException(e);
             }
         }
+    }
+
+    @Override
+    public boolean canConvertType(Class<?> clazz) {
+        return clazz.equals(this.clazz);
     }
 
     /**

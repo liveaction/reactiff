@@ -22,4 +22,9 @@ public class CharacterConverter implements ParamConverter<Character> {
         }
         return input.toCharArray()[0];
     }
+
+    @Override
+    public boolean canConvertType(Class<?> clazz) {
+        return clazz == Character.class;
+    }
 }

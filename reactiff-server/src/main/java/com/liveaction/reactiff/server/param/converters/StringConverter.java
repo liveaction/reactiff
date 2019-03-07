@@ -8,6 +8,11 @@ public class StringConverter implements ParamConverter<String> {
     }
 
     @Override
+    public boolean canConvertType(Class<?> clazz) {
+        return clazz == String.class;
+    }
+
+    @Override
     public String fromString(String s) {
         return s;
     }
