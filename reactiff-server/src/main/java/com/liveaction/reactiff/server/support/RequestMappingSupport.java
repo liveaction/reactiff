@@ -14,6 +14,7 @@ import com.liveaction.reactiff.api.server.annotation.RequestBody;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.route.HttpRoute;
 import com.liveaction.reactiff.api.server.route.Route;
+import com.liveaction.reactiff.server.param.ParamUtils;
 import com.liveaction.reactiff.server.utils.FilterUtils;
 import com.liveaction.reactiff.server.utils.ResultUtils;
 import org.reactivestreams.Publisher;
@@ -28,7 +29,6 @@ import reactor.netty.http.server.HttpServerRoutes;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -74,29 +74,6 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
         LOGGER.trace("Registered route {}", route);
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> T getPropertyValue(String value, Class<T> clazz) {
-        if (clazz.isAssignableFrom(Boolean.class)) {
-            return (T) Boolean.valueOf(value);
-        }
-        if (clazz.isAssignableFrom(Integer.class)) {
-            return (T) Integer.valueOf(value);
-        }
-        if (clazz.isAssignableFrom(Long.class)) {
-            return (T) Long.valueOf(value);
-        }
-        if (clazz.isAssignableFrom(Float.class)) {
-            return (T) Float.valueOf(value);
-        }
-        if (clazz.isAssignableFrom(String.class)) {
-            return (T) String.valueOf(value);
-        }
-        if (clazz.isAssignableFrom(Instant.class)) {
-            return (T) Instant.parse(value);
-        }
-        throw new IllegalArgumentException(String.format("Type %s is not supported. Accepted types are Boolean, Integer, Long, Float, String and Instant", clazz.getSimpleName()));
-    }
-
     private Mono<Result> invokeHandlerMethod(ReactiveHandler reactiveHandler, Method method, Request request) {
         try {
             TypeToken<?> returnType = TypeToken.of(method.getGenericReturnType());
@@ -114,7 +91,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
-                        args.add(getPropertyValue(request.pathParam(name), genericParameterType.getRawType()));
+                        args.add(ParamUtils.convertValue(request.pathParam(name), genericParameterType));
                     } else if (parameter.getAnnotation(RequestBody.class) != null) {
                         if (genericParameterType.isAssignableFrom(Mono.class)) {
                             TypeToken<?> paramType = returnType.resolveType(Mono.class.getTypeParameters()[0]);
