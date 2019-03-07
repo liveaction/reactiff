@@ -137,8 +137,8 @@ public final class ParamUtils {
     @SuppressWarnings("unchecked")
     private static <T> ParamConverter<T> getConverter(Class<T> type) {
         ArrayList<ParamConverter<?>> paramConverters = Lists.newArrayList(converters);
-        converters.add(ConstructorBasedConverter.getFromType(type));
-        converters.add(MethodBasedConverter.getFromType(type));
+        paramConverters.add(ConstructorBasedConverter.getFromType(type));
+        paramConverters.add(MethodBasedConverter.getFromType(type));
 
 
         for (ParamConverter<?> converter : paramConverters) {
