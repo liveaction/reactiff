@@ -21,6 +21,11 @@ public final class AnnotationTestController implements ReactiveHandler {
         return Mono.just(value);
     }
 
+    @RequestMapping(method = HttpMethod.GET, path = "/annotated/params/primitive/boolean/{pathParam}")
+    public Mono<Boolean> testPathParameterAsPrimitiveBoolean(@PathParam("pathParam") boolean value) {
+        return Mono.just(value);
+    }
+
     @RequestMapping(method = HttpMethod.GET, path = "/annotated/infer-param-name/{pathParam}")
     public Mono<Boolean> testPathParameterInferName(@PathParam String pathParam) {
         return Mono.just(Boolean.valueOf(pathParam));
