@@ -18,7 +18,9 @@ Available routes:
 	GET  /yes/{name}             => TestController.yes(Request request)                                     : Flux<String>
 	POST /boolean/flux/from/mono => TestController.booleanFluxFromMono(Request request)                     : Flux<Boolean>
 	POST /boolean/mono/from/flux => TestController.booleanMonoFromFlux(Request request)                     : Mono<Boolean>
+	POST /monovoid               => TestController.executeVoid()                                            : Mono<Void>
 	POST /upload                 => TestController.upload(Request request)                                  : Flux<byte[]>
+	POST /void                   => TestController.execute(Request request)                                 : void
 	POST /yes                    => TestController.postPojo(Request request)                                : Flux<Pojo>
 	POST /yes/heavy              => TestController.postHeavyPojo(Request request)                           : Flux<Pojo>
 	WS   /websocket              => TestController.yesWebSocket(WebsocketInbound in, WebsocketOutbound out) : Publisher<Void>

@@ -104,4 +104,17 @@ public final class TestController implements ReactiveHandler {
         });
     }
 
+    @RequestMapping(method = HttpMethod.POST, path = "/void")
+    public void execute(Request request) {
+        Boolean error = Boolean.valueOf(request.uriParam("error"));
+        if (error) {
+            throw new IllegalArgumentException("fail");
+        }
+    }
+
+    @RequestMapping(method = HttpMethod.POST, path = "/monovoid")
+    public Mono<Void> executeVoid() {
+        return Mono.empty();
+    }
+
 }

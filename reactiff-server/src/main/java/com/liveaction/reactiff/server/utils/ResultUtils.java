@@ -7,6 +7,7 @@ import reactor.core.publisher.Mono;
 
 public final class ResultUtils {
 
+    private static final TypeToken<Void> VOID_TYPE_TOKEN = TypeToken.of(Void.class);
     private static final TypeToken<Mono> MONO_TYPE_TOKEN = TypeToken.of(Mono.class);
     private static final TypeToken<Result> RESULT_TYPE_TOKEN = TypeToken.of(Result.class);
     private static final TypeToken<Publisher> PUBLISHER_TYPE_TOKEN = TypeToken.of(Publisher.class);
@@ -19,7 +20,9 @@ public final class ResultUtils {
                 return (Mono<Result>) result;
             }
             Mono<?> publisher = (Mono) result;
-            return publisher.map(mono -> toTypedResult(Mono.just(mono), paramType));
+            return publisher
+                    .map(mono -> (Result)toTypedResult(Mono.just(mono), paramType))
+                    .switchIfEmpty(Mono.just(toTypedResult(null, paramType)));
 
         } else if (PUBLISHER_TYPE_TOKEN.isAssignableFrom(returnType)) {
             TypeToken<?> paramType = returnType.resolveType(Publisher.class.getTypeParameters()[0]);
@@ -31,7 +34,8 @@ public final class ResultUtils {
         } else if (RESULT_TYPE_TOKEN.isAssignableFrom(returnType)) {
             Result httpResult = (Result) result;
             return Mono.just(httpResult);
-
+        } else if(void.class == returnType.getRawType() || VOID_TYPE_TOKEN.isAssignableFrom(returnType)) {
+            return Mono.just(Result.ok(null, returnType));
         } else {
             return Mono.just(toTypedResult(Mono.just(result), returnType));
         }

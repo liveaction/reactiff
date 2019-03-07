@@ -495,4 +495,34 @@ public final class ReactiveHttpServerTest {
                 .verify();
     }
 
+    @Test
+    public void shouldHandleVoid() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .post()
+                        .uri("/void")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(Void.class)))
+                .expectComplete()
+                .verify();
+
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .post()
+                        .uri("/void?error=true")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(Void.class)))
+                .expectError(HttpException.class)
+                .verify();
+    }
+
+    @Test
+    public void shouldHandleMonoVoid() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .post()
+                        .uri("/monovoid")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(Void.class)))
+                .expectComplete()
+                .verify();
+
+    }
 }

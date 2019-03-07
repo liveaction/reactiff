@@ -8,6 +8,7 @@ import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.route.Route;
 import com.liveaction.reactiff.server.RequestImpl;
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,12 +43,16 @@ public final class FilterUtils {
                 .onErrorResume(throwable -> {
                     int status = 500;
                     LOGGER.error("Unexpected error", throwable);
+                    String message = throwable.getMessage();
+                    if (message == null) {
+                        message = HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase();
+                    }
                     if (writeErrorStacktrace) {
                         StringWriter stringWriter = new StringWriter();
                         throwable.printStackTrace(new PrintWriter(stringWriter));
-                        return Mono.just(Result.withStatus(status, throwable.getMessage(), stringWriter.toString()));
+                        return Mono.just(Result.withStatus(status, message, stringWriter.toString()));
                     } else {
-                        return Mono.just(Result.withStatus(status, throwable.getMessage()));
+                        return Mono.just(Result.withStatus(status, message));
                     }
                 })
                 .flatMap(filteredResult -> {
