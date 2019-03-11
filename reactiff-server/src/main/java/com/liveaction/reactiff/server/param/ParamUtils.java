@@ -45,10 +45,6 @@ public final class ParamUtils {
         }
     }
 
-    public static void addConverter(ParamConverter<?> converter) {
-        converters.add(converter);
-    }
-
     private static List<String> getMultipleValues(String input) {
         if (input == null) {
             return null;
