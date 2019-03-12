@@ -62,9 +62,14 @@ public final class AnnotationTestController implements ReactiveHandler {
         return pojos.map(pojo -> new Pojo(pojo.id, pojo.name + " from server"));
     }
 
-    @RequestMapping(method=HttpMethod.POST, path="/annotated/body/parametrized")
+    @RequestMapping(method = HttpMethod.POST, path = "/annotated/body/parametrized")
     public Flux<Pojo> testParametrizedBodyParameter(@RequestBody Flux<List<Pojo>> pojoLists) {
         return pojoLists.flatMapIterable(pojos -> pojos);
+    }
+
+    @RequestMapping(method = HttpMethod.POST, path = "/annotated/body/parametrized/2/level")
+    public Flux<Pojo> testParametrizedBodyParameter2Level(@RequestBody Flux<List<List<Pojo>>> pojoLists) {
+        return pojoLists.flatMap(pojos -> Flux.fromIterable(pojos).flatMapIterable(p -> p));
     }
 
 }

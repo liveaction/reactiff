@@ -189,5 +189,30 @@ public final class AnnotationParamTest {
                 .verify();
     }
 
+    @Test
+    public void shouldParseParametrizedBodyParameter2Level() {
+        TypeToken<ImmutableList<ImmutableList<Pojo>>> type = new TypeToken<ImmutableList<ImmutableList<Pojo>>>() {
+        };
+        ImmutableList<ImmutableList<Pojo>> pojos1 = ImmutableList.of(
+                ImmutableList.of(new Pojo("haroun", "lebody")),
+                ImmutableList.of(new Pojo("jean", "paul")));
+
+        ImmutableList<ImmutableList<Pojo>> pojos2 = ImmutableList.of(
+                ImmutableList.of(new Pojo("alexandre", "legrand")));
+
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/annotated/body/parametrized/2/level")
+                        .send(withCodecManager.codecManager.send("application/json", Flux.just(pojos1, pojos2), type))
+                        .response(withCodecManager.checkErrorAndDecodeAsFlux(Pojo.class)))
+                .expectNext(new Pojo("haroun", "lebody"))
+                .expectNext(new Pojo("jean", "paul"))
+                .expectNext(new Pojo("alexandre", "legrand"))
+                .expectComplete()
+                .verify();
+    }
+
 
 }
