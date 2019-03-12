@@ -1,14 +1,10 @@
-package com.liveaction.reactiff.server.param.converters;
+package com.liveaction.reactiff.server.param.converter;
 
-public class CharacterConverter implements ParamConverter<Character> {
+public final class CharacterConverter implements ParamConverter<Character> {
 
-    /**
-     * The converter.
-     */
     public static final CharacterConverter INSTANCE = new CharacterConverter();
 
     private CharacterConverter() {
-        // No direct instantiation
     }
 
     @Override

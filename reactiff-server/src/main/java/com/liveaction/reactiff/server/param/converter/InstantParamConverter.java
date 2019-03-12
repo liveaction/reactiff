@@ -1,16 +1,12 @@
-package com.liveaction.reactiff.server.param.converters;
+package com.liveaction.reactiff.server.param.converter;
 
 import java.time.Instant;
 
 public final class InstantParamConverter implements ParamConverter<Instant> {
 
-    /**
-     * The converter.
-     */
     public static final InstantParamConverter INSTANCE = new InstantParamConverter();
 
     private InstantParamConverter() {
-        // No direct instantiation
     }
 
     @Override

@@ -81,8 +81,8 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
             Parameter[] parameters = method.getParameters();
             for (int i = 0; i < method.getParameterCount(); i++) {
                 Parameter parameter = parameters[i];
-                TypeToken<?> genericParameterType = TypeToken.of(parameter.getType());
-                if (genericParameterType.isAssignableFrom(Request.class)) {
+                TypeToken<?> parameterType = TypeToken.of(parameter.getType());
+                if (parameterType.isAssignableFrom(Request.class)) {
                     args.add(request);
                 } else {
                     PathParam annotation = parameter.getAnnotation(PathParam.class);
@@ -91,13 +91,13 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
-                        args.add(ParamUtils.convertValue(request.pathParam(name), genericParameterType));
+                        args.add(ParamUtils.convertValue(request.pathParam(name), parameterType));
                     } else if (parameter.getAnnotation(RequestBody.class) != null) {
-                        final TypeToken<?> parametrizedType = TypeToken.of(parameter.getParameterizedType());
-                        if (genericParameterType.isAssignableFrom(Mono.class)) {
+                        TypeToken<?> parametrizedType = TypeToken.of(parameter.getParameterizedType());
+                        if (parameterType.isAssignableFrom(Mono.class)) {
                             TypeToken<?> paramType = parametrizedType.resolveType(Mono.class.getTypeParameters()[0]);
                             args.add(request.bodyToMono(paramType));
-                        } else if (genericParameterType.isAssignableFrom(Flux.class)) {
+                        } else if (parameterType.isAssignableFrom(Flux.class)) {
                             TypeToken<?> paramType = parametrizedType.resolveType(Flux.class.getTypeParameters()[0]);
                             args.add(request.bodyToFlux(paramType));
                         } else {

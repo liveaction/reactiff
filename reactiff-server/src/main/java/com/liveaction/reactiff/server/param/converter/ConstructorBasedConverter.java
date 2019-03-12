@@ -1,11 +1,11 @@
-package com.liveaction.reactiff.server.param.converters;
+package com.liveaction.reactiff.server.param.converter;
 
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class ConstructorBasedConverter<T> implements ParamConverter<T> {
+public final class ConstructorBasedConverter<T> implements ParamConverter<T> {
 
     private final Constructor<T> constructor;
     private final Class<T> clazz;
@@ -14,6 +14,7 @@ public class ConstructorBasedConverter<T> implements ParamConverter<T> {
         this.constructor = constructor;
         this.clazz = clazz;
     }
+
     @Override
     public T fromString(String input) {
         try {

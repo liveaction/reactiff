@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.param.converters;
+package com.liveaction.reactiff.server.param.converter;
 
 import org.slf4j.LoggerFactory;
 
@@ -6,7 +6,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-public class MethodBasedConverter<T> implements ParamConverter<T> {
+public final class MethodBasedConverter<T> implements ParamConverter<T> {
+
     private static final String FROM = "from";
     private static final String FROM_STRING = "fromString";
     private static final String VALUE_OF = "valueOf";

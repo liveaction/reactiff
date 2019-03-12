@@ -1,16 +1,17 @@
 package com.liveaction.reactiff.server.param;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Primitives;
 import com.google.common.reflect.TypeToken;
-import com.liveaction.reactiff.server.param.converters.BooleanConverter;
-import com.liveaction.reactiff.server.param.converters.CharacterConverter;
-import com.liveaction.reactiff.server.param.converters.ConstructorBasedConverter;
-import com.liveaction.reactiff.server.param.converters.InstantParamConverter;
-import com.liveaction.reactiff.server.param.converters.MethodBasedConverter;
-import com.liveaction.reactiff.server.param.converters.ParamConverter;
-import com.liveaction.reactiff.server.param.converters.StringConverter;
+import com.liveaction.reactiff.server.param.converter.BooleanConverter;
+import com.liveaction.reactiff.server.param.converter.CharacterConverter;
+import com.liveaction.reactiff.server.param.converter.ConstructorBasedConverter;
+import com.liveaction.reactiff.server.param.converter.InstantParamConverter;
+import com.liveaction.reactiff.server.param.converter.MethodBasedConverter;
+import com.liveaction.reactiff.server.param.converter.ParamConverter;
+import com.liveaction.reactiff.server.param.converter.StringConverter;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ import java.util.Set;
 
 public final class ParamUtils {
 
-    private static List<ParamConverter<?>> converters = Lists.newArrayList(
+    private static final ImmutableList<ParamConverter<?>> CONVERTERS = ImmutableList.of(
             StringConverter.INSTANCE,
             BooleanConverter.INSTANCE,
             InstantParamConverter.INSTANCE,
@@ -132,10 +133,9 @@ public final class ParamUtils {
 
     @SuppressWarnings("unchecked")
     private static <T> ParamConverter<T> getConverter(Class<T> type) {
-        ArrayList<ParamConverter<?>> paramConverters = Lists.newArrayList(converters);
+        List<ParamConverter<?>> paramConverters = Lists.newArrayList(CONVERTERS);
         paramConverters.add(ConstructorBasedConverter.getFromType(type));
         paramConverters.add(MethodBasedConverter.getFromType(type));
-
 
         for (ParamConverter<?> converter : paramConverters) {
             if (converter != null && converter.canConvertType(type)) {

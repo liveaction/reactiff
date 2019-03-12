@@ -1,14 +1,10 @@
-package com.liveaction.reactiff.server.param.converters;
+package com.liveaction.reactiff.server.param.converter;
 
-public class BooleanConverter implements ParamConverter<Boolean> {
+public final class BooleanConverter implements ParamConverter<Boolean> {
 
-    /**
-     * The converter.
-     */
     public static final BooleanConverter INSTANCE = new BooleanConverter();
 
     private BooleanConverter() {
-        // No direct instantiation
     }
 
     @Override
