@@ -93,11 +93,12 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         }
                         args.add(ParamUtils.convertValue(request.pathParam(name), genericParameterType));
                     } else if (parameter.getAnnotation(RequestBody.class) != null) {
+                        final TypeToken<?> parametrizedType = TypeToken.of(parameter.getParameterizedType());
                         if (genericParameterType.isAssignableFrom(Mono.class)) {
-                            TypeToken<?> paramType = returnType.resolveType(Mono.class.getTypeParameters()[0]);
+                            TypeToken<?> paramType = parametrizedType.resolveType(Mono.class.getTypeParameters()[0]);
                             args.add(request.bodyToMono(paramType));
                         } else if (genericParameterType.isAssignableFrom(Flux.class)) {
-                            TypeToken<?> paramType = returnType.resolveType(Flux.class.getTypeParameters()[0]);
+                            TypeToken<?> paramType = parametrizedType.resolveType(Flux.class.getTypeParameters()[0]);
                             args.add(request.bodyToFlux(paramType));
                         } else {
                             throw new IllegalArgumentException(RequestBody.class.getSimpleName() + " only support Mono<T> or Flux<T> type");
