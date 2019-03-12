@@ -1,5 +1,7 @@
 package com.liveaction.reactiff.server.param;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.server.mock.Pojo;
 import com.liveaction.reactiff.server.mock.PojoWithConstructor;
 import com.liveaction.reactiff.server.mock.PojoWithFrom;
@@ -156,7 +158,7 @@ public final class AnnotationParamTest {
                 .verify();
     }
 
-        @Test
+    @Test
     public void shouldParseBodyParameter() {
         StepVerifier.create(
                 withReactiveServer.httpClient()
@@ -169,5 +171,23 @@ public final class AnnotationParamTest {
                 .expectComplete()
                 .verify();
     }
+
+    @Test
+    public void shouldParseParametrizedBodyParameter() {
+        TypeToken<ImmutableList<Pojo>> type = new TypeToken<ImmutableList<Pojo>>() {
+        };
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                        .post()
+                        .uri("/annotated/body/parametrized")
+                        .send(withCodecManager.codecManager.send("application/json", Flux.just(ImmutableList.of(new Pojo("haroun", "lebody")), ImmutableList.of(new Pojo("jean", "paul"))), type))
+                        .response(withCodecManager.checkErrorAndDecodeAsFlux(Pojo.class)))
+                .expectNext(new Pojo("haroun", "lebody"))
+                .expectNext(new Pojo("jean", "paul"))
+                .expectComplete()
+                .verify();
+    }
+
 
 }

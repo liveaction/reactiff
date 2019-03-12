@@ -13,6 +13,8 @@ import com.liveaction.reactiff.server.mock.PojoWithValueOf;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 public final class AnnotationTestController implements ReactiveHandler {
 
     @RequestMapping(method = HttpMethod.GET, path = "/annotated/params/{pathParam}")
@@ -58,6 +60,11 @@ public final class AnnotationTestController implements ReactiveHandler {
     @RequestMapping(method = HttpMethod.POST, path = "/annotated/body")
     public Flux<Pojo> testBodyParameter(@RequestBody Flux<Pojo> pojos) {
         return pojos.map(pojo -> new Pojo(pojo.id, pojo.name + " from server"));
+    }
+
+    @RequestMapping(method=HttpMethod.POST, path="/annotated/body/parametrized")
+    public Flux<Pojo> testParametrizedBodyParameter(@RequestBody Flux<List<Pojo>> pojoLists) {
+        return pojoLists.flatMapIterable(pojos -> pojos);
     }
 
 }
