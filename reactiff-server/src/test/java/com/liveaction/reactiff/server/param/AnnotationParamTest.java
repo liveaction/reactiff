@@ -2,11 +2,7 @@ package com.liveaction.reactiff.server.param;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeToken;
-import com.liveaction.reactiff.server.mock.Pojo;
-import com.liveaction.reactiff.server.mock.PojoWithConstructor;
-import com.liveaction.reactiff.server.mock.PojoWithFrom;
-import com.liveaction.reactiff.server.mock.PojoWithFromString;
-import com.liveaction.reactiff.server.mock.PojoWithValueOf;
+import com.liveaction.reactiff.server.mock.*;
 import com.liveaction.reactiff.server.rules.WithCodecManager;
 import com.liveaction.reactiff.server.rules.WithReactiveServer;
 import org.junit.ClassRule;
@@ -212,6 +208,62 @@ public final class AnnotationParamTest {
                 .expectNext(new Pojo("alexandre", "legrand"))
                 .expectComplete()
                 .verify();
+    }
+
+    @Test
+    public void shouldParseHeaderParametersUsingValue1() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("X-String", "My String"))
+                        .get()
+                        .uri("/annotated/headers/1")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(String.class)))
+                .expectNext("My String")
+                .expectComplete()
+                .verify();
+
+    }
+
+    @Test
+    public void shouldParseHeaderParametersUsingValue2() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("X-Integer", "10"))
+                        .get()
+                        .uri("/annotated/headers/2")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(Integer.class)))
+                .expectNext(10)
+                .expectComplete()
+                .verify();
+
+    }
+
+    @Test
+    public void shouldParseHeaderParametersUsingValue3() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("X-Double", "2.345"))
+                        .get()
+                        .uri("/annotated/headers/3")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(Double.class)))
+                .expectNext(2.345)
+                .expectComplete()
+                .verify();
+
+    }
+
+    @Test
+    public void shouldParseHeaderParametersUsingValue4() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                        .headers(httpHeaders -> httpHeaders.set("X-Boolean", "true"))
+                        .get()
+                        .uri("/annotated/headers/4")
+                        .response(withCodecManager.checkErrorAndDecodeAsMono(Boolean.class)))
+                .expectNext(true)
+                .expectComplete()
+                .verify();
+
     }
 
 

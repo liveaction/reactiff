@@ -9,6 +9,7 @@ import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
+import com.liveaction.reactiff.api.server.annotation.HeaderParam;
 import com.liveaction.reactiff.api.server.annotation.PathParam;
 import com.liveaction.reactiff.api.server.annotation.RequestBody;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
@@ -103,6 +104,13 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         } else {
                             throw new IllegalArgumentException(RequestBody.class.getSimpleName() + " only support Mono<T> or Flux<T> type");
                         }
+                    } else if (parameter.getAnnotation(HeaderParam.class) != null) {
+                        HeaderParam headerAnnotation = parameter.getAnnotation(HeaderParam.class);
+                        String name = headerAnnotation.value();
+                        if (name.isEmpty()) {
+                            name = parameter.getName();
+                        }
+                        args.add(ParamUtils.convertValue(request.header(name), parameterType));
                     }
                 }
             }

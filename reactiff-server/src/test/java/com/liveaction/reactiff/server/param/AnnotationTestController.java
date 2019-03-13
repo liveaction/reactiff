@@ -2,6 +2,7 @@ package com.liveaction.reactiff.server.param;
 
 import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
+import com.liveaction.reactiff.api.server.annotation.HeaderParam;
 import com.liveaction.reactiff.api.server.annotation.PathParam;
 import com.liveaction.reactiff.api.server.annotation.RequestBody;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
@@ -70,6 +71,26 @@ public final class AnnotationTestController implements ReactiveHandler {
     @RequestMapping(method = HttpMethod.POST, path = "/annotated/body/parametrized/2/level")
     public Flux<Pojo> testParametrizedBodyParameter2Level(@RequestBody Flux<List<List<Pojo>>> pojoLists) {
         return pojoLists.flatMap(pojos -> Flux.fromIterable(pojos).flatMapIterable(p -> p));
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/annotated/headers/1")
+    public Mono<String> testParametrizedHeaderParametersUsingValue1(@HeaderParam(value = "X-String") String xString) {
+        return Mono.just(xString);
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/annotated/headers/2")
+    public Mono<Integer> testParametrizedHeaderParametersUsingValue2(@HeaderParam(value = "X-Integer") Integer xInteger) {
+        return Mono.just(xInteger);
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/annotated/headers/3")
+    public Mono<Double> testParametrizedHeaderParametersUsingValue3(@HeaderParam(value = "X-Double") Double xDouble) {
+        return Mono.just(xDouble);
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/annotated/headers/4")
+    public Mono<Boolean> testParametrizedHeaderParametersUsingValue4(@HeaderParam(value = "X-Boolean") Boolean xBoolean) {
+        return Mono.just(xBoolean);
     }
 
 }
