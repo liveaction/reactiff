@@ -47,6 +47,11 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     }
 
     @Override
+    public boolean isStarted() {
+        return disposableServer != null;
+    }
+
+    @Override
     public void start() {
         disposableServer = httpServer.bindNow();
         LOGGER.info("Server started on http://{}:{}", host, disposableServer.port());
@@ -55,6 +60,7 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     @Override
     public void close() {
         disposableServer.disposeNow();
+        disposableServer = null;
     }
 
     @Override

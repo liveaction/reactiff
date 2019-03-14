@@ -36,6 +36,8 @@ public interface ReactiveHttpServer extends Closeable {
         return new ReactiveHttpServerBuilder();
     }
 
+    boolean isStarted();
+
     void start();
 
     void close();
