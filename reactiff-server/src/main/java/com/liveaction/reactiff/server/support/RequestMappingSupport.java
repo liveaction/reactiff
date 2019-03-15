@@ -86,8 +86,9 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                 if (parameterType.isAssignableFrom(Request.class)) {
                     args.add(request);
                 } else {
-                    PathParam annotation = parameter.getAnnotation(PathParam.class);
-                    if (annotation != null) {
+                    PathParam annotation;
+                    HeaderParam headerAnnotation;
+                    if ((annotation = parameter.getAnnotation(PathParam.class)) != null) {
                         String name = annotation.value();
                         if (name.isEmpty()) {
                             name = parameter.getName();
@@ -104,8 +105,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         } else {
                             throw new IllegalArgumentException(RequestBody.class.getSimpleName() + " only support Mono<T> or Flux<T> type");
                         }
-                    } else if (parameter.getAnnotation(HeaderParam.class) != null) {
-                        HeaderParam headerAnnotation = parameter.getAnnotation(HeaderParam.class);
+                    } else if ((headerAnnotation = parameter.getAnnotation(HeaderParam.class)) != null) {
                         String name = headerAnnotation.value();
                         if (name.isEmpty()) {
                             name = parameter.getName();
