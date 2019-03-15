@@ -11,6 +11,7 @@ import com.liveaction.reactiff.server.internal.param.converter.ConstructorBasedC
 import com.liveaction.reactiff.server.internal.param.converter.InstantParamConverter;
 import com.liveaction.reactiff.server.internal.param.converter.MethodBasedConverter;
 import com.liveaction.reactiff.server.internal.param.converter.ParamConverter;
+import com.liveaction.reactiff.server.internal.param.converter.PathConverter;
 import com.liveaction.reactiff.server.internal.param.converter.StringConverter;
 
 import java.lang.reflect.Array;
@@ -26,7 +27,8 @@ public final class ParamUtils {
             StringConverter.INSTANCE,
             BooleanConverter.INSTANCE,
             InstantParamConverter.INSTANCE,
-            CharacterConverter.INSTANCE
+            CharacterConverter.INSTANCE,
+            PathConverter.INSTANCE
     );
 
     private ParamUtils() {

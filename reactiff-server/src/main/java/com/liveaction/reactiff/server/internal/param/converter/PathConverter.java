@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.param.converter;
+package com.liveaction.reactiff.server.internal.param.converter;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,4 +19,5 @@ public final class PathConverter implements ParamConverter<Path> {
     public boolean canConvertType(Class<?> clazz) {
         return clazz == Boolean.class;
     }
+
 }
