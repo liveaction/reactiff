@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.filters;
+package com.liveaction.reactiff.server.internal.filters;
 
 import com.liveaction.reactiff.api.server.FilterChain;
 import com.liveaction.reactiff.api.server.ReactiveFilter;

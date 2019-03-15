@@ -1,10 +1,11 @@
-package com.liveaction.reactiff.server;
+package com.liveaction.reactiff.server.internal;
 
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.FilterChain;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
-import com.liveaction.reactiff.server.utils.FilterUtils;
+import com.liveaction.reactiff.server.ReactiveHttpServer;
+import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.netty.DisposableServer;
@@ -32,13 +33,13 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
 
     private DisposableServer disposableServer;
 
-    ReactiveHttpServerImpl(String host,
-                           int port,
-                           Collection<HttpProtocol> protocols,
-                           CodecManager codecManager,
-                           boolean wiretap,
-                           boolean compress,
-                           boolean writeErrorStacktrace) {
+    public ReactiveHttpServerImpl(String host,
+                                  int port,
+                                  Collection<HttpProtocol> protocols,
+                                  CodecManager codecManager,
+                                  boolean wiretap,
+                                  boolean compress,
+                                  boolean writeErrorStacktrace) {
         this.host = host;
         this.port = port;
         this.protocols = protocols;

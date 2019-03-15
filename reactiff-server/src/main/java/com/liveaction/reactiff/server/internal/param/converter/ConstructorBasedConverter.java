@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.param.converter;
+package com.liveaction.reactiff.server.internal.param.converter;
 
 import org.slf4j.LoggerFactory;
 

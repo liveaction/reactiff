@@ -2,8 +2,8 @@ package com.liveaction.reactiff.server;
 
 import com.google.common.collect.ImmutableSet;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
-import com.liveaction.reactiff.server.filters.CorsFilter;
-import com.liveaction.reactiff.server.filters.ExceptionMappingFilter;
+import com.liveaction.reactiff.server.internal.filters.CorsFilter;
+import com.liveaction.reactiff.server.internal.filters.ExceptionMappingFilter;
 
 import java.util.function.Function;
 

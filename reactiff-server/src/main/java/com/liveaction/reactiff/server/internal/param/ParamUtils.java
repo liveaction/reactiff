@@ -1,17 +1,17 @@
-package com.liveaction.reactiff.server.param;
+package com.liveaction.reactiff.server.internal.param;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Primitives;
 import com.google.common.reflect.TypeToken;
-import com.liveaction.reactiff.server.param.converter.BooleanConverter;
-import com.liveaction.reactiff.server.param.converter.CharacterConverter;
-import com.liveaction.reactiff.server.param.converter.ConstructorBasedConverter;
-import com.liveaction.reactiff.server.param.converter.InstantParamConverter;
-import com.liveaction.reactiff.server.param.converter.MethodBasedConverter;
-import com.liveaction.reactiff.server.param.converter.ParamConverter;
-import com.liveaction.reactiff.server.param.converter.StringConverter;
+import com.liveaction.reactiff.server.internal.param.converter.BooleanConverter;
+import com.liveaction.reactiff.server.internal.param.converter.CharacterConverter;
+import com.liveaction.reactiff.server.internal.param.converter.ConstructorBasedConverter;
+import com.liveaction.reactiff.server.internal.param.converter.InstantParamConverter;
+import com.liveaction.reactiff.server.internal.param.converter.MethodBasedConverter;
+import com.liveaction.reactiff.server.internal.param.converter.ParamConverter;
+import com.liveaction.reactiff.server.internal.param.converter.StringConverter;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;

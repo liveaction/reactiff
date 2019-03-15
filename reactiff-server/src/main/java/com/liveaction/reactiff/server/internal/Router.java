@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server;
+package com.liveaction.reactiff.server.internal;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -9,11 +9,11 @@ import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.route.Route;
-import com.liveaction.reactiff.server.support.HandlerSupportFunction;
-import com.liveaction.reactiff.server.support.RequestMappingSupport;
-import com.liveaction.reactiff.server.support.WsMappingSupport;
-import com.liveaction.reactiff.server.template.TemplateEngineImpl;
-import com.liveaction.reactiff.server.utils.FilterUtils;
+import com.liveaction.reactiff.server.internal.support.HandlerSupportFunction;
+import com.liveaction.reactiff.server.internal.support.RequestMappingSupport;
+import com.liveaction.reactiff.server.internal.support.WsMappingSupport;
+import com.liveaction.reactiff.server.internal.template.TemplateEngineImpl;
+import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 import static com.liveaction.reactiff.api.server.utils.FormatUtils.formatRoutes;
 import static java.util.stream.Collectors.toList;
 
-public class Router implements BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> {
+public final class Router implements BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> {
 
     private static final Comparator<Route> ROUTE_ORDER = Comparator.comparingInt(Route::rank)
             .thenComparing(Route::descriptor)

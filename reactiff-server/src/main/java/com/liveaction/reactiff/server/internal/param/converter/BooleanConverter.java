@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.param.converter;
+package com.liveaction.reactiff.server.internal.param.converter;
 
 public final class BooleanConverter implements ParamConverter<Boolean> {
 

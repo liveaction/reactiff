@@ -29,6 +29,8 @@ public interface ReactiveHttpServer extends Closeable {
 
         Builder compress(boolean compress);
 
+        Builder writeErrorStacktrace(boolean writeErrorStacktrace);
+
         ReactiveHttpServer build();
     }
 

@@ -5,13 +5,14 @@ import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
+import com.liveaction.reactiff.server.internal.ReactiveHttpServerImpl;
 import reactor.netty.http.HttpProtocol;
 import reactor.util.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
 
-public final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
+final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
 
     private String host = "0.0.0.0";
 
@@ -87,7 +88,13 @@ public final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Build
     }
 
     @Override
-    public ReactiveHttpServerImpl build() {
+    public ReactiveHttpServer.Builder writeErrorStacktrace(boolean writeErrorStacktrace) {
+        this.writeErrorStacktrace = writeErrorStacktrace;
+        return this;
+    }
+
+    @Override
+    public ReactiveHttpServer build() {
         if (codecManager == null) {
             codecManager = new CodecManagerImpl();
         }

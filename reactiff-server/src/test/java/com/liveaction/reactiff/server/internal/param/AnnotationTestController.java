@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.param;
+package com.liveaction.reactiff.server.internal.param;
 
 import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;

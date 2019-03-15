@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.param;
+package com.liveaction.reactiff.server.internal.param;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeToken;

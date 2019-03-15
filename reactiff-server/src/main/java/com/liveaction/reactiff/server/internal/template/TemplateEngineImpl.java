@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.template;
+package com.liveaction.reactiff.server.internal.template;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
