@@ -9,6 +9,9 @@ public final class BooleanConverter implements ParamConverter<Boolean> {
 
     @Override
     public Boolean fromString(String s) {
+        if (s == null) {
+            return null;
+        }
         return Boolean.valueOf(s);
     }
 

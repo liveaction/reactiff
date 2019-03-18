@@ -12,12 +12,15 @@ public final class PathConverter implements ParamConverter<Path> {
 
     @Override
     public Path fromString(String s) {
+        if (s == null) {
+            return null;
+        }
         return Paths.get(s);
     }
 
     @Override
     public boolean canConvertType(Class<?> clazz) {
-        return clazz == Boolean.class;
+        return clazz == Path.class;
     }
 
 }
