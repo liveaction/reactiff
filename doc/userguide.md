@@ -13,8 +13,9 @@ Reactiff user guide.
 
 ### Method annotations
 ### Parameters binding
+### The Request object
 ### Return type binding
-#### The Result
+### The Result object
 
 ## Web socket
 
