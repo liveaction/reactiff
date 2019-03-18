@@ -158,7 +158,7 @@ transfer-encoding: chunked
 
 # Packages description
 
-- `reactiff-api` : the java API which contains codec and server public API.
-- `reactiff-codec` : basic codecs : text, file and binary.
-- `reactiff-codec-jackson` : json and smile codecs implemented with jackson.
+- `reactiff-api` : the codec and server public java API
+- `reactiff-codec` : CodecManager and basic codecs implementation for text, file and raw binary support.
+- `reactiff-codec-jackson` : json and smile (binary) codecs implementation based on jackson.
 - `reactiff-server` : the server implementation (wrapping handlers and filters with reactor-netty)
