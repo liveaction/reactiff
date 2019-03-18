@@ -10,7 +10,7 @@
 
 # What is it ?
 
-`reactiff` is a simple glue between your micro servive and the `reactor-netty` library.
+`reactiff` is a simple glue between your micro servives and the `reactor-netty` library.
 
 The aims is to bring full reactive HTTP communication in a non intrusive library to unleash `reactor-netty` power!
 
@@ -32,39 +32,59 @@ The aims is to bring full reactive HTTP communication in a non intrusive library
 A simple controller implementing `ReactiveHandler` :
 
 ```java
-public final class MyHandler implements ReactiveHandler {
-    
+public final class PojoHandler implements ReactiveHandler {
+
     @RequestMapping(method = GET, path = "/pojo")
     public Flux<Pojo> list() {
-        Flux<Pojo> reactiveList = null; // non blocking database call
-        return reactiveList;
+        return Flux.range(0, 10)
+                .delayElements(Duration.ofMillis(50))
+                .map(index -> new Pojo(String.valueOf(index), "Hello you"));
     }
-    
+
 }
 ```
 
 running in a simple java application :
 
 ```java
-public final class Application {
-    
-    public static void main(String[] args){
+public final class ExampleApp {
+
+    public static void main(String[] args) {
         CodecManager codecManager = new CodecManagerImpl();
         codecManager.addCodec(new JsonCodec(new ObjectMapper()));
-        
-        ReactiveHttpServer server = ReactiveHttpServer.create()
-                        .codecManager(codecManager)
-                        .addHandler()
-                        .build();
-        
-        server.addReactiveFilter(DefaultFilters.cors());
-        server.addReactiveHandler(new MyHandler());
-        
-        server.start();
+
+        try (ReactiveHttpServer server = ReactiveHttpServer.create()
+                .protocols(HttpProtocol.HTTP11)
+                .codecManager(codecManager)
+                .port(3000)
+                .build()) {
+
+            server.addReactiveFilter(DefaultFilters.cors(
+                    ImmutableSet.of("*"),
+                    ImmutableSet.of("X-UserHeader"),
+                    ImmutableSet.of("GET")
+                    , true,
+                    -1
+            ));
+            server.addReactiveHandler(new PojoHandler());
+            server.start();
+
+            Flux<Pojo> response = HttpClient.create()
+                    .get()
+                    .uri("http://localhost:3000/pojo")
+                    .response(codecManager.decodeAsFlux(Pojo.class));
+
+            response.subscribe(System.out::println);
+
+            System.out.println(String.format("Received %d results", response.count().block()));
+        }
     }
-    
+
 }
+
 ```
+
+``````
 
 # Packages description
 

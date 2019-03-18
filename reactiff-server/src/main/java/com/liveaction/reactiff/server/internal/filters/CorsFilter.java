@@ -80,7 +80,7 @@ public final class CorsFilter implements ReactiveFilter {
             if (!this.allowedMethods.contains(parsedMethod)) {
                 resultBuilder.status(401, "No such method for this route");
             } else {
-                emitValidCORSResponse(originHeader, resultBuilder);
+                emitValidCorsResponse(originHeader, resultBuilder);
             }
 
         } catch (IllegalArgumentException e) {
@@ -91,7 +91,7 @@ public final class CorsFilter implements ReactiveFilter {
 
     }
 
-    private void emitValidCORSResponse(String originHeader, Result.Builder resultBuilder) {
+    private void emitValidCorsResponse(String originHeader, Result.Builder resultBuilder) {
         resultBuilder.status(HttpResponseStatus.ACCEPTED);
         if (this.maxAge > 0) {
             resultBuilder.header(ACCESS_CONTROL_MAX_AGE, String.valueOf(this.maxAge));
