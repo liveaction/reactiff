@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -41,12 +42,13 @@ public final class RawBinaryCodec implements Codec {
     @SuppressWarnings("unchecked")
     private <T> Publisher<T> decode(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         if (BYTE_ARRAY.isAssignableFrom(typeToken)) {
-            return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux).asByteArray();
+            return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux)
+                    .asByteArray();
         } else if (BYTE_BUFF.isAssignableFrom(typeToken)) {
             return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux);
         } else if (BYTE_BUFFER_TYPE_TOKEN.isAssignableFrom(typeToken)) {
             return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux)
-                    .map(ByteBuf::nioBuffer);
+                    .asByteBuffer();
         } else {
             throw new IllegalArgumentException("Unable to encode to type '" + typeToken + "'");
         }
@@ -60,10 +62,7 @@ public final class RawBinaryCodec implements Codec {
             return ByteBufFlux.fromInbound(data);
         } else if (BYTE_BUFFER_TYPE_TOKEN.isAssignableFrom(typeToken)) {
             return ByteBufFlux.fromInbound(Flux.from(data)
-                    .map(t -> {
-                        ByteBuffer buffer = (ByteBuffer) t;
-                        return buffer.duplicate().array();
-                    }));
+                    .map(t -> Unpooled.wrappedBuffer((ByteBuffer) t)));
         } else {
             throw new IllegalArgumentException("Unable to encode type '" + typeToken + "'");
         }
