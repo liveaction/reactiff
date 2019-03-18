@@ -162,3 +162,7 @@ transfer-encoding: chunked
 - `reactiff-codec` : CodecManager and basic codecs implementation for text, file and raw binary support.
 - `reactiff-codec-jackson` : json and smile (binary) codecs implementation based on jackson.
 - `reactiff-server` : the server implementation (wrapping handlers and filters with reactor-netty)
+
+# User guide
+
+For more detailed instructions see our [user guide](./doc/userguide.md)
