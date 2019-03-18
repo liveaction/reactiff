@@ -18,7 +18,7 @@ The aims is to bring full reactive HTTP communication in a non intrusive library
 
 - A simple DSL based on annotations to declare HTTP handlers and filters.
 - A reactive implementation of codecs : text, files, json, binary (smile).
-- The `Codec` interface to extend coding and decoding of client and server request's content. The codec choice is based on a HTTP compliant content negociation.
+- The `Codec` interface to extend coding and decoding of client and server request's content. The codec choice is based on an HTTP compliant content negociation.
 
 # What are the main lead
 
@@ -56,11 +56,11 @@ public final class ExampleApp {
         ReactiveHttpServer server = ReactiveHttpServer.create()
                 .protocols(HttpProtocol.HTTP11)
                 .codecManager(codecManager)
+                .handler(new PojoHandler())
                 .port(3000)
                 .build();
 
-        server.addReactiveHandler(new PojoHandler());
-        server.start();
+        server.startAndWait();
     }
 
 }
@@ -71,12 +71,12 @@ That can be consumed with,
 - a simple `reactor-netty` client :
 
 ```java
-public final class ExampleApp {
+public final class ExampleClient {
 
     public static void main(String[] args) {
         CodecManager codecManager = new CodecManagerImpl();
         codecManager.addCodec(new JsonCodec(new ObjectMapper()));
-                
+
         Flux<Pojo> response = HttpClient.create()
                 .get()
                 .uri("http://localhost:3000/pojo")
