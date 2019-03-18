@@ -90,10 +90,10 @@ public final class ExampleApp {
 }
 ```
 
-- or a curl :
+- or a simple httpie call in the terminal :
 
 ```bash
-14:48 $ http ':3000/pojo'                                                                                                                                                                                                                                                                                                    
+$ http ':3000/pojo'                                                                                                                                                                                                                                                                                                    
 HTTP/1.1 200 OK                                                                                                                                                                                                                                                                                                              
 content-type: application/json
 transfer-encoding: chunked
