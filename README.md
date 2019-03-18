@@ -12,7 +12,20 @@
 
 `reactiff` is a simple glue between your micro servives and the `reactor-netty` library.
 
-The aims is to bring full reactive HTTP communication in a non intrusive library to unleash `reactor-netty` power!
+The aim is to bring full reactive HTTP communication in a non intrusive library to unleash `reactor-netty` power!
+
+# Why ?
+
+`reactor-netty` is a thin library that provides `reactor` wiring with non blocking `netty` library.
+However, `reactor-netty` provides only a low level API which support basic handler and router.
+
+It may require writing some code to be used in a daily application that serves a REST API over the web and consumed by a frontend tier.
+
+This is the gap that `reactiff` is trying to fill :
+
+- a language to describe REST handlers
+- a language to describe filters (with common web filters)
+- a request and response coding/decoding support that plugs well with `reactor-netty`' non-blocking and back-pressure enabled communication.
 
 # What does it contain ?
 
@@ -22,8 +35,9 @@ The aims is to bring full reactive HTTP communication in a non intrusive library
 
 # What are the main lead
 
-- be a simple zero waste API
-- only a one goal library; not a framework. We did not make any choice : no dependency injection required, no templates mechanism provided...
+- be the finest possible layer over `reactor-netty` and `netty`
+- provides a zero waste API
+- only one goal library; not a framework. We did not make any choice : no dependency injection required, no templates mechanism provided...
 - java and OSGI support
 - easily testable
 
@@ -90,7 +104,7 @@ public final class ExampleClient {
 }
 ```
 
-- or a simple httpie call in the terminal :
+- or a simple `httpie` call in the terminal :
 
 ```bash
 $ http ':3000/pojo'                                                                                                                                                                                                                                                                                                    
