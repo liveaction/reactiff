@@ -10,14 +10,14 @@
 
 # What is it ?
 
-`reactiff` is a simple glue between your micro servives and the `reactor-netty` library.
+`reactiff` is a simple glue between your micro services and the `reactor-netty` library.
 
 The aim is to bring full reactive HTTP communication in a non intrusive library to unleash `reactor-netty` power!
 
 # Why ?
 
 `reactor-netty` is a thin library that provides `reactor` wiring with non blocking `netty` library.
-However, `reactor-netty` provides only a low level API which support basic handler and router.
+However, `reactor-netty` provides only a low level API which supports basic handler and router.
 
 It may require writing some code to be used in a daily application that serves a REST API over the web and consumed by a frontend tier.
 
@@ -25,7 +25,7 @@ This is the gap that `reactiff` is trying to fill :
 
 - a language to describe REST handlers
 - a language to describe filters (with common web filters)
-- a request and response coding/decoding support that plugs well with `reactor-netty`' non-blocking and back-pressure enabled communication.
+- a request and response coding/decoding support that plugs well with `reactor-netty` non-blocking and back-pressure enabled communication.
 
 # What does it contain ?
 
