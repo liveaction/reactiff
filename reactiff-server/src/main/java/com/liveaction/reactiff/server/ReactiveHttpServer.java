@@ -32,6 +32,7 @@ public interface ReactiveHttpServer extends Closeable {
         Builder writeErrorStacktrace(boolean writeErrorStacktrace);
 
         ReactiveHttpServer build();
+
     }
 
     static Builder create() {
@@ -41,6 +42,8 @@ public interface ReactiveHttpServer extends Closeable {
     boolean isStarted();
 
     void start();
+
+    void startAndWait();
 
     void close();
 

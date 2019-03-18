@@ -12,6 +12,7 @@ import reactor.netty.DisposableServer;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.server.HttpServer;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -56,6 +57,11 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     public void start() {
         disposableServer = httpServer.bindNow();
         LOGGER.info("Server started on http://{}:{}", host, disposableServer.port());
+    }
+
+    @Override
+    public void startAndWait() {
+        httpServer.bindUntilJavaShutdown(Duration.ofSeconds(5), null);
     }
 
     @Override

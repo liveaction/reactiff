@@ -53,38 +53,94 @@ public final class ExampleApp {
         CodecManager codecManager = new CodecManagerImpl();
         codecManager.addCodec(new JsonCodec(new ObjectMapper()));
 
-        try (ReactiveHttpServer server = ReactiveHttpServer.create()
+        ReactiveHttpServer server = ReactiveHttpServer.create()
                 .protocols(HttpProtocol.HTTP11)
                 .codecManager(codecManager)
                 .port(3000)
-                .build()) {
+                .build();
 
-            server.addReactiveFilter(DefaultFilters.cors(
-                    ImmutableSet.of("*"),
-                    ImmutableSet.of("X-UserHeader"),
-                    ImmutableSet.of("GET")
-                    , true,
-                    -1
-            ));
-            server.addReactiveHandler(new PojoHandler());
-            server.start();
-
-            Flux<Pojo> response = HttpClient.create()
-                    .get()
-                    .uri("http://localhost:3000/pojo")
-                    .response(codecManager.decodeAsFlux(Pojo.class));
-
-            response.subscribe(System.out::println);
-
-            System.out.println(String.format("Received %d results", response.count().block()));
-        }
+        server.addReactiveHandler(new PojoHandler());
+        server.start();
     }
 
 }
-
 ```
 
-``````
+That can be consumed with,
+
+- a simple `reactor-netty` client :
+
+```java
+public final class ExampleApp {
+
+    public static void main(String[] args) {
+        CodecManager codecManager = new CodecManagerImpl();
+        codecManager.addCodec(new JsonCodec(new ObjectMapper()));
+                
+        Flux<Pojo> response = HttpClient.create()
+                .get()
+                .uri("http://localhost:3000/pojo")
+                .response(codecManager.decodeAsFlux(Pojo.class));
+
+        response.subscribe(System.out::println);
+
+        System.out.println(String.format("Received %d results", response.count().block()));
+    }
+
+}
+```
+
+- or a curl :
+
+```bash
+14:48 $ http ':3000/pojo'                                                                                                                                                                                                                                                                                                    
+HTTP/1.1 200 OK                                                                                                                                                                                                                                                                                                              
+content-type: application/json
+transfer-encoding: chunked
+
+[
+    {
+        "id": "0",
+        "name": "Hello you"
+    },
+    {
+        "id": "1",
+        "name": "Hello you"
+    },
+    {
+        "id": "2",
+        "name": "Hello you"
+    },
+    {
+        "id": "3",
+        "name": "Hello you"
+    },
+    {
+        "id": "4",
+        "name": "Hello you"
+    },
+    {
+        "id": "5",
+        "name": "Hello you"
+    },
+    {
+        "id": "6",
+        "name": "Hello you"
+    },
+    {
+        "id": "7",
+        "name": "Hello you"
+    },
+    {
+        "id": "8",
+        "name": "Hello you"
+    },
+    {
+        "id": "9",
+        "name": "Hello you"
+    }
+]
+```
 
 # Packages description
 
