@@ -9,10 +9,7 @@ import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
-import com.liveaction.reactiff.api.server.annotation.HeaderParam;
-import com.liveaction.reactiff.api.server.annotation.PathParam;
-import com.liveaction.reactiff.api.server.annotation.RequestBody;
-import com.liveaction.reactiff.api.server.annotation.RequestMapping;
+import com.liveaction.reactiff.api.server.annotation.*;
 import com.liveaction.reactiff.api.server.route.HttpRoute;
 import com.liveaction.reactiff.api.server.route.Route;
 import com.liveaction.reactiff.server.internal.param.ParamUtils;
@@ -88,6 +85,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                 } else {
                     PathParam annotation;
                     HeaderParam headerAnnotation;
+                    UriParam uriParam;
                     if ((annotation = parameter.getAnnotation(PathParam.class)) != null) {
                         String name = annotation.value();
                         if (name.isEmpty()) {
@@ -111,6 +109,12 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                             name = parameter.getName();
                         }
                         args.add(ParamUtils.convertValue(request.header(name), parameterType));
+                    } else if ((uriParam = parameter.getAnnotation(UriParam.class)) != null) {
+                        String name = uriParam.value();
+                        if (name.isEmpty()) {
+                            name = parameter.getName();
+                        }
+                        args.add(ParamUtils.convertValue(request.uriParam(name), parameterType));
                     }
                 }
             }
