@@ -66,7 +66,7 @@ public interface CodecManager {
             if (contentType == null) {
                 throw new IllegalArgumentException("No content-type set in http headers. Unable to determine one, please specify one to encode the body");
             }
-            return nettyOutbound.send(encodeAs(contentType, data, typeToken));
+            return send(contentType, data, typeToken).apply(httpClientRequest, nettyOutbound);
         };
     }
 
