@@ -84,4 +84,15 @@ public final class RequestImplTest {
                 );
     }
 
+    @Test
+    public void shouldDecodeEncodedFragmentPathParam() {
+        HttpServerRequest httpServerRequest = Mockito.mock(HttpServerRequest.class);
+        Mockito.when(httpServerRequest.method()).thenReturn(new HttpMethod("GET"));
+        Mockito.when(httpServerRequest.uri()).thenReturn("/test");
+        Mockito.when(httpServerRequest.param("id")).thenReturn("a:partially%3Aencoded%2Fpath");
+
+        RequestImpl request = new RequestImpl(httpServerRequest, withCodecManager.codecManager, Optional.empty());
+        Assertions.assertThat(request.pathParam("id")).isEqualTo("a:partially:encoded/path");
+    }
+
 }

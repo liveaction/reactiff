@@ -78,7 +78,7 @@ public final class RequestImpl implements Request {
 
     @Override
     public String pathParam(String name) {
-        return httpServerRequest.param(name);
+        return QueryStringDecoder.decodeComponent(httpServerRequest.param(name));
     }
 
     @Override
