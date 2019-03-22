@@ -37,7 +37,7 @@ public interface Request {
 
     String pathParam(String name);
 
-    ImmutableMap<String, List<String>> uriParams();
+    ImmutableMap<String, ImmutableList<String>> uriParams();
 
     String header(CharSequence name);
 

@@ -2,6 +2,7 @@ package com.liveaction.reactiff.server;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.HttpMethod;
@@ -27,7 +28,7 @@ public final class RequestImpl implements Request {
 
     private final HttpServerRequest httpServerRequest;
     private final CodecManager codecManager;
-    private final ImmutableMap<String, List<String>> parameters;
+    private final ImmutableMap<String, ImmutableList<String>> parameters;
     private final HttpMethod httpMethod;
     private final Route matchingRoute;
 
@@ -35,7 +36,7 @@ public final class RequestImpl implements Request {
         this.httpServerRequest = httpServerRequest;
         this.codecManager = codecManager;
         QueryStringDecoder decoder = new QueryStringDecoder(httpServerRequest.uri());
-        parameters = ImmutableMap.copyOf(decoder.parameters());
+        parameters = ImmutableMap.copyOf(Maps.transformValues(decoder.parameters(), ImmutableList::copyOf));
         httpMethod = HttpMethod.valueOf(httpServerRequest.method().name());
         this.matchingRoute = matchingRoute.orElse(null);
     }
@@ -71,7 +72,7 @@ public final class RequestImpl implements Request {
     }
 
     @Override
-    public ImmutableMap<String, List<String>> uriParams() {
+    public ImmutableMap<String, ImmutableList<String>> uriParams() {
         return parameters;
     }
 
