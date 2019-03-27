@@ -66,6 +66,8 @@ public interface Request {
 
     String path();
 
+    String query();
+
     String uri();
 
     HttpVersion version();

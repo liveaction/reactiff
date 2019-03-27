@@ -137,8 +137,13 @@ public final class RequestImpl implements Request {
     }
 
     @Override
+    public String query() {
+        return new QueryStringDecoder(httpServerRequest.uri()).rawQuery();
+    }
+
+    @Override
     public String uri() {
-        return httpServerRequest.uri();
+        return new QueryStringDecoder(httpServerRequest.uri()).rawPath();
     }
 
     @Override
