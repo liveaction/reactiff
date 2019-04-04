@@ -103,7 +103,11 @@ public final class CodecManagerImpl implements CodecManager {
                 .filter(myCodec -> myCodec.supports(contentType, typeToken))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unable to found an encoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'"));
-        return codec.encode(contentType, data, typeToken);
+        try {
+            return codec.encode(contentType, data, typeToken);
+        } catch (Exception e) {
+            return Flux.error(e);
+        }
     }
 
     private String negociateContentType(String acceptHeader, TypeToken<?> typeToken) {
