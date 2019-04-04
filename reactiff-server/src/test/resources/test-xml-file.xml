@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<root>
+    <je>
+        <suis>
+            <un>
+                <!-- Test encodé en base 64-->
+                SmUgc3VpcyB1biB0ZXh0ZSBzZWNyZXQgbm9uIGQndW5lIHBpcGUgIQ==
+            </un>
+        </suis>
+    </je>
+</root>

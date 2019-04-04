@@ -43,7 +43,7 @@ public final class NettyHttpClient {
                     }
 
                     LOGGER.info("Get response {}", res.status());
-                    return codecManager.decodeAs(res, flux, typeToken);
+                    return codecManager.decodeAsFlux(res, flux, typeToken);
                 });
     }
 }

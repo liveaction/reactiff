@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Route not found</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+
+<p>
+
+<p>                      _   _  __  __         ______
+    _ __ ___  __ _  ___| |_(_)/ _|/ _|       / / / /
+    | '__/ _ \/ _` |/ __| __| | |_| |_ _____ / / / /
+    | | |  __/ (_| | (__| |_| |  _|  _|_____/ / / /
+    |_|  \___|\__,_|\___|\__|_|_| |_|      /_/_/_/
+</p>
+
+<p>Route not found : <strong>/yes_not_exists</strong></p>
+
+<h4>Available routes :</h4>
+
+<table>
+    <tr>
+        <td>GET</td>
+        <td><strong>/non</strong></td>
+        <td>public reactor.core.publisher.Mono
+            com.liveaction.reactiff.server.general.example.TestController.unauthorized()</td>
+    </tr>
+    <tr>
+        <td>GET</td>
+        <td><strong>/oui</strong></td>
+        <td>public reactor.core.publisher.Mono
+            com.liveaction.reactiff.server.general.example.TestController.authorized()</td>
+    </tr>
+    <tr>
+        <td>GET</td>
+        <td><strong>/yes/nosuch</strong></td>
+        <td>public reactor.core.publisher.Mono
+            com.liveaction.reactiff.server.general.example.TestController.noSuchElementException(com.liveaction.reactiff.api.server.Request)</td>
+    </tr>
+    <tr>
+        <td>GET</td>
+        <td><strong>/yes/unauthorized</strong></td>
+        <td>public reactor.core.publisher.Mono
+            com.liveaction.reactiff.server.general.example.TestController.unauthorizedException(com.liveaction.reactiff.api.server.Request)</td>
+    </tr>
+    <tr>
+        <td>GET</td>
+        <td><strong>/yes/{name}</strong></td>
+        <td>public reactor.core.publisher.Flux
+            com.liveaction.reactiff.server.general.example.TestController.yes(com.liveaction.reactiff.api.server.Request)</td>
+    </tr>
+    <tr>
+        <td>POST</td>
+        <td><strong>/upload</strong></td>
+        <td>public reactor.core.publisher.Flux
+            com.liveaction.reactiff.server.general.example.TestController.upload(com.liveaction.reactiff.api.server.Request)</td>
+    </tr>
+    <tr>
+        <td>POST</td>
+        <td><strong>/yes</strong></td>
+        <td>public reactor.core.publisher.Flux
+            com.liveaction.reactiff.server.general.example.TestController.postPojo(com.liveaction.reactiff.api.server.Request)</td>
+    </tr>
+    <tr>
+        <td>WS</td>
+        <td><strong>/websocket</strong></td>
+        <td>public org.reactivestreams.Publisher
+            com.liveaction.reactiff.server.general.example.TestController.yesWebSocket(reactor.netty.http.websocket.WebsocketInbound,reactor.netty.http.websocket.WebsocketOutbound)</td>
+    </tr>
+</table>
+
+</body>
+
+</html>

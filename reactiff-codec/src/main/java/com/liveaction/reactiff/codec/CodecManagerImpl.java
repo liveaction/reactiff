@@ -1,32 +1,40 @@
 package com.liveaction.reactiff.codec;
 
 import com.google.common.reflect.TypeToken;
+import com.liveaction.reactiff.api.codec.Codec;
+import com.liveaction.reactiff.api.codec.CodecManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClientResponse;
 import reactor.netty.http.server.HttpServerRequest;
 
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.stream.Stream;
 
 public final class CodecManagerImpl implements CodecManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CodecManagerImpl.class);
-    private static final String TEXT_PLAIN = "text/plain";
+    private static final String DEFAULT = "application/json";
 
     private final Set<Codec> codecs = new ConcurrentSkipListSet<>(Comparator.comparingInt(Codec::rank));
 
+    private String defaultContentType = DEFAULT;
+
     @Override
     public void addCodec(Codec codec) {
-        codecs.add(codec);
+        boolean add = codecs.add(codec);
+        if (!add) {
+            LOGGER.warn("Codec rank conflict : {} (rank = {}). It has not been added. Fix this !", codec, codec.rank());
+        }
     }
 
     @Override
@@ -35,53 +43,100 @@ public final class CodecManagerImpl implements CodecManager {
     }
 
     @Override
-    public <T> Publisher<T> decodeAs(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        String contentType = Optional.ofNullable(response.responseHeaders().get(HttpHeaderNames.CONTENT_TYPE))
-                .orElse(HttpHeaders.Values.APPLICATION_JSON);
-        Codec codec = codecs.stream()
-                .filter(myCodec -> myCodec.supports(contentType))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unable to found a decoder that supports Content-Type '" + contentType + "'"));
-        LOGGER.debug("Found a decoder for Content-Type='{}'", contentType);
-        return codec.decode(contentType, byteBufFlux, typeToken);
+    public void setDefaultContentType(String defaultContentType) {
+        this.defaultContentType = defaultContentType;
     }
 
     @Override
-    public <T> Publisher<T> decodeAs(HttpServerRequest request, TypeToken<T> typeToken) {
-        String contentType = Optional.ofNullable(request.requestHeaders().get(HttpHeaderNames.CONTENT_TYPE))
-                .orElse(TEXT_PLAIN);
-        Codec codec = codecs.stream()
-                .filter(myCodec -> myCodec.supports(contentType))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unable to found a decoder that supports Content-Type '" + contentType + "'"));
-        LOGGER.debug("Found a decoder for Content-Type='{}'", contentType);
-        return codec.decode(contentType, request.receive(), typeToken);
+    public <T> Mono<T> decodeAsMono(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
+        String contentType = findContentType(response.responseHeaders());
+        Codec codec = findCodec(contentType, typeToken);
+        return codec.decodeMono(contentType, byteBufFlux, typeToken);
+    }
+
+    private String findContentType(HttpHeaders httpHeaders) {
+        return Optional.ofNullable(httpHeaders.get(HttpHeaderNames.CONTENT_TYPE))
+                .orElse(defaultContentType);
     }
 
     @Override
-    public <T> Publisher<ByteBuf> encode(HttpHeaders httpHeaders, Publisher<T> data) {
-        String acceptHeader = httpHeaders.get(HttpHeaderNames.ACCEPT);
-        String contentType = negociateContentType(acceptHeader);
-        return encodeAs(contentType, httpHeaders, data);
+    public <T> Mono<T> decodeAsMono(HttpServerRequest request, TypeToken<T> typeToken) {
+        String contentType = findContentType(request.requestHeaders());
+        Codec codec = findCodec(contentType, typeToken);
+        return codec.decodeMono(contentType, request.receive(), typeToken);
     }
 
     @Override
-    public <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders httpHeaders, Publisher<T> data) {
-        Codec codec = codecs.stream()
-                .filter(myCodec -> myCodec.supports(contentType))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unable to found an encoder that supports Content-Type '" + contentType + "'"));
-        LOGGER.debug("Found a encoder for Content-Type='{}'", contentType);
+    public <T> Flux<T> decodeAsFlux(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
+        String contentType = findContentType(response.responseHeaders());
+        Codec codec = findCodec(contentType, typeToken);
+        return codec.decodeFlux(contentType, byteBufFlux, typeToken);
+    }
+
+    @Override
+    public <T> Flux<T> decodeAsFlux(HttpServerRequest request, TypeToken<T> typeToken) {
+        String contentType = findContentType(request.requestHeaders());
+        Codec codec = findCodec(contentType, typeToken);
+        return codec.decodeFlux(contentType, request.receive(), typeToken);
+    }
+
+    @Override
+    public <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
+        String contentType = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
+        if (contentType == null) {
+            String acceptHeader = requestHttpHeaders.get(HttpHeaderNames.ACCEPT);
+            contentType = negociateContentType(acceptHeader, typeToken);
+        }
+        return encodeAs(contentType, responseHttpHeaders, data, typeToken);
+    }
+
+    @Override
+    public <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders httpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
+        LOGGER.debug("Found an encoder for Content-Type='{}'", contentType);
         httpHeaders.set(HttpHeaderNames.CONTENT_TYPE, contentType);
-        return codec.encode(contentType, data);
+        return encodeAs(contentType, data, typeToken);
     }
 
-    private String negociateContentType(String acceptHeader) {
-        return Stream.of(acceptHeader.split(";"))
-                .filter(contentType -> codecs.stream()
-                        .anyMatch(codec -> codec.supports(contentType)))
+    @Override
+    public <T> Publisher<ByteBuf> encodeAs(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
+        Codec codec = codecs.stream()
+                .filter(myCodec -> myCodec.supports(contentType, typeToken))
                 .findFirst()
-                .orElse(HttpHeaderValues.TEXT_PLAIN.toString());
+                .orElseThrow(() -> new IllegalArgumentException("Unable to found an encoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'"));
+        try {
+            return codec.encode(contentType, data, typeToken);
+        } catch (Exception e) {
+            return Flux.error(e);
+        }
+    }
+
+    private String negociateContentType(String acceptHeader, TypeToken<?> typeToken) {
+        for (String contentType : acceptHeader.split(",")) {
+            String trim = contentType.trim();
+            Optional<String> matches = codecs.stream()
+                    .map(codec -> {
+                        if (codec.supports(trim, typeToken)) {
+                            return trim;
+                        } else {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .findFirst();
+            if (matches.isPresent()) {
+                return matches.get();
+            }
+        }
+        return defaultContentType;
+    }
+
+    private Codec findCodec(String contentType, TypeToken<?> typeToken) {
+        Codec codec = codecs.stream()
+                .filter(myCodec -> myCodec.supports(contentType, typeToken))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unable to found a decoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'"));
+        LOGGER.debug("Found a decoder for Content-Type='{}'", contentType);
+        return codec;
     }
 
 }

@@ -1,0 +1,26 @@
+                      _   _  __  __         ______
+  _ __ ___  __ _  ___| |_(_)/ _|/ _|       / / / /
+ | '__/ _ \/ _` |/ __| __| | |_| |_ _____ / / / /
+ | | |  __/ (_| | (__| |_| |  _|  _|_____/ / / /
+ |_|  \___|\__,_|\___|\__|_|_| |_|      /_/_/_/
+
+Route not found: GET /yes_not_exists
+
+Available routes:
+	GET  /boolean                => TestController.getBoolean(Request request)                              : Mono<Boolean>
+	GET  /booleans               => TestController.getBooleans(Request request)                             : Flux<Boolean>
+	GET  /failed                 => TestController.failed()                                                 : Mono<Result<String>>
+	GET  /non                    => TestController.unauthorized()                                           : Mono<String>
+	GET  /oui                    => TestController.authorized()                                             : Mono<String>
+	GET  /yes/nosuch             => TestController.noSuchElementException(Request request)                  : Mono<Void>
+	GET  /yes/nosuchflux         => TestController.noSuchElementExceptionFlux(Request request)              : Mono<Result<Void>>
+	GET  /yes/unauthorized       => TestController.unauthorizedException(Request request)                   : Mono<Void>
+	GET  /yes/{name}             => TestController.yes(Request request)                                     : Flux<String>
+	POST /boolean/flux/from/mono => TestController.booleanFluxFromMono(Request request)                     : Flux<Boolean>
+	POST /boolean/mono/from/flux => TestController.booleanMonoFromFlux(Request request)                     : Mono<Boolean>
+	POST /monovoid               => TestController.executeVoid()                                            : Mono<Void>
+	POST /upload                 => TestController.upload(Request request)                                  : Flux<byte[]>
+	POST /void                   => TestController.execute(Request request)                                 : void
+	POST /yes                    => TestController.postPojo(Request request)                                : Flux<Pojo>
+	POST /yes/heavy              => TestController.postHeavyPojo(Request request)                           : Flux<Pojo>
+	WS   /websocket              => TestController.yesWebSocket(WebsocketInbound in, WebsocketOutbound out) : Publisher<Void>
