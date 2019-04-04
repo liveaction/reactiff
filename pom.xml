@@ -58,6 +58,15 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>com.amashchenko.maven.plugin</groupId>
+                <artifactId>gitflow-maven-plugin</artifactId>
+                <version>1.10.0</version>
+                <configuration>
+                    <postHotfixGoals>deploy</postHotfixGoals>
+                    <postReleaseGoals>deploy</postReleaseGoals>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -244,5 +253,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+
 
 </project>
