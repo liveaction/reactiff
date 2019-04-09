@@ -6,6 +6,7 @@ import com.liveaction.reactiff.api.server.ReactiveHandler;
 import reactor.netty.http.HttpProtocol;
 
 import java.io.Closeable;
+import java.util.function.Consumer;
 
 public interface ReactiveHttpServer extends Closeable {
 
@@ -44,6 +45,8 @@ public interface ReactiveHttpServer extends Closeable {
     void start();
 
     void startAndWait();
+
+    void startAndWait(Consumer onStart);
 
     void close();
 
