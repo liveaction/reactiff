@@ -13,11 +13,8 @@ import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.server.HttpServer;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+import java.util.function.Consumer;
 
 public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
 
@@ -62,6 +59,11 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     @Override
     public void startAndWait() {
         httpServer.bindUntilJavaShutdown(Duration.ofSeconds(5), null);
+    }
+
+    @Override
+    public void startAndWait(Consumer onStart) {
+        httpServer.bindUntilJavaShutdown(Duration.ofSeconds(5), onStart);
     }
 
     @Override
