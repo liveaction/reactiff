@@ -12,7 +12,6 @@
         <module>reactiff-api</module>
         <module>reactiff-server</module>
         <module>reactiff-codec</module>
-        <module>reactiff-client</module>
         <module>reactiff-codec-jackson</module>
     </modules>
 
