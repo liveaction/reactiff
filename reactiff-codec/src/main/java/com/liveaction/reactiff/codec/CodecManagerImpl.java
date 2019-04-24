@@ -105,6 +105,16 @@ public final class CodecManagerImpl implements CodecManager {
         }
     }
 
+    @Override
+    public <T> Publisher<ByteBuf> encodeAs(HttpHeaders requestHttpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
+        String contentType = requestHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
+        if (contentType == null) {
+            String acceptHeader = requestHttpHeaders.get(HttpHeaderNames.ACCEPT);
+            contentType = negociateContentType(acceptHeader, typeToken);
+        }
+        return encodeAs(contentType, data, typeToken);
+    }
+
     private String negociateContentType(String acceptHeader, TypeToken<?> typeToken) {
         for (String contentType : acceptHeader.split(",")) {
             String trim = contentType.trim();
