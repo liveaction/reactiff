@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClientResponse;
 import reactor.netty.http.server.HttpServerRequest;
 
 import java.util.Comparator;
@@ -48,36 +47,32 @@ public final class CodecManagerImpl implements CodecManager {
     }
 
     @Override
-    public <T> Mono<T> decodeAsMono(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        String contentType = findContentType(response.responseHeaders());
+    public <T> Mono<T> decodeAsMono(HttpHeaders httpHeaders, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
+        String contentType = findContentType(httpHeaders);
         Codec codec = findCodec(contentType, typeToken);
         return codec.decodeMono(contentType, byteBufFlux, typeToken);
     }
 
-    private String findContentType(HttpHeaders httpHeaders) {
-        return Optional.ofNullable(httpHeaders.get(HttpHeaderNames.CONTENT_TYPE))
-                .orElse(defaultContentType);
-    }
-
     @Override
     public <T> Mono<T> decodeAsMono(HttpServerRequest request, TypeToken<T> typeToken) {
-        String contentType = findContentType(request.requestHeaders());
-        Codec codec = findCodec(contentType, typeToken);
-        return codec.decodeMono(contentType, request.receive(), typeToken);
+        return decodeAsMono(request.requestHeaders(), request.receive(), typeToken);
     }
 
     @Override
-    public <T> Flux<T> decodeAsFlux(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        String contentType = findContentType(response.responseHeaders());
+    public <T> Flux<T> decodeAsFlux(HttpHeaders httpHeaders, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
+        String contentType = findContentType(httpHeaders);
         Codec codec = findCodec(contentType, typeToken);
         return codec.decodeFlux(contentType, byteBufFlux, typeToken);
     }
 
     @Override
     public <T> Flux<T> decodeAsFlux(HttpServerRequest request, TypeToken<T> typeToken) {
-        String contentType = findContentType(request.requestHeaders());
-        Codec codec = findCodec(contentType, typeToken);
-        return codec.decodeFlux(contentType, request.receive(), typeToken);
+        return decodeAsFlux(request.requestHeaders(), request.receive(), typeToken);
+    }
+
+    private String findContentType(HttpHeaders httpHeaders) {
+        return Optional.ofNullable(httpHeaders.get(HttpHeaderNames.CONTENT_TYPE))
+                .orElse(defaultContentType);
     }
 
     @Override

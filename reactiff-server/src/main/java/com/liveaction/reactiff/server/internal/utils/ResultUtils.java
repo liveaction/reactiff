@@ -21,8 +21,8 @@ public final class ResultUtils {
             }
             Mono<?> publisher = (Mono) result;
             return publisher
-                    .map(mono -> (Result)toTypedResult(Mono.just(mono), paramType))
-                    .switchIfEmpty(Mono.just(toTypedResult(null, paramType)));
+                    .map(val -> (Result)toTypedResult(Mono.just(val), paramType))
+                    .switchIfEmpty(Mono.just(toTypedResult(null, paramType))); // for Mono<Void>
 
         } else if (PUBLISHER_TYPE_TOKEN.isAssignableFrom(returnType)) {
             TypeToken<?> paramType = returnType.resolveType(Publisher.class.getTypeParameters()[0]);

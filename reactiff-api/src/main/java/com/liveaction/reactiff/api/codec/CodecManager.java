@@ -21,7 +21,7 @@ public interface CodecManager {
     }
 
     default <T> BiFunction<HttpClientResponse, Publisher<ByteBuf>, Mono<T>> decodeAsMono(TypeToken<T> typeToken) {
-        return (response, byteBufFlux) -> decodeAsMono(response, byteBufFlux, typeToken);
+        return (response, byteBufFlux) -> decodeAsMono(response.responseHeaders(), byteBufFlux, typeToken);
     }
 
     default <T> BiFunction<HttpClientResponse, Publisher<ByteBuf>, Flux<T>> decodeAsFlux(Class<T> clazz) {
@@ -29,7 +29,7 @@ public interface CodecManager {
     }
 
     default <T> BiFunction<HttpClientResponse, Publisher<ByteBuf>, Flux<T>> decodeAsFlux(TypeToken<T> typeToken) {
-        return (response, byteBufFlux) -> decodeAsFlux(response, byteBufFlux, typeToken);
+        return (response, byteBufFlux) -> decodeAsFlux(response.responseHeaders(), byteBufFlux, typeToken);
     }
 
 
@@ -52,12 +52,12 @@ public interface CodecManager {
                         .send(encodeAs(contentType, httpClientRequest.requestHeaders(), data, typeToken));
     }
 
-    default <T> Mono<T> decodeAsMono(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, Class<T> clazz) {
-        return decodeAsMono(response, byteBufFlux, TypeToken.of(clazz));
+    default <T> Mono<T> decodeAsMono(HttpHeaders httpHeaders, Publisher<ByteBuf> byteBufFlux, Class<T> clazz) {
+        return decodeAsMono(httpHeaders, byteBufFlux, TypeToken.of(clazz));
     }
 
-    default <T> Flux<T> decodeAsFlux(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, Class<T> clazz) {
-        return decodeAsFlux(response, byteBufFlux, TypeToken.of(clazz));
+    default <T> Flux<T> decodeAsFlux(HttpHeaders httpHeaders, Publisher<ByteBuf> byteBufFlux, Class<T> clazz) {
+        return decodeAsFlux(httpHeaders, byteBufFlux, TypeToken.of(clazz));
     }
 
     default <T> BiFunction<? super HttpClientRequest, ? super NettyOutbound, ? extends Publisher<Void>> send(Publisher<T> data, TypeToken<T> typeToken) {
@@ -76,11 +76,11 @@ public interface CodecManager {
 
     void setDefaultContentType(String defaultContentType);
 
-    <T> Mono<T> decodeAsMono(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken);
+    <T> Mono<T> decodeAsMono(HttpHeaders httpHeaders, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken);
 
     <T> Mono<T> decodeAsMono(HttpServerRequest request, TypeToken<T> typeToken);
 
-    <T> Flux<T> decodeAsFlux(HttpClientResponse response, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken);
+    <T> Flux<T> decodeAsFlux(HttpHeaders httpHeaders, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken);
 
     <T> Flux<T> decodeAsFlux(HttpServerRequest request, TypeToken<T> typeToken);
 
