@@ -26,7 +26,7 @@ public final class RawBinaryCodec implements Codec {
 
     @Override
     public boolean supports(String contentType, TypeToken<?> typeToken) {
-        return BINARY_DATA.stream().anyMatch(t -> t.isAssignableFrom(typeToken));
+        return typeToken != null && BINARY_DATA.stream().anyMatch(t -> t.isAssignableFrom(typeToken));
     }
 
     @Override

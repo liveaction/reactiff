@@ -3,22 +3,28 @@ package com.liveaction.reactiff.codec;
 import com.google.common.base.Throwables;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
+import com.liveaction.reactiff.api.server.Result;
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
 
+import javax.activation.MimetypesFileTypeMap;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Path;
 
 public final class RawFileCodec implements Codec {
 
     private static final TypeToken<File> FILE = TypeToken.of(File.class);
+    private static final TypeToken<Path> PATH = TypeToken.of(Path.class);
+    private static MimetypesFileTypeMap MIME_TYPE_MAP = new MimetypesFileTypeMap();
 
     @Override
     public int rank() {
@@ -27,7 +33,7 @@ public final class RawFileCodec implements Codec {
 
     @Override
     public boolean supports(String contentType, TypeToken<?> typeToken) {
-        return FILE.isAssignableFrom(typeToken);
+        return typeToken != null && (FILE.isAssignableFrom(typeToken) || PATH.isAssignableFrom(typeToken));
     }
 
     @Override
@@ -37,7 +43,7 @@ public final class RawFileCodec implements Codec {
 
     @Override
     public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return Flux.from(decode(byteBufFlux, typeToken));
+        return Flux.error(new IllegalArgumentException("Cannot get a flux a file"));
     }
 
     @SuppressWarnings("unchecked")
@@ -101,5 +107,25 @@ public final class RawFileCodec implements Codec {
                 fluxSink.error(e);
             }
         });
+    }
+
+    @Override
+    public <T> Mono<Result<T>> enrich(Result<T> result) {
+        return ((Mono<?>) result.data())
+                .map(item -> {
+                    String fileName;
+                    if (item instanceof File) {
+                        fileName = ((File) item).getName();
+                    } else if (item instanceof Path) {
+                        fileName = ((Path) item).getFileName().toString();
+                    } else {
+                        throw new IllegalArgumentException("Only Path and File is accepted");
+                    }
+                    return result.copy()
+                            .header(HttpHeaderNames.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                            .header(HttpHeaderNames.CONTENT_TYPE, MIME_TYPE_MAP.getContentType(fileName), false)
+                            .build();
+                });
+
     }
 }

@@ -1,6 +1,7 @@
 package com.liveaction.reactiff.api.codec;
 
 import com.google.common.reflect.TypeToken;
+import com.liveaction.reactiff.api.server.Result;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaders;
 import org.reactivestreams.Publisher;
@@ -84,6 +85,8 @@ public interface CodecManager {
 
     <T> Flux<T> decodeAsFlux(HttpServerRequest request, TypeToken<T> typeToken);
 
+    <T> Mono<Result<T>> enrichResult(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Result<T> result);
+
     /**
      * Negociate the best matching Content-Type between the requestHttpHeaders and the available codecs.
      * Read 'Accept' header from the requestHttpHeaders.
@@ -92,8 +95,6 @@ public interface CodecManager {
     <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data, TypeToken<T> typeToken);
 
     <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders responseHttpHeaders, Publisher<T> data, TypeToken<T> typeToken);
-
-    <T> Publisher<ByteBuf> encodeAs(String contentType, Publisher<T> data, TypeToken<T> typeToken);
 
     <T> Publisher<ByteBuf> encodeAs(HttpHeaders requestHttpHeaders, Publisher<T> data, TypeToken<T> typeToken);
 

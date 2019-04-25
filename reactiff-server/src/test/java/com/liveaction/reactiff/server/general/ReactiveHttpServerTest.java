@@ -3,32 +3,43 @@ package com.liveaction.reactiff.server.general;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
+import com.google.common.net.HttpHeaders;
 import com.liveaction.reactiff.api.codec.Body;
 import com.liveaction.reactiff.server.DefaultFilters;
 import com.liveaction.reactiff.server.general.example.AuthFilter;
+import com.liveaction.reactiff.server.general.example.FileTransferController;
 import com.liveaction.reactiff.server.general.example.TestController;
 import com.liveaction.reactiff.server.mock.Pojo;
 import com.liveaction.reactiff.server.rules.ReactorUtils;
 import com.liveaction.reactiff.server.rules.WithCodecManager;
 import com.liveaction.reactiff.server.rules.WithReactiveServer;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClientResponse;
 import reactor.test.StepVerifier;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 public final class ReactiveHttpServerTest {
+
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @ClassRule
     public static WithCodecManager withCodecManager = new WithCodecManager();
@@ -53,6 +64,41 @@ public final class ReactiveHttpServerTest {
             }))
             .withFilter(new AuthFilter())
             .withHandler(new TestController());
+
+    @Before
+    public void setUp() throws Exception {
+        withReactiveServer.withHandler(new FileTransferController(temporaryFolder.newFolder().toPath()));
+    }
+
+    @Test
+    public void shouldDownloadFile() {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .get()
+                .uri("/download/file")
+                .response()
+                .map(HttpClientResponse::responseHeaders)
+                .map(headers -> headers.entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))))
+                .expectNextMatches(map ->
+                        map.get(HttpHeaderNames.CONTENT_DISPOSITION.toString()).equals("attachment; filename=\"table.csv\"")
+                                && map.get(HttpHeaderNames.TRANSFER_ENCODING.toString()).equals(HttpHeaderValues.CHUNKED.toString())
+                                && !map.containsKey(HttpHeaders.CONTENT_LENGTH)).expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldDownloadPath() {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .get()
+                .uri("/download/path")
+                .response()
+                .map(HttpClientResponse::responseHeaders)
+                .map(headers -> headers.entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))))
+                .expectNextMatches(map ->
+                        map.get(HttpHeaderNames.CONTENT_DISPOSITION.toString()).equals("attachment; filename=\"table.csv\"")
+                                && map.get(HttpHeaderNames.TRANSFER_ENCODING.toString()).equals(HttpHeaderValues.CHUNKED.toString())
+                                && !map.containsKey(HttpHeaders.CONTENT_LENGTH)).expectComplete()
+                .verify();
+    }
 
     @Test
     public void shouldReceiveStrings() {

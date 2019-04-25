@@ -39,7 +39,7 @@ public final class FilterUtils {
                                                boolean writeErrorStacktrace) {
         Request request = new RequestImpl(req, codecManager, matchingRoute);
         FilterChain filterChain = chainFunction.apply(chain);
-        return filterChain.chain(request)
+        Mono<Result<?>> enrichedResult = filterChain.chain(request)
                 .onErrorResume(throwable -> {
                     int status = 500;
                     LOGGER.error("Unexpected error", throwable);
@@ -55,16 +55,23 @@ public final class FilterUtils {
                         return Mono.just(Result.withStatus(status, message));
                     }
                 })
+                .flatMap(result -> {
+//                    if (result.status().code() == 200) {
+                        return (Mono<Result<?>>) codecManager.enrichResult(req.requestHeaders(), res.responseHeaders(), result);
+//                    }
+                });
+        return enrichedResult
                 .flatMap(filteredResult -> {
-                    filteredResult.headers().forEach(res::header);
-                    HttpServerResponse httpServerResponse = res.status(filteredResult.status());
-                    Publisher<?> data = filteredResult.data();
+                    Result<?> result = filteredResult;
+                    HttpServerResponse httpServerResponse = res.status(result.status());
+                    result.headers().forEach(res::addHeader);
+                    Publisher<?> data = result.data();
                     if (data == null) {
                         return Mono.from(httpServerResponse.send());
                     } else {
                         return Mono.from(httpServerResponse
                                 .options(NettyPipeline.SendOptions::flushOnEach)
-                                .send(encodeResult(req, res, codecManager, filteredResult)));
+                                .send(encodeResult(req, res, codecManager, result)));
                     }
                 });
     }

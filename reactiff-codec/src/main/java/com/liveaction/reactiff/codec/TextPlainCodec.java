@@ -18,7 +18,7 @@ public final class TextPlainCodec implements Codec {
 
     @Override
     public boolean supports(String contentType, TypeToken<?> typeToken) {
-        return String.class.equals(typeToken.getRawType()) && contentType.toUpperCase().startsWith("TEXT/");
+        return typeToken != null && String.class.equals(typeToken.getRawType()) && contentType.toUpperCase().startsWith("TEXT/");
     }
 
     @Override

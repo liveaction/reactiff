@@ -3,6 +3,7 @@ package com.liveaction.reactiff.codec;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
 import com.liveaction.reactiff.api.codec.CodecManager;
+import com.liveaction.reactiff.api.server.Result;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -76,6 +77,18 @@ public final class CodecManagerImpl implements CodecManager {
     }
 
     @Override
+    public <T> Mono<Result<T>> enrichResult(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Result<T> result) {
+        String contentType = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
+        if (contentType == null) {
+            String acceptHeader = requestHttpHeaders.get(HttpHeaderNames.ACCEPT);
+            contentType = negociateContentType(acceptHeader, result.type());
+        }
+        return getOptionalCodec(contentType, result.type())
+                .map(codec -> codec.enrich(result))
+                .orElse(Mono.just(result));
+    }
+
+    @Override
     public <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         String contentType = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType == null) {
@@ -89,20 +102,7 @@ public final class CodecManagerImpl implements CodecManager {
     public <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders httpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         LOGGER.debug("Found an encoder for Content-Type='{}'", contentType);
         httpHeaders.set(HttpHeaderNames.CONTENT_TYPE, contentType);
-        return encodeAs(contentType, data, typeToken);
-    }
-
-    @Override
-    public <T> Publisher<ByteBuf> encodeAs(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
-        Codec codec = codecs.stream()
-                .filter(myCodec -> myCodec.supports(contentType, typeToken))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unable to found an encoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'"));
-        try {
-            return codec.encode(contentType, data, typeToken);
-        } catch (Exception e) {
-            return Flux.error(e);
-        }
+        return encodeAs(getCodec(contentType, typeToken), contentType, data, typeToken);
     }
 
     @Override
@@ -112,7 +112,27 @@ public final class CodecManagerImpl implements CodecManager {
             String acceptHeader = requestHttpHeaders.get(HttpHeaderNames.ACCEPT);
             contentType = negociateContentType(acceptHeader, typeToken);
         }
-        return encodeAs(contentType, data, typeToken);
+        return encodeAs(getCodec(contentType, typeToken), contentType, data, typeToken);
+    }
+
+    private <T> Publisher<ByteBuf> encodeAs(Codec codec, String contentType, Publisher<T> data, TypeToken<T> typeToken) {
+        try {
+            return codec.encode(contentType, data, typeToken);
+        } catch (Exception e) {
+            return Flux.error(e);
+        }
+    }
+
+    private <T> Codec getCodec(String contentType, TypeToken<T> typeToken) {
+        return getOptionalCodec(contentType, typeToken)
+                .orElseThrow(() -> new IllegalArgumentException("Unable to found an encoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'"));
+    }
+
+    private <T> Optional<Codec> getOptionalCodec(String contentType, TypeToken<T> typeToken) {
+        return codecs.stream()
+                .filter(myCodec -> myCodec.supports(contentType, typeToken))
+                .findFirst();
+
     }
 
     private String negociateContentType(String acceptHeader, TypeToken<?> typeToken) {

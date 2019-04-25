@@ -7,6 +7,8 @@
 Route not found: GET /yes_not_exists
 
 Available routes:
+	GET  /download/file          => FileTransferController.downloadFile()                                   : Result<File>
+	GET  /download/path          => FileTransferController.downloadPath()                                   : Result<Path>
 	GET  /boolean                => TestController.getBoolean(Request request)                              : Mono<Boolean>
 	GET  /booleans               => TestController.getBooleans(Request request)                             : Flux<Boolean>
 	GET  /failed                 => TestController.failed()                                                 : Mono<Result<String>>

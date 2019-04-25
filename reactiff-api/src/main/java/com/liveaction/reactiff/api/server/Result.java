@@ -57,7 +57,7 @@ public abstract class Result<T> {
         return Result.withStatus(HttpResponseStatus.FORBIDDEN.code(), reasonPhrase);
     }
 
-    public Builder copy() {
+    public Builder<T> copy() {
         Builder<T> builder = new Builder<>();
         builder.status(status());
         builder.data(data(), type());
@@ -93,7 +93,15 @@ public abstract class Result<T> {
         }
 
         public Builder<BT> header(CharSequence name, String value) {
-            httpHeaders.put(name.toString(), value);
+            return header(name, value, true);
+        }
+
+        public Builder<BT> header(CharSequence name, String value, boolean override) {
+            if (override) {
+                httpHeaders.put(name.toString(), value);
+            } else {
+                httpHeaders.putIfAbsent(name.toString(), value);
+            }
             return this;
         }
 
