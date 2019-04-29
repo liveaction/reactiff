@@ -53,6 +53,10 @@ public abstract class Result<T> {
         return Result.withStatus(HttpResponseStatus.UNAUTHORIZED.code(), reasonPhrase);
     }
 
+    public static Result internalServer(String reasonPhrase) {
+        return Result.withStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR.code(), reasonPhrase);
+    }
+
     public static Result forbidden(String reasonPhrase) {
         return Result.withStatus(HttpResponseStatus.FORBIDDEN.code(), reasonPhrase);
     }
