@@ -21,7 +21,7 @@ However, `reactor-netty` provides only a low level API which supports basic hand
 
 It may require writing some code to be used in a daily application that serves a REST API over the web and consumed by a frontend tier.
 
-This is the gap that `reactiff` is trying to fill :
+This is the gap `reactiff` is trying to fill :
 
 - a language to describe REST handlers
 - a language to describe filters (with common web filters)
