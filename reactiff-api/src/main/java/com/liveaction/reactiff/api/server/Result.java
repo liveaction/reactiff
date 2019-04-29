@@ -61,6 +61,14 @@ public abstract class Result<T> {
         return Result.withStatus(HttpResponseStatus.FORBIDDEN.code(), reasonPhrase);
     }
 
+    public static Result badRequest(String reasonPhrase) {
+        return Result.withStatus(HttpResponseStatus.BAD_REQUEST.code(), reasonPhrase);
+    }
+
+    public static Result noContent(String reasonPhrase) {
+        return Result.withStatus(HttpResponseStatus.NO_CONTENT.code(), reasonPhrase);
+    }
+
     public Builder<T> copy() {
         Builder<T> builder = new Builder<>();
         builder.status(status());
