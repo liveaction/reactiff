@@ -16,6 +16,7 @@ import com.liveaction.reactiff.server.internal.template.TemplateEngineImpl;
 import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.server.HttpServerRequest;
@@ -56,6 +57,9 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
 
     private final boolean writeErrorStacktrace;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(Router.class);
+
+
     public Router(CodecManager codecManager, Function<FilterChain, FilterChain> filterFunction, boolean writeErrorStacktrace) {
         this.codecManager = codecManager;
         this.filterFunction = filterFunction;
@@ -68,8 +72,13 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
 
     public void addReactiveHander(ReactiveHandler reactiveHandler) {
         this.reactiveHandlers.add(reactiveHandler);
-        logRegister(reactiveHandler);
-        updateRoutes();
+        try {
+            logRegister(reactiveHandler);
+            updateRoutes();
+        } catch (Throwable t) { // catch all errors to let other handlers be registered
+            LOGGER.error(String.format("Error occured while registering routes of handler %s", reactiveHandler.getClass().getSimpleName()), t);
+            removeReactiveHander(reactiveHandler);
+        }
     }
 
     public void removeReactiveHander(ReactiveHandler reactiveHandler) {
