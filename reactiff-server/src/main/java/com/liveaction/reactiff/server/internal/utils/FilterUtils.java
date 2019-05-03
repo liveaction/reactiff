@@ -55,11 +55,7 @@ public final class FilterUtils {
                         return Mono.just(Result.withStatus(status, message));
                     }
                 })
-                .flatMap(result -> {
-//                    if (result.status().code() == 200) {
-                        return (Mono<Result<?>>) codecManager.enrichResult(req.requestHeaders(), res.responseHeaders(), result);
-//                    }
-                });
+                .flatMap(result -> (Mono<Result<?>>) codecManager.enrichResult(req.requestHeaders(), res.responseHeaders(), result));
         return enrichedResult
                 .flatMap(filteredResult -> {
                     Result<?> result = filteredResult;
