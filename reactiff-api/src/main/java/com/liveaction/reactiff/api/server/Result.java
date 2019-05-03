@@ -105,7 +105,7 @@ public abstract class Result<T> {
         }
 
         public Builder<BT> header(CharSequence name, String value) {
-            return header(name, value, true);
+            return header(name, value, false);
         }
 
         public Builder<BT> header(CharSequence name, String value, boolean override) {
