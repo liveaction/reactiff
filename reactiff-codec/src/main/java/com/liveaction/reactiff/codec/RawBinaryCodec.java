@@ -9,6 +9,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
+import reactor.netty.ByteBufMono;
 
 import java.nio.ByteBuffer;
 
@@ -30,24 +31,34 @@ public final class RawBinaryCodec implements Codec {
     }
 
     @Override
-    public <T> Mono<T> decodeMono(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return Mono.from(decode(byteBufFlux, typeToken));
+    @SuppressWarnings("unchecked")
+    public <T> Mono<T> decodeMono(String contentType, Publisher<ByteBuf> input, TypeToken<T> typeToken) {
+        ByteBufMono byteBufMono = ByteBufFlux.fromInbound(input)
+                .aggregate();
+        if (BYTE_ARRAY.isAssignableFrom(typeToken)) {
+            return (Mono<T>) byteBufMono
+                    .asByteArray();
+        } else if (BYTE_BUFF.isAssignableFrom(typeToken)) {
+            return (Mono<T>) byteBufMono;
+        } else if (BYTE_BUFFER_TYPE_TOKEN.isAssignableFrom(typeToken)) {
+            return (Mono<T>) byteBufMono
+                    .asByteBuffer();
+        } else {
+            throw new IllegalArgumentException("Unable to encode to type '" + typeToken + "'");
+        }
     }
 
     @Override
-    public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return Flux.from(decode(byteBufFlux, typeToken));
-    }
-
     @SuppressWarnings("unchecked")
-    private <T> Publisher<T> decode(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
+    public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> input, TypeToken<T> typeToken) {
+        ByteBufFlux byteBufFlux = ByteBufFlux.fromInbound(input);
         if (BYTE_ARRAY.isAssignableFrom(typeToken)) {
-            return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux)
+            return (Flux<T>) byteBufFlux
                     .asByteArray();
         } else if (BYTE_BUFF.isAssignableFrom(typeToken)) {
-            return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux);
+            return (Flux<T>) byteBufFlux;
         } else if (BYTE_BUFFER_TYPE_TOKEN.isAssignableFrom(typeToken)) {
-            return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux)
+            return (Flux<T>) byteBufFlux
                     .asByteBuffer();
         } else {
             throw new IllegalArgumentException("Unable to encode to type '" + typeToken + "'");
