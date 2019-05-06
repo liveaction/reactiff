@@ -136,20 +136,22 @@ public final class CodecManagerImpl implements CodecManager {
     }
 
     private String negociateContentType(String acceptHeader, TypeToken<?> typeToken) {
-        for (String contentType : acceptHeader.split(",")) {
-            String trim = contentType.trim();
-            Optional<String> matches = codecs.stream()
-                    .map(codec -> {
-                        if (codec.supports(trim, typeToken)) {
-                            return trim;
-                        } else {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .findFirst();
-            if (matches.isPresent()) {
-                return matches.get();
+        if (acceptHeader != null) {
+            for (String contentType : acceptHeader.split(",")) {
+                String trim = contentType.trim();
+                Optional<String> matches = codecs.stream()
+                        .map(codec -> {
+                            if (codec.supports(trim, typeToken)) {
+                                return trim;
+                            } else {
+                                return null;
+                            }
+                        })
+                        .filter(Objects::nonNull)
+                        .findFirst();
+                if (matches.isPresent()) {
+                    return matches.get();
+                }
             }
         }
         return defaultContentType;
