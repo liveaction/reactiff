@@ -24,12 +24,7 @@ import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.HttpServerRoutes;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -40,6 +35,7 @@ import static java.util.stream.Collectors.toList;
 public final class Router implements BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> {
 
     private static final Comparator<Route> ROUTE_ORDER = Comparator.comparingInt(Route::rank)
+            .thenComparing(Route::hasUriParam)
             .thenComparing(Route::descriptor)
             .thenComparing(Route::path)
             .thenComparing(r -> r.handlerMethod().getName());
@@ -73,7 +69,6 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
     public void addReactiveHander(ReactiveHandler reactiveHandler) {
         this.reactiveHandlers.add(reactiveHandler);
         try {
-            logRegister(reactiveHandler);
             updateRoutes();
         } catch (Throwable t) { // catch all errors to let other handlers be registered
             LOGGER.error(String.format("Error occured while registering routes of handler %s", reactiveHandler.getClass().getSimpleName()), t);
@@ -83,7 +78,6 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
 
     public void removeReactiveHander(ReactiveHandler reactiveHandler) {
         this.reactiveHandlers.remove(reactiveHandler);
-        logUnregister(reactiveHandler);
         updateRoutes();
     }
 
@@ -94,28 +88,29 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
 
     private void updateRoutes() {
         HttpServerRoutes httpServerRoutes = HttpServerRoutes.newRoutes();
-        handlerSupportFunctions.forEach(handlerSupportFunction -> reactiveHandlers.forEach(rh -> registerMethod(httpServerRoutes, rh, handlerSupportFunction)));
+
+        reactiveHandlers.forEach(rh -> registerMethod(httpServerRoutes, rh));
         httpServerRoutes.route(httpServerRequest -> true, (req, res) -> FilterUtils.applyFilters(req, res, codecManager, filterFunction, this::notFound, Optional.empty(), writeErrorStacktrace));
         this.httpServerRoutes = httpServerRoutes;
     }
 
-    private void logRegister(ReactiveHandler reactiveHandler) {
-        handlerSupportFunctions.forEach(handlerSupportFunction -> getAnnotatedRoutes(reactiveHandler, handlerSupportFunction)
-                .forEach(route ->
-                        LoggerFactory.getLogger(Router.class).info("Register route {}", route)
-                ));
+    private void registerMethod(HttpServerRoutes httpServerRoutes, ReactiveHandler reactiveHandler) {
+        getRoutes(reactiveHandler)
+                .forEach(handledRoute -> {
+                    LoggerFactory.getLogger(Router.class).info("Register route {}", handledRoute.route);
+                    handledRoute.register(httpServerRoutes, reactiveHandler);
+                });
     }
 
-    private void logUnregister(ReactiveHandler reactiveHandler) {
-        handlerSupportFunctions.forEach(handlerSupportFunction -> getAnnotatedRoutes(reactiveHandler, handlerSupportFunction)
-                .forEach(route ->
-                        LoggerFactory.getLogger(Router.class).info("Unregister route {}", route)
-                ));
+    private Stream<? extends HandledRoute<? extends Annotation, ? extends Route>> getRoutes(ReactiveHandler reactiveHandler) {
+        return handlerSupportFunctions.stream()
+                .flatMap(handlerSupportFunction -> getHandledRoutes(reactiveHandler, handlerSupportFunction))
+                .sorted((r1, r2) -> ROUTE_ORDER.compare(r1.route, r2.route));
     }
 
-    private <T extends Annotation, R extends Route> void registerMethod(HttpServerRoutes httpServerRoutes, ReactiveHandler reactiveHandler, HandlerSupportFunction<T, R> handlerSupportFunction) {
-        getAnnotatedRoutes(reactiveHandler, handlerSupportFunction)
-                .forEach(route -> handlerSupportFunction.register(httpServerRoutes, reactiveHandler, route));
+    private <T extends Annotation, R extends Route> Stream<HandledRoute<T, R>> getHandledRoutes(ReactiveHandler reactiveHandler, HandlerSupportFunction<T, R> handlerSupportFunction) {
+        return getAnnotatedRoutes(reactiveHandler, handlerSupportFunction)
+                .map(route -> new HandledRoute<>(route, handlerSupportFunction));
     }
 
     private <T extends Annotation, R extends Route> Stream<R> getAnnotatedRoutes(ReactiveHandler reactiveHandler, HandlerSupportFunction<T, R> handlerSupportFunction) {
@@ -125,14 +120,13 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
                 .flatMap(methodEntry ->
                         handlerSupportFunction.buildRoutes(methodEntry.getKey(), methodEntry.getValue())
                                 .stream()
-                )
-                .sorted(ROUTE_ORDER);
+                );
     }
 
     private Mono<Result> notFound(Request request) {
         List<Route> routes = reactiveHandlers.stream()
-                .flatMap(reactiveHandler -> handlerSupportFunctions.stream()
-                        .flatMap(handlerSupportFunction -> getAnnotatedRoutes(reactiveHandler, handlerSupportFunction)))
+                .flatMap(this::getRoutes)
+                .map(hr -> hr.route)
                 .collect(toList());
 
         ImmutableMap<String, String> parameters = ImmutableMap.of("requestMethod", request.method().name(), "requestUri", request.uri(), "routes", formatRoutes(routes));
@@ -143,5 +137,20 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
                         .data(Mono.just(page), String.class)
                         .build());
     }
+
+    private static final class HandledRoute<T extends Annotation, R extends Route> {
+        final R route;
+        final HandlerSupportFunction<T, R> handlerSupportFunction;
+
+        private HandledRoute(R route, HandlerSupportFunction<T, R> handlerSupportFunction) {
+            this.route = route;
+            this.handlerSupportFunction = handlerSupportFunction;
+        }
+
+        void register(HttpServerRoutes httpServerRoutes, ReactiveHandler reactiveHandler) {
+            handlerSupportFunction.register(httpServerRoutes, reactiveHandler, route);
+        }
+    }
+
 
 }

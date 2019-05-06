@@ -42,7 +42,7 @@ public final class FilterUtils {
         Mono<Result<?>> enrichedResult = filterChain.chain(request)
                 .onErrorResume(throwable -> {
                     int status = 500;
-                    LOGGER.error("Unexpected error", throwable);
+                    LOGGER.error("Unexpected error for {}", req.uri(), throwable);
                     String message = throwable.getMessage();
                     if (message == null) {
                         message = HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase();

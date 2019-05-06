@@ -17,7 +17,6 @@ Available routes:
 	GET  /yes/nosuch             => TestController.noSuchElementException(Request request)                  : Mono<Void>
 	GET  /yes/nosuchflux         => TestController.noSuchElementExceptionFlux(Request request)              : Mono<Result<Void>>
 	GET  /yes/unauthorized       => TestController.unauthorizedException(Request request)                   : Mono<Void>
-	GET  /yes/{name}             => TestController.yes(Request request)                                     : Flux<String>
 	POST /boolean/flux/from/mono => TestController.booleanFluxFromMono(Request request)                     : Flux<Boolean>
 	POST /boolean/mono/from/flux => TestController.booleanMonoFromFlux(Request request)                     : Mono<Boolean>
 	POST /monovoid               => TestController.executeVoid()                                            : Mono<Void>
@@ -26,3 +25,4 @@ Available routes:
 	POST /yes                    => TestController.postPojo(Request request)                                : Flux<Pojo>
 	POST /yes/heavy              => TestController.postHeavyPojo(Request request)                           : Flux<Pojo>
 	WS   /websocket              => TestController.yesWebSocket(WebsocketInbound in, WebsocketOutbound out) : Publisher<Void>
+	GET  /yes/{name}             => TestController.yes(Request request)                                     : Flux<String>

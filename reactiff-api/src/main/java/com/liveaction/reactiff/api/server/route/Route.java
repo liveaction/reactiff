@@ -4,8 +4,11 @@ import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.utils.FormatUtils;
 
 import java.lang.reflect.Method;
+import java.util.regex.Pattern;
 
 public abstract class Route {
+
+    private static final Pattern URI_PARAM_PATTERN = Pattern.compile(".*\\{[^}]*}.*");
 
     public static HttpRoute http(int rank, HttpMethod method, String path, Method handlerMethod) {
         return new HttpRoute(rank, method, path, handlerMethod);
@@ -22,6 +25,10 @@ public abstract class Route {
     public abstract String path();
 
     public abstract Method handlerMethod();
+
+    public boolean hasUriParam() {
+        return URI_PARAM_PATTERN.matcher(path()).matches();
+    }
 
     @Override
     public String toString() {

@@ -38,7 +38,7 @@ public final class TestController implements ReactiveHandler {
         return Mono.error(new IllegalAccessException("Access forbidden by me"));
     }
 
-    @RequestMapping(method = HttpMethod.GET, path = "/yes/{name}", rank = 1)
+    @RequestMapping(method = HttpMethod.GET, path = "/yes/{name}")
     public Flux<String> yes(Request request) {
         return Flux.just("Hey " + request.pathParam("name"), "Hey baby !");
     }
