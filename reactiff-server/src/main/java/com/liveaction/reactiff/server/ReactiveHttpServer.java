@@ -6,6 +6,7 @@ import com.liveaction.reactiff.api.server.ReactiveHandler;
 import reactor.netty.http.HttpProtocol;
 
 import java.io.Closeable;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 public interface ReactiveHttpServer extends Closeable {
@@ -22,9 +23,15 @@ public interface ReactiveHttpServer extends Closeable {
 
         Builder filter(ReactiveFilter filter);
 
+        Builder filter(ReactiveFilter filter, boolean add);
+
         Builder handler(ReactiveHandler handler);
 
+        Builder handler(ReactiveHandler handler, boolean add);
+
         Builder codecManager(CodecManager codecManager);
+
+        Builder executor(Executor executor);
 
         Builder wiretap(boolean wiretap);
 

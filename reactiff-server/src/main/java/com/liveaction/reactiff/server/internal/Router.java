@@ -67,16 +67,18 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
     }
 
     public void addReactiveHander(ReactiveHandler reactiveHandler) {
+        LOGGER.info("Adding Controller {}", reactiveHandler.getClass().getName());
         this.reactiveHandlers.add(reactiveHandler);
         try {
             updateRoutes();
         } catch (Throwable t) { // catch all errors to let other handlers be registered
-            LOGGER.error(String.format("Error occured while registering routes of handler %s", reactiveHandler.getClass().getSimpleName()), t);
+            LOGGER.error(String.format("Error occurred while registering routes of handler %s", reactiveHandler.getClass().getSimpleName()), t);
             removeReactiveHander(reactiveHandler);
         }
     }
 
     public void removeReactiveHander(ReactiveHandler reactiveHandler) {
+        LOGGER.info("Removing Controller {}", reactiveHandler.getClass().getName());
         this.reactiveHandlers.remove(reactiveHandler);
         updateRoutes();
     }

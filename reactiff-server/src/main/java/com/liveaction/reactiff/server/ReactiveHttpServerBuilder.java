@@ -11,6 +11,7 @@ import reactor.util.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.Executor;
 
 final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
 
@@ -23,6 +24,8 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
     private Collection<ReactiveFilter> filters = Sets.newHashSet();
 
     private Collection<ReactiveHandler> handlers = Sets.newHashSet();
+
+    private Executor executor;
 
     private boolean wiretap = false;
 
@@ -59,19 +62,43 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
 
     @Override
     public ReactiveHttpServer.Builder filter(ReactiveFilter filter) {
-        filters.add(filter);
+        return filter(filter, true);
+    }
+
+    @Override
+    public ReactiveHttpServer.Builder filter(ReactiveFilter filter, boolean add) {
+        if (add) {
+            this.filters.add(filter);
+        } else {
+            this.filters.remove(filter);
+        }
         return this;
     }
 
     @Override
     public ReactiveHttpServer.Builder handler(ReactiveHandler handler) {
-        this.handlers.add(handler);
+        return handler(handler, true);
+    }
+
+    @Override
+    public ReactiveHttpServer.Builder handler(ReactiveHandler handler, boolean add) {
+        if (add) {
+            this.handlers.add(handler);
+        } else {
+            this.handlers.remove(handler);
+        }
         return this;
     }
 
     @Override
     public ReactiveHttpServer.Builder codecManager(CodecManager codecManager) {
         this.codecManager = codecManager;
+        return this;
+    }
+
+    @Override
+    public ReactiveHttpServer.Builder executor(Executor executor) {
+        this.executor = executor;
         return this;
     }
 
@@ -98,7 +125,7 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
         if (codecManager == null) {
             codecManager = new CodecManagerImpl();
         }
-        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, wiretap, compress, writeErrorStacktrace);
+        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, executor, wiretap, compress, writeErrorStacktrace);
         filters.forEach(reactiveHttpServer::addReactiveFilter);
         handlers.forEach(reactiveHttpServer::addReactiveHandler);
         return reactiveHttpServer;
