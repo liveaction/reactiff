@@ -15,6 +15,7 @@ import com.liveaction.reactiff.server.rules.WithCodecManager;
 import com.liveaction.reactiff.server.rules.WithReactiveServer;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.junit.Before;
@@ -570,5 +571,27 @@ public final class ReactiveHttpServerTest {
                 .expectComplete()
                 .verify();
 
+    }
+
+    @Test
+    public void shouldSetCookie() {
+        StepVerifier.create(
+                withReactiveServer.httpClient()
+                .get()
+                .uri("/setCookie")
+                .response())
+                .expectNextMatches(httpClientResponse -> {
+                     if (httpClientResponse.cookies().size() == 1) {
+                         Cookie cookie = httpClientResponse.cookies().get("cookieName").iterator().next();
+                         return cookie.isSecure() == true
+                                 && cookie.isHttpOnly() == true
+                                 && cookie.value().equals("cookieValue")
+                                 && cookie.maxAge() == Duration.ofHours(1).getSeconds();
+                     } else {
+                         return false;
+                     }
+                })
+                .expectComplete()
+                .verify();
     }
 }

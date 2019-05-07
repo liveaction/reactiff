@@ -8,12 +8,16 @@ import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.annotation.WsMapping;
 import com.liveaction.reactiff.server.mock.Pojo;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.websocket.WebsocketInbound;
 import reactor.netty.http.websocket.WebsocketOutbound;
 
+import java.time.Duration;
 import java.util.NoSuchElementException;
 
 public final class TestController implements ReactiveHandler {
@@ -115,6 +119,18 @@ public final class TestController implements ReactiveHandler {
     @RequestMapping(method = HttpMethod.POST, path = "/monovoid")
     public Mono<Void> executeVoid() {
         return Mono.empty();
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/setCookie")
+    public Mono<Result> setCookie() {
+        Cookie c = new DefaultCookie("cookieName", "cookieValue");
+        c.setHttpOnly(true);
+        c.setSecure(true);
+        c.setMaxAge(Duration.ofHours(1).getSeconds());
+        return Mono.just(Result.builder()
+                .status(HttpResponseStatus.OK.code(), "OK")
+                .cookie(c)
+                .build());
     }
 
 }

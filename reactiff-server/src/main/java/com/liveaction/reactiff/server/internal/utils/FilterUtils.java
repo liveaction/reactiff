@@ -9,6 +9,7 @@ import com.liveaction.reactiff.api.server.route.Route;
 import com.liveaction.reactiff.server.RequestImpl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,7 @@ public final class FilterUtils {
                     Result<?> result = filteredResult;
                     HttpServerResponse httpServerResponse = res.status(result.status());
                     result.headers().forEach(res::addHeader);
+                    result.cookies().forEach(res::addCookie);
                     Publisher<?> data = result.data();
                     if (data == null) {
                         return Mono.from(httpServerResponse.send());

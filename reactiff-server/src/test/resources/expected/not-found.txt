@@ -14,6 +14,7 @@ Available routes:
 	GET  /failed                 => TestController.failed()                                                 : Mono<Result<String>>
 	GET  /non                    => TestController.unauthorized()                                           : Mono<String>
 	GET  /oui                    => TestController.authorized()                                             : Mono<String>
+	GET  /setCookie              => TestController.setCookie()                                              : Mono<Result<Object>>
 	GET  /yes/nosuch             => TestController.noSuchElementException(Request request)                  : Mono<Void>
 	GET  /yes/nosuchflux         => TestController.noSuchElementExceptionFlux(Request request)              : Mono<Result<Void>>
 	GET  /yes/unauthorized       => TestController.unauthorizedException(Request request)                   : Mono<Void>
