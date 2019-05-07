@@ -35,32 +35,15 @@ public final class ParamUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T convertValue(String input, TypeToken<T> typeToken) throws IllegalArgumentException {
+    public static <T> T convertValue(List<String> input, TypeToken<T> typeToken) throws IllegalArgumentException {
         Class<T> rawType = (Class<T>) typeToken.getRawType();
         if (rawType.isArray()) {
-            List<String> args = getMultipleValues(input);
-            return createArray(args, rawType.getComponentType());
+            return createArray(input, rawType.getComponentType());
         } else if (Collection.class.isAssignableFrom(rawType)) {
-            List<String> args = getMultipleValues(input);
-            return createCollection(args, typeToken);
+            return createCollection(input, typeToken);
         } else {
-            return convertSingleValue(input, rawType);
+            return convertSingleValue(input.get(0), rawType);
         }
-    }
-
-    private static List<String> getMultipleValues(String input) {
-        if (input == null) {
-            return null;
-        }
-        String[] segments = input.split(",");
-        List<String> values = new ArrayList<>();
-        for (String s : segments) {
-            String v = s.trim();
-            if (!v.isEmpty()) {
-                values.add(v);
-            }
-        }
-        return values;
     }
 
     @SuppressWarnings("unchecked")

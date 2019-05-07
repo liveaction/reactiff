@@ -1,5 +1,6 @@
 package com.liveaction.reactiff.server.internal.support;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
@@ -63,7 +64,8 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
     @Override
     public void register(HttpServerRoutes httpServerRoutes, ReactiveHandler reactiveHandler, HttpRoute route) {
         Method method = route.handlerMethod();
-        FilterChain routeChain = (request) -> invokeHandlerMethod(reactiveHandler, method, request);
+        FilterChain routeChain = (request) -> invokeHandlerMethod(reactiveHandler, method, request)
+                .doOnError(error -> LOGGER.warn("An error occurred while calling {}:{}", reactiveHandler.getClass().getSimpleName(), method.getName(), error));
         BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> {
             Optional<Route> matchingRoute = Optional.of(Route.http(0, HttpMethod.valueOf(req.method().name()), route.path(), method));
             return FilterUtils.applyFilters(req, res, codecManager, filterChainer, routeChain, matchingRoute, writeErrorStacktrace);
@@ -80,6 +82,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
             for (int i = 0; i < method.getParameterCount(); i++) {
                 Parameter parameter = parameters[i];
                 TypeToken<?> parameterType = TypeToken.of(parameter.getType());
+                TypeToken<?> parametrizedType = TypeToken.of(parameter.getParameterizedType());
                 if (parameterType.isAssignableFrom(Request.class)) {
                     args.add(request);
                 } else {
@@ -91,9 +94,8 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
-                        args.add(ParamUtils.convertValue(request.pathParam(name), parameterType));
+                        args.add(ParamUtils.convertValue(ImmutableList.of(request.pathParam(name)), parametrizedType));
                     } else if (parameter.getAnnotation(RequestBody.class) != null) {
-                        TypeToken<?> parametrizedType = TypeToken.of(parameter.getParameterizedType());
                         if (parameterType.isAssignableFrom(Mono.class)) {
                             TypeToken<?> paramType = parametrizedType.resolveType(Mono.class.getTypeParameters()[0]);
                             args.add(request.bodyToMono(paramType));
@@ -108,22 +110,22 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
-                        args.add(ParamUtils.convertValue(request.header(name), parameterType));
+                        args.add(ParamUtils.convertValue(request.headers(name), parametrizedType));
                     } else if ((uriParam = parameter.getAnnotation(UriParam.class)) != null) {
                         String name = uriParam.value();
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
-                        args.add(ParamUtils.convertValue(request.uriParam(name), parameterType));
+                        args.add(ParamUtils.convertValue(request.uriParams(name), parametrizedType));
                     }
                 }
             }
             Object rawResult = method.invoke(reactiveHandler, args.toArray());
             return ResultUtils.toResult(returnType, rawResult);
-        } catch (IllegalAccessException e) {
-            return Mono.error(e);
         } catch (InvocationTargetException e) {
             return Mono.error(e.getTargetException());
+        } catch (Throwable e) {
+            return Mono.error(e);
         }
     }
 
