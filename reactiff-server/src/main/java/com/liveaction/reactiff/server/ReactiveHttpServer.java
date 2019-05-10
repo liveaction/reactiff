@@ -34,6 +34,10 @@ public interface ReactiveHttpServer extends Closeable {
 
         Builder handler(ReactiveHandler handler, boolean add);
 
+        Builder converter(ParamTypeConverter<?> converter);
+
+        Builder converter(ParamTypeConverter<?> converter, boolean add);
+
         Builder codecManager(CodecManager codecManager);
 
         Builder executor(Executor executor);

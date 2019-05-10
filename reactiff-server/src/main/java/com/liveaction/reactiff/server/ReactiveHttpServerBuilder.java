@@ -6,6 +6,7 @@ import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
 import com.liveaction.reactiff.server.internal.ReactiveHttpServerImpl;
+import com.liveaction.reactiff.server.internal.param.converter.ParamTypeConverter;
 import reactor.netty.http.HttpProtocol;
 import reactor.util.annotation.Nullable;
 
@@ -24,6 +25,8 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
     private Collection<ReactiveFilter> filters = Sets.newHashSet();
 
     private Collection<ReactiveHandler> handlers = Sets.newHashSet();
+
+    private Collection<ParamTypeConverter<?>> converters = Sets.newHashSet();
 
     private Executor executor;
 
@@ -91,6 +94,21 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
     }
 
     @Override
+    public ReactiveHttpServer.Builder converter(ParamTypeConverter<?> converter) {
+        return converter(converter, true);
+    }
+
+    @Override
+    public ReactiveHttpServer.Builder converter(ParamTypeConverter<?> converter, boolean add) {
+        if (add) {
+            this.converters.add(converter);
+        } else {
+            this.converters.remove(converter);
+        }
+        return this;
+    }
+
+    @Override
     public ReactiveHttpServer.Builder codecManager(CodecManager codecManager) {
         this.codecManager = codecManager;
         return this;
@@ -128,6 +146,7 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
         ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, executor, wiretap, compress, writeErrorStacktrace);
         filters.forEach(reactiveHttpServer::addReactiveFilter);
         handlers.forEach(reactiveHttpServer::addReactiveHandler);
+        converters.forEach(reactiveHttpServer::addParamTypeConverter);
         return reactiveHttpServer;
     }
 
