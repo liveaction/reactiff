@@ -1,4 +1,4 @@
-package com.liveaction.reactiff.server.internal.param.converter;
+package com.liveaction.reactiff.server.param.converter;
 
 public interface ParamTypeConverter<T> {
 

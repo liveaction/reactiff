@@ -7,6 +7,7 @@ import com.google.common.collect.Sets;
 import com.google.common.primitives.Primitives;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.server.internal.param.converter.*;
+import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,5 +1,7 @@
 package com.liveaction.reactiff.server.internal.param.converter;
 
+import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
+
 public final class StringConverter implements ParamTypeConverter<String> {
 
     public static final StringConverter INSTANCE = new StringConverter();

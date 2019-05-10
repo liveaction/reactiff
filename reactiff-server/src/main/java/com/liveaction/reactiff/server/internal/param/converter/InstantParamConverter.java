@@ -1,5 +1,7 @@
 package com.liveaction.reactiff.server.internal.param.converter;
 
+import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
+
 import java.time.Instant;
 
 public final class InstantParamConverter implements ParamTypeConverter<Instant> {

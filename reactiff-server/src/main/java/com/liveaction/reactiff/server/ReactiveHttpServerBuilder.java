@@ -6,7 +6,7 @@ import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
 import com.liveaction.reactiff.server.internal.ReactiveHttpServerImpl;
-import com.liveaction.reactiff.server.internal.param.converter.ParamTypeConverter;
+import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
 import reactor.netty.http.HttpProtocol;
 import reactor.util.annotation.Nullable;
 
