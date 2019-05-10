@@ -9,6 +9,7 @@ import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.route.Route;
+import com.liveaction.reactiff.server.internal.param.ParamConverter;
 import com.liveaction.reactiff.server.internal.support.HandlerSupportFunction;
 import com.liveaction.reactiff.server.internal.support.RequestMappingSupport;
 import com.liveaction.reactiff.server.internal.support.WsMappingSupport;
@@ -56,11 +57,11 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
     private static final Logger LOGGER = LoggerFactory.getLogger(Router.class);
 
 
-    public Router(CodecManager codecManager, Function<FilterChain, FilterChain> filterFunction, boolean writeErrorStacktrace) {
+    public Router(CodecManager codecManager, ParamConverter paramConverter, Function<FilterChain, FilterChain> filterFunction, boolean writeErrorStacktrace) {
         this.codecManager = codecManager;
         this.filterFunction = filterFunction;
         this.handlerSupportFunctions = ImmutableSet.of(
-                new RequestMappingSupport(codecManager, filterFunction, writeErrorStacktrace),
+                new RequestMappingSupport(codecManager, paramConverter, filterFunction, writeErrorStacktrace),
                 new WsMappingSupport()
         );
         this.writeErrorStacktrace = writeErrorStacktrace;

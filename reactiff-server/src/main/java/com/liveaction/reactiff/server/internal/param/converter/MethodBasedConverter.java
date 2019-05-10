@@ -6,7 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-public final class MethodBasedConverter<T> implements ParamConverter<T> {
+public final class MethodBasedConverter<T> implements ParamTypeConverter<T> {
 
     private static final String FROM = "from";
     private static final String FROM_STRING = "fromString";

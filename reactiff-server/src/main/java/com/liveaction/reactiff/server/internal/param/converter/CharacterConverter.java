@@ -1,6 +1,6 @@
 package com.liveaction.reactiff.server.internal.param.converter;
 
-public final class CharacterConverter implements ParamConverter<Character> {
+public final class CharacterConverter implements ParamTypeConverter<Character> {
 
     public static final CharacterConverter INSTANCE = new CharacterConverter();
 

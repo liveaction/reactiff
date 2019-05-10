@@ -3,6 +3,7 @@ package com.liveaction.reactiff.server;
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
+import com.liveaction.reactiff.server.internal.param.converter.ParamTypeConverter;
 import reactor.netty.http.HttpProtocol;
 
 import java.io.Closeable;
@@ -10,6 +11,10 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 public interface ReactiveHttpServer extends Closeable {
+
+    void addParamTypeConverter(ParamTypeConverter<?> paramTypeConverter);
+
+    void removeParamTypeConverter(ParamTypeConverter<?> paramTypeConverter);
 
     interface Builder {
 

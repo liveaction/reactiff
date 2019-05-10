@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public final class ConstructorBasedConverter<T> implements ParamConverter<T> {
+public final class ConstructorBasedConverter<T> implements ParamTypeConverter<T> {
 
     private final Constructor<T> constructor;
     private final Class<T> clazz;

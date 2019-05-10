@@ -13,7 +13,7 @@ import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.annotation.*;
 import com.liveaction.reactiff.api.server.route.HttpRoute;
 import com.liveaction.reactiff.api.server.route.Route;
-import com.liveaction.reactiff.server.internal.param.ParamUtils;
+import com.liveaction.reactiff.server.internal.param.ParamConverter;
 import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import com.liveaction.reactiff.server.internal.utils.ResultUtils;
 import org.reactivestreams.Publisher;
@@ -40,11 +40,14 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestMappingSupport.class);
 
     private final CodecManager codecManager;
+    private final ParamConverter paramConverter;
     private final Function<FilterChain, FilterChain> filterChainer;
     private final boolean writeErrorStacktrace;
 
-    public RequestMappingSupport(CodecManager codecManager, Function<FilterChain, FilterChain> chainFunction, boolean writeErrorStacktrace) {
+    public RequestMappingSupport(CodecManager codecManager, ParamConverter paramConverter,
+                                 Function<FilterChain, FilterChain> chainFunction, boolean writeErrorStacktrace) {
         this.codecManager = codecManager;
+        this.paramConverter = paramConverter;
         this.filterChainer = chainFunction;
         this.writeErrorStacktrace = writeErrorStacktrace;
     }
@@ -94,7 +97,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
-                        args.add(ParamUtils.convertValue(ImmutableList.of(request.pathParam(name)), parametrizedType));
+                        args.add(paramConverter.convertValue(ImmutableList.of(request.pathParam(name)), parametrizedType));
                     } else if (parameter.getAnnotation(RequestBody.class) != null) {
                         if (parameterType.isAssignableFrom(Mono.class)) {
                             TypeToken<?> paramType = parametrizedType.resolveType(Mono.class.getTypeParameters()[0]);
@@ -110,13 +113,13 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
-                        args.add(ParamUtils.convertValue(request.headers(name), parametrizedType));
+                        args.add(paramConverter.convertValue(request.headers(name), parametrizedType));
                     } else if ((uriParam = parameter.getAnnotation(UriParam.class)) != null) {
                         String name = uriParam.value();
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
-                        args.add(ParamUtils.convertValue(request.uriParams(name), parametrizedType));
+                        args.add(paramConverter.convertValue(request.uriParams(name), parametrizedType));
                     }
                 }
             }

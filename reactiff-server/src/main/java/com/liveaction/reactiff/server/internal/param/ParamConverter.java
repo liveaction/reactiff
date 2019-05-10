@@ -2,28 +2,26 @@ package com.liveaction.reactiff.server.internal.param;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Primitives;
 import com.google.common.reflect.TypeToken;
-import com.liveaction.reactiff.server.internal.param.converter.BooleanConverter;
-import com.liveaction.reactiff.server.internal.param.converter.CharacterConverter;
-import com.liveaction.reactiff.server.internal.param.converter.ConstructorBasedConverter;
-import com.liveaction.reactiff.server.internal.param.converter.InstantParamConverter;
-import com.liveaction.reactiff.server.internal.param.converter.MethodBasedConverter;
-import com.liveaction.reactiff.server.internal.param.converter.ParamConverter;
-import com.liveaction.reactiff.server.internal.param.converter.PathConverter;
-import com.liveaction.reactiff.server.internal.param.converter.StringConverter;
+import com.liveaction.reactiff.server.internal.param.converter.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.*;
 
-public final class ParamUtils {
+public final class ParamConverter {
 
-    private static final ImmutableList<ParamConverter<?>> CONVERTERS = ImmutableList.of(
+    private static final Logger LOGGER = LoggerFactory.getLogger(ParamConverter.class);
+
+    private final Map<Type, ParamTypeConverter<?>> converters = Maps.newConcurrentMap();
+
+    private static final ImmutableList<ParamTypeConverter<?>> DEFAULT_CONVERTERS = ImmutableList.of(
             StringConverter.INSTANCE,
             BooleanConverter.INSTANCE,
             InstantParamConverter.INSTANCE,
@@ -31,11 +29,25 @@ public final class ParamUtils {
             PathConverter.INSTANCE
     );
 
-    private ParamUtils() {
+    public ParamConverter(Collection<ParamTypeConverter<?>> converters) {
+        DEFAULT_CONVERTERS.forEach(this::addConverter);
+        converters.forEach(this::addConverter);
+    }
+
+    public <T> void addConverter(ParamTypeConverter<T> converter) {
+        Type type = ((ParameterizedType) converter.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0];
+        LOGGER.info("Adding a converter for {}", type.getTypeName());
+        this.converters.put(type, converter);
+    }
+
+    public void removeConverter(ParamTypeConverter<?> converter) {
+        Type type = ((ParameterizedType) converter.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0];
+        LOGGER.info("Removing a converter for {}", type.getTypeName());
+        this.converters.remove(type, converter);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T convertValue(List<String> input, TypeToken<T> typeToken) throws IllegalArgumentException {
+    public <T> T convertValue(List<String> input, TypeToken<T> typeToken) throws IllegalArgumentException {
         Class<T> rawType = (Class<T>) typeToken.getRawType();
         if (rawType.isArray()) {
             return createArray(input, rawType.getComponentType());
@@ -47,15 +59,15 @@ public final class ParamUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T createCollection(Collection<String> input, TypeToken<T> typeToken) {
+    private <T> T createCollection(Collection<String> input, TypeToken<T> typeToken) {
         // Get the generic type of the list
         TypeToken<T> itemType = (TypeToken<T>) typeToken.resolveType(Collection.class.getTypeParameters()[0]);
-        ParamConverter<T> converter = (ParamConverter<T>) getConverter(itemType.getRawType());
+        ParamTypeConverter<T> converter = (ParamTypeConverter<T>) getConverter(itemType.getRawType());
         return createCollectionWithConverter(input, typeToken, converter);
     }
 
     @SuppressWarnings("unchecked")
-    private static <A, T> T createCollectionWithConverter(Collection<String> input, TypeToken<T> type, ParamConverter<A> converter) {
+    private <A, T> T createCollectionWithConverter(Collection<String> input, TypeToken<T> type, ParamTypeConverter<A> converter) {
         Collection<A> collection = (Collection<A>) initCollection(type.getRawType());
         if (input != null) {
             for (String v : input) {
@@ -65,7 +77,7 @@ public final class ParamUtils {
         return (T) collection;
     }
 
-    private static <A> Collection<A> initCollection(Class<A> rawType) {
+    private <A> Collection<A> initCollection(Class<A> rawType) {
         if (rawType.isAssignableFrom(List.class)) {
             return Lists.newArrayList();
         }
@@ -77,7 +89,7 @@ public final class ParamUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T createArray(Collection<String> input, Class<?> componentType) {
+    private <T> T createArray(Collection<String> input, Class<?> componentType) {
         if (input == null) {
             return (T) Array.newInstance(componentType, 0);
         }
@@ -87,7 +99,7 @@ public final class ParamUtils {
             theType = Primitives.wrap(componentType);
         }
 
-        ParamConverter converter = getConverter(theType);
+        ParamTypeConverter converter = getConverter(theType);
 
         List<Object> list = new ArrayList<>();
         for (String v : input) {
@@ -104,7 +116,7 @@ public final class ParamUtils {
         return (T) array;
     }
 
-    private static <T> T convertSingleValue(String input, Class<T> type) {
+    private <T> T convertSingleValue(String input, Class<T> type) {
         if (type.isPrimitive()) {
             type = Primitives.wrap(type);
             if (input == null) {
@@ -112,19 +124,19 @@ public final class ParamUtils {
             }
         }
 
-        ParamConverter<T> converter = getConverter(type);
+        ParamTypeConverter<T> converter = getConverter(type);
         return converter.fromString(input);
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> ParamConverter<T> getConverter(Class<T> type) {
-        List<ParamConverter<?>> paramConverters = Lists.newArrayList(CONVERTERS);
+    private <T> ParamTypeConverter<T> getConverter(Class<T> type) {
+        List<ParamTypeConverter<?>> paramConverters = Lists.newArrayList(converters.values());
         paramConverters.add(ConstructorBasedConverter.getFromType(type));
         paramConverters.add(MethodBasedConverter.getFromType(type));
 
-        for (ParamConverter<?> converter : paramConverters) {
+        for (ParamTypeConverter<?> converter : paramConverters) {
             if (converter != null && converter.canConvertType(type)) {
-                return (ParamConverter<T>) converter;
+                return (ParamTypeConverter<T>) converter;
             }
         }
         throw new NoSuchElementException(String.format("Cannot find a converter able to create instance of %s", type.getName()));

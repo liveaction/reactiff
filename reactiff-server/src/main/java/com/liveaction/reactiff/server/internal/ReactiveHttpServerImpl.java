@@ -1,10 +1,13 @@
 package com.liveaction.reactiff.server.internal;
 
+import com.google.common.collect.ImmutableList;
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.FilterChain;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.server.ReactiveHttpServer;
+import com.liveaction.reactiff.server.internal.param.ParamConverter;
+import com.liveaction.reactiff.server.internal.param.converter.ParamTypeConverter;
 import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -34,6 +37,7 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
 
     private final HttpServer httpServer;
     private final Router router;
+    private final ParamConverter paramConverter = new ParamConverter(ImmutableList.of());
 
     private DisposableServer disposableServer;
 
@@ -49,7 +53,7 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
         this.port = port;
         this.protocols = protocols;
         this.executor = executor;
-        this.router = new Router(codecManager, this::chain, writeErrorStacktrace);
+        this.router = new Router(codecManager, paramConverter, this::chain, writeErrorStacktrace);
         this.httpServer = createServer(wiretap, compress);
     }
 
@@ -107,6 +111,16 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     public void removeReactiveHandler(ReactiveHandler reactiveHandler) {
         router.removeReactiveHander(reactiveHandler);
         LOGGER.info("ReactiveHandler {}(rank={}) removed", reactiveHandler.getClass().getName(), reactiveHandler.handlerRank());
+    }
+
+    @Override
+    public void addParamTypeConverter(ParamTypeConverter<?> paramTypeConverter) {
+        paramConverter.addConverter(paramTypeConverter);
+    }
+
+    @Override
+    public void removeParamTypeConverter(ParamTypeConverter<?> paramTypeConverter) {
+        paramConverter.removeConverter(paramTypeConverter);
     }
 
     private HttpServer createServer(boolean wiretap, boolean compress) {

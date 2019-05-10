@@ -1,6 +1,6 @@
 package com.liveaction.reactiff.server.internal.param.converter;
 
-public interface ParamConverter<T> {
+public interface ParamTypeConverter<T> {
 
     T fromString(String s);
 
