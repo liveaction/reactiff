@@ -96,4 +96,13 @@ public final class AnnotationTestController implements ReactiveHandler {
         return Mono.just(xBoolean);
     }
 
+    @RequestMapping(method = HttpMethod.GET, path = "/annotated/uriparam/default")
+    public Flux<String> getUriParamsDefault(@DefaultValue("defaultTest") @UriParam("param") List<String> params) {
+        return Flux.fromIterable(params);
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/annotated/headerparam/default")
+    public Flux<String> getHeaderParamsDefault(@DefaultValue("defaultTest") @HeaderParam("Param") List<String> params) {
+        return Flux.fromIterable(params);
+    }
 }

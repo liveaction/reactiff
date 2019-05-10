@@ -92,6 +92,8 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                     PathParam annotation;
                     HeaderParam headerAnnotation;
                     UriParam uriParam;
+                    DefaultValue defaultValueAnnotation = parameter.getAnnotation(DefaultValue.class);
+                    String defaultValue = defaultValueAnnotation == null ? "" : defaultValueAnnotation.value();
                     if ((annotation = parameter.getAnnotation(PathParam.class)) != null) {
                         String name = annotation.value();
                         if (name.isEmpty()) {
@@ -113,13 +115,17 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
-                        args.add(paramConverter.convertValue(request.headers(name), parametrizedType));
+                        List<String> params = request.headers(name);
+                        List<String> value = params == null || params.isEmpty() ? Lists.newArrayList(defaultValue) : params;
+                        args.add(paramConverter.convertValue(value, parametrizedType));
                     } else if ((uriParam = parameter.getAnnotation(UriParam.class)) != null) {
                         String name = uriParam.value();
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
-                        args.add(paramConverter.convertValue(request.uriParams(name), parametrizedType));
+                        ImmutableList<String> params = request.uriParams(name);
+                        ImmutableList<String> value = params == null || params.isEmpty() ? ImmutableList.of(defaultValue) : params;
+                        args.add(paramConverter.convertValue(value, parametrizedType));
                     }
                 }
             }
