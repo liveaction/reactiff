@@ -74,6 +74,10 @@ public abstract class Result<T> {
         return Result.withStatus(HttpResponseStatus.NO_CONTENT.code(), reasonPhrase);
     }
 
+    public static Result notFound(String reasonPhrase) {
+        return Result.withStatus(HttpResponseStatus.NOT_FOUND.code(), reasonPhrase);
+    }
+
     public static Result redirectTemporary(String url) {
         return Result.builder()
                 .status(HttpResponseStatus.TEMPORARY_REDIRECT)
