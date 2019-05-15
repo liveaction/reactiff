@@ -13,11 +13,10 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.server.HttpServerRequest;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public final class CodecManagerImpl implements CodecManager {
@@ -80,8 +79,7 @@ public final class CodecManagerImpl implements CodecManager {
     public <T> Mono<Result<T>> enrichResult(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Result<T> result) {
         String contentType = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType == null) {
-            String acceptHeader = requestHttpHeaders.get(HttpHeaderNames.ACCEPT);
-            contentType = negociateContentType(acceptHeader, result.type());
+            contentType = negociateContentType(requestHttpHeaders.getAll(HttpHeaderNames.ACCEPT), result.type());
         }
         return getOptionalCodec(contentType, result.type())
                 .map(codec -> codec.enrich(result))
@@ -92,25 +90,24 @@ public final class CodecManagerImpl implements CodecManager {
     public <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         String contentType = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType == null) {
-            String acceptHeader = requestHttpHeaders.get(HttpHeaderNames.ACCEPT);
-            contentType = negociateContentType(acceptHeader, typeToken);
+            contentType = negociateContentType(requestHttpHeaders.getAll(HttpHeaderNames.ACCEPT), typeToken);
         }
         return encodeAs(contentType, responseHttpHeaders, data, typeToken);
     }
 
     @Override
     public <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders httpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
+        Codec codec = getCodec(contentType, typeToken);
         LOGGER.debug("Found an encoder for Content-Type='{}'", contentType);
         httpHeaders.set(HttpHeaderNames.CONTENT_TYPE, contentType);
-        return encodeAs(getCodec(contentType, typeToken), contentType, data, typeToken);
+        return encodeAs(codec, contentType, data, typeToken);
     }
 
     @Override
     public <T> Publisher<ByteBuf> encodeAs(HttpHeaders requestHttpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         String contentType = requestHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType == null) {
-            String acceptHeader = requestHttpHeaders.get(HttpHeaderNames.ACCEPT);
-            contentType = negociateContentType(acceptHeader, typeToken);
+            contentType = negociateContentType(requestHttpHeaders.getAll(HttpHeaderNames.ACCEPT), typeToken);
         }
         return encodeAs(getCodec(contentType, typeToken), contentType, data, typeToken);
     }
@@ -135,26 +132,25 @@ public final class CodecManagerImpl implements CodecManager {
 
     }
 
-    private String negociateContentType(String acceptHeader, TypeToken<?> typeToken) {
-        if (acceptHeader != null) {
-            for (String contentType : acceptHeader.split(",")) {
-                String trim = contentType.trim();
-                Optional<String> matches = codecs.stream()
+    private String negociateContentType(Collection<String> acceptHeader, TypeToken<?> typeToken) {
+        return acceptHeader.stream()
+                .map(String::trim)
+                .map(contentType -> codecs.stream()
                         .map(codec -> {
-                            if (codec.supports(trim, typeToken)) {
-                                return trim;
+                            if (codec.supports(contentType, typeToken)) {
+                                return Tuples.of(contentType, codec);
                             } else {
                                 return null;
                             }
                         })
                         .filter(Objects::nonNull)
-                        .findFirst();
-                if (matches.isPresent()) {
-                    return matches.get();
-                }
-            }
-        }
-        return defaultContentType;
+                        .findFirst())
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .sorted(Comparator.comparingInt(tuple -> tuple.getT2().rank()))
+                .map(Tuple2::getT1)
+                .findFirst()
+                .orElse(defaultContentType);
     }
 
     private Codec findCodec(String contentType, TypeToken<?> typeToken) {
