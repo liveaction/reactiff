@@ -1,5 +1,6 @@
 package com.liveaction.reactiff.codec;
 
+import com.google.common.base.Splitter;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
 import com.liveaction.reactiff.api.codec.CodecManager;
@@ -18,6 +19,7 @@ import reactor.util.function.Tuples;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.stream.StreamSupport;
 
 public final class CodecManagerImpl implements CodecManager {
 
@@ -134,6 +136,7 @@ public final class CodecManagerImpl implements CodecManager {
 
     private String negociateContentType(Collection<String> acceptHeader, TypeToken<?> typeToken) {
         return acceptHeader.stream()
+                .flatMap(s -> StreamSupport.stream(Splitter.on(',').split(s).spliterator(), false))
                 .map(String::trim)
                 .map(contentType -> codecs.stream()
                         .map(codec -> {
