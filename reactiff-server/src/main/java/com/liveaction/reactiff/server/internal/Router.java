@@ -127,10 +127,7 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
     }
 
     private Mono<Result> notFound(Request request) {
-        List<Route> routes = reactiveHandlers.stream()
-                .flatMap(this::getRoutes)
-                .map(hr -> hr.route)
-                .collect(toList());
+        List<Route> routes = routes();
 
         ImmutableMap<String, String> parameters = ImmutableMap.of("requestMethod", request.method().name(), "requestUri", request.uri(), "routes", formatRoutes(routes));
         return TEMPLATE_ENGINE.process(NOT_FOUND_TEMPLATE, parameters)
@@ -139,6 +136,13 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
                         .header(HttpHeaderNames.CONTENT_TYPE, "text/plain")
                         .data(Mono.just(page), String.class)
                         .build());
+    }
+
+    public List<Route> routes() {
+        return reactiveHandlers.stream()
+                .flatMap(this::getRoutes)
+                .map(hr -> hr.route)
+                .collect(toList());
     }
 
     private static final class HandledRoute<T extends Annotation, R extends Route> {

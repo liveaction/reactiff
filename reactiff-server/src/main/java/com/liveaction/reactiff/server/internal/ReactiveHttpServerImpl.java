@@ -5,6 +5,7 @@ import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.FilterChain;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
+import com.liveaction.reactiff.api.server.route.Route;
 import com.liveaction.reactiff.server.ReactiveHttpServer;
 import com.liveaction.reactiff.server.internal.param.ParamConverter;
 import com.liveaction.reactiff.server.internal.utils.FilterUtils;
@@ -87,6 +88,11 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     @Override
     public int port() {
         return disposableServer.port();
+    }
+
+    @Override
+    public List<Route> routes() {
+        return router.routes();
     }
 
     @Override
