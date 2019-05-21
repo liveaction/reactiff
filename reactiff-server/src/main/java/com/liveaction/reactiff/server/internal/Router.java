@@ -133,7 +133,6 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
         return TEMPLATE_ENGINE.process(NOT_FOUND_TEMPLATE, parameters)
                 .map(page -> Result.<String>builder()
                         .status(404, String.format("'%s' not found", request.uri()))
-                        .header(HttpHeaderNames.CONTENT_TYPE, "text/plain")
                         .data(Mono.just(page), String.class)
                         .build());
     }
