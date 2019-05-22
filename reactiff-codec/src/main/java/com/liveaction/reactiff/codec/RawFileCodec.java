@@ -15,8 +15,6 @@ import javax.activation.MimetypesFileTypeMap;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.file.Path;
 
 public final class RawFileCodec implements Codec {
@@ -32,6 +30,10 @@ public final class RawFileCodec implements Codec {
 
     @Override
     public boolean supports(String contentType, TypeToken<?> typeToken) {
+        return isFileOrPath(typeToken);
+    }
+
+    private boolean isFileOrPath(TypeToken<?> typeToken) {
         return typeToken != null && (FILE.isAssignableFrom(typeToken) || PATH.isAssignableFrom(typeToken));
     }
 
@@ -47,20 +49,20 @@ public final class RawFileCodec implements Codec {
 
     @SuppressWarnings("unchecked")
     private <T> Publisher<T> decode(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        if (FILE.isAssignableFrom(typeToken)) {
+        if (isFileOrPath(typeToken)) {
             try {
                 File file = File.createTempFile("reactiff-upload", ".raw");
                 FileOutputStream out = new FileOutputStream(file);
-                return Flux.from(byteBufFlux)
-                        .reduceWith(() -> out, (o, array) -> {
+                Mono<Void> writeFlux = Flux.from(byteBufFlux)
+                        .concatMap(bytes -> {
                             try {
-                                array.readBytes(o, array.readableBytes());
+                                bytes.readBytes(out, bytes.readableBytes());
                             } catch (IOException e) {
-                                throw Throwables.propagate(e);
+                                return Mono.error(e);
                             }
-                            return o;
+                            return Mono.empty();
                         })
-                        .map(o -> (T) file)
+                        .then()
                         .doFinally(signalType -> {
                             try {
                                 out.close();
@@ -68,6 +70,11 @@ public final class RawFileCodec implements Codec {
                                 Throwables.propagate(e);
                             }
                         });
+                if (FILE.isAssignableFrom(typeToken)) {
+                    return writeFlux.thenReturn((T) file);
+                } else {
+                    return writeFlux.thenReturn((T) file.toPath());
+                }
             } catch (IOException e) {
                 throw Throwables.propagate(e);
             }
@@ -78,38 +85,18 @@ public final class RawFileCodec implements Codec {
 
     @Override
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
+        Mono<Path> path;
         if (FILE.isAssignableFrom(typeToken)) {
-            return ByteBufFlux.fromInbound(Mono.from(data).flatMapMany(t -> readFileAsFlux((File) t)));
+            path = Mono.from(data)
+                    .cast(File.class)
+                    .map(File::toPath);
+        } else if(PATH.isAssignableFrom(typeToken)) {
+            path = Mono.from(data)
+                    .cast(Path.class);
         } else {
             throw new IllegalArgumentException("Unable to encode type '" + typeToken + "'");
         }
-    }
-
-    private Flux<byte[]> readFileAsFlux(File file) {
-        ByteBuffer buffer = ByteBuffer.allocate(4096);
-        return Flux.using(() -> new RandomAccessFile(file, "r").getChannel(),
-                fileChannel -> Flux.generate(sink -> {
-                    try {
-                        int read = fileChannel.read(buffer);
-                        if (read > 0) {
-                            byte[] bytes = new byte[read];
-                            System.arraycopy(buffer.array(), buffer.arrayOffset(), bytes, 0, read);
-                            buffer.clear();
-                            sink.next(bytes);
-                        } else {
-                            sink.complete();
-                        }
-                    } catch (IOException e) {
-                        sink.error(e);
-                    }
-                })
-                , fileChannel -> {
-                    try {
-                        fileChannel.close();
-                    } catch (IOException e) {
-                    }
-                }
-        );
+        return path.flatMapMany(ByteBufFlux::fromPath);
     }
 
     @Override
