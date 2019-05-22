@@ -17,7 +17,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 
 public final class RawFileCodec implements Codec {
@@ -43,7 +42,7 @@ public final class RawFileCodec implements Codec {
 
     @Override
     public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return Flux.error(new IllegalArgumentException("Cannot get a flux a file"));
+        return Flux.error(new IllegalArgumentException("Cannot get a flux from file"));
     }
 
     @SuppressWarnings("unchecked")
@@ -87,26 +86,30 @@ public final class RawFileCodec implements Codec {
     }
 
     private Flux<byte[]> readFileAsFlux(File file) {
-        return Flux.create(fluxSink -> {
-            try {
-                RandomAccessFile aFile = new RandomAccessFile(file, "r");
-                FileChannel inChannel = aFile.getChannel();
-                ByteBuffer buffer = ByteBuffer.allocate(4096);
-                while (inChannel.read(buffer) > 0) {
-                    buffer.flip();
-                    int len = buffer.limit();
-                    byte[] bytes = new byte[len];
-                    System.arraycopy(buffer.array(), buffer.arrayOffset(), bytes, 0, len);
-                    buffer.clear(); // do something with the data and clear/compact it.
-                    fluxSink.next(bytes);
+        ByteBuffer buffer = ByteBuffer.allocate(4096);
+        return Flux.using(() -> new RandomAccessFile(file, "r").getChannel(),
+                fileChannel -> Flux.generate(sink -> {
+                    try {
+                        int read = fileChannel.read(buffer);
+                        if (read > 0) {
+                            byte[] bytes = new byte[read];
+                            System.arraycopy(buffer.array(), buffer.arrayOffset(), bytes, 0, read);
+                            buffer.clear();
+                            sink.next(bytes);
+                        } else {
+                            sink.complete();
+                        }
+                    } catch (IOException e) {
+                        sink.error(e);
+                    }
+                })
+                , fileChannel -> {
+                    try {
+                        fileChannel.close();
+                    } catch (IOException e) {
+                    }
                 }
-                inChannel.close();
-                aFile.close();
-                fluxSink.complete();
-            } catch (IOException e) {
-                fluxSink.error(e);
-            }
-        });
+        );
     }
 
     @Override
