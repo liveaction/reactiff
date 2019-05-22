@@ -9,6 +9,7 @@ Route not found: GET /yes_not_exists
 Available routes:
 	GET  /download/file          => FileTransferController.downloadFile()                                   : Result<File>
 	GET  /download/path          => FileTransferController.downloadPath()                                   : Result<Path>
+	POST /upload/multipart       => FileTransferController.uploadPath(Request request)                      : Flux<String>
 	GET  /boolean                => TestController.getBoolean(Request request)                              : Mono<Boolean>
 	GET  /booleans               => TestController.getBooleans(Request request)                             : Flux<Boolean>
 	GET  /failed                 => TestController.failed()                                                 : Mono<Result<String>>
@@ -21,6 +22,7 @@ Available routes:
 	POST /boolean/flux/from/mono => TestController.booleanFluxFromMono(Request request)                     : Flux<Boolean>
 	POST /boolean/mono/from/flux => TestController.booleanMonoFromFlux(Request request)                     : Mono<Boolean>
 	POST /monovoid               => TestController.executeVoid()                                            : Mono<Void>
+	POST /multipart              => TestController.getMultipartFields(Request request)                      : Mono<Map<String, String>>
 	POST /upload                 => TestController.upload(Request request)                                  : Flux<byte[]>
 	POST /void                   => TestController.execute(Request request)                                 : void
 	POST /yes                    => TestController.postPojo(Request request)                                : Flux<Pojo>

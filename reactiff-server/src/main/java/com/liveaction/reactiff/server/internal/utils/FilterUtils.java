@@ -6,10 +6,9 @@ import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.route.Route;
-import com.liveaction.reactiff.server.RequestImpl;
+import com.liveaction.reactiff.server.internal.RequestImpl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,8 +57,7 @@ public final class FilterUtils {
                 })
                 .flatMap(result -> (Mono<Result<?>>) codecManager.enrichResult(req.requestHeaders(), res.responseHeaders(), result));
         return enrichedResult
-                .flatMap(filteredResult -> {
-                    Result<?> result = filteredResult;
+                .flatMap(result -> {
                     HttpServerResponse httpServerResponse = res.status(result.status());
                     result.headers().forEach(res::addHeader);
                     result.cookies().forEach(res::addCookie);

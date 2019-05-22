@@ -1,6 +1,7 @@
 package com.liveaction.reactiff.server.rules;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
 import com.liveaction.reactiff.codec.RawBinaryCodec;
@@ -34,10 +35,14 @@ public final class WithCodecManager extends ExternalResource {
     }
 
     public <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> checkErrorAndDecodeAsMono(Class<T> clazz) {
+        return checkErrorAndDecodeAsMono(TypeToken.of(clazz));
+    }
+
+    public <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> checkErrorAndDecodeAsMono(TypeToken<T> typeToken) {
         return (response, flux) -> {
             HttpResponseStatus status = response.status();
             if (status.code() == 200) {
-                return codecManager.decodeAsMono(clazz).apply(response, flux);
+                return codecManager.decodeAsMono(typeToken).apply(response, flux);
             } else {
                 return Mono.error(new HttpException(status.code(), status.code() + " : " + status.reasonPhrase()));
             }

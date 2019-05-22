@@ -30,6 +30,11 @@ public final class WithReactiveServer extends ExternalResource {
         return this;
     }
 
+    public WithReactiveServer removeHandler(ReactiveHandler reactiveHandler) {
+        server.removeReactiveHandler(reactiveHandler);
+        return this;
+    }
+
     public void before() {
         server.start();
     }

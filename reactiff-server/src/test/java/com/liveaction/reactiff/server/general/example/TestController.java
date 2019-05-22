@@ -1,13 +1,14 @@
 package com.liveaction.reactiff.server.general.example;
 
+import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
-import com.liveaction.reactiff.api.server.annotation.UriParam;
 import com.liveaction.reactiff.api.server.annotation.WsMapping;
+import com.liveaction.reactiff.api.server.multipart.FormFieldPart;
 import com.liveaction.reactiff.server.mock.Pojo;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -19,8 +20,9 @@ import reactor.netty.http.websocket.WebsocketInbound;
 import reactor.netty.http.websocket.WebsocketOutbound;
 
 import java.time.Duration;
-import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 public final class TestController implements ReactiveHandler {
 
@@ -133,6 +135,17 @@ public final class TestController implements ReactiveHandler {
                 .status(HttpResponseStatus.OK.code(), "OK")
                 .cookie(c)
                 .build());
+    }
+
+    @RequestMapping(method = HttpMethod.POST, path = "/multipart")
+    public Mono<Map<String, String>> getMultipartFields(Request request) {
+        return request.parts()
+                .flatMapIterable(Map::values)
+                .filter(part -> part instanceof FormFieldPart)
+                .cast(FormFieldPart.class)
+                .map(ffp -> Maps.immutableEntry(ffp.name(), ffp.value()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
     }
 
 }
