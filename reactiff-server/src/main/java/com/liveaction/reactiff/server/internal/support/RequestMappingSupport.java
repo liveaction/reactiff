@@ -10,7 +10,12 @@ import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
-import com.liveaction.reactiff.api.server.annotation.*;
+import com.liveaction.reactiff.api.server.annotation.DefaultValue;
+import com.liveaction.reactiff.api.server.annotation.HeaderParam;
+import com.liveaction.reactiff.api.server.annotation.PathParam;
+import com.liveaction.reactiff.api.server.annotation.RequestBody;
+import com.liveaction.reactiff.api.server.annotation.RequestMapping;
+import com.liveaction.reactiff.api.server.annotation.UriParam;
 import com.liveaction.reactiff.api.server.route.HttpRoute;
 import com.liveaction.reactiff.api.server.route.Route;
 import com.liveaction.reactiff.server.internal.param.ParamConverter;
@@ -93,7 +98,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                     HeaderParam headerAnnotation;
                     UriParam uriParam;
                     DefaultValue defaultValueAnnotation = parameter.getAnnotation(DefaultValue.class);
-                    String defaultValue = defaultValueAnnotation == null ? "" : defaultValueAnnotation.value();
+                    String defaultValue = defaultValueAnnotation == null ? null : defaultValueAnnotation.value();
                     if ((annotation = parameter.getAnnotation(PathParam.class)) != null) {
                         String name = annotation.value();
                         if (name.isEmpty()) {
@@ -116,16 +121,30 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                             name = parameter.getName();
                         }
                         List<String> params = request.headers(name);
-                        List<String> value = params == null || params.isEmpty() ? Lists.newArrayList(defaultValue) : params;
-                        args.add(paramConverter.convertValue(value, parametrizedType));
+                        if (params == null || params.isEmpty()) {
+                            if (defaultValue == null) {
+                                args.add(null);
+                            } else {
+                                args.add(paramConverter.convertValue(Lists.newArrayList(defaultValue), parametrizedType));
+                            }
+                        } else {
+                            args.add(paramConverter.convertValue(params, parametrizedType));
+                        }
                     } else if ((uriParam = parameter.getAnnotation(UriParam.class)) != null) {
                         String name = uriParam.value();
                         if (name.isEmpty()) {
                             name = parameter.getName();
                         }
                         ImmutableList<String> params = request.uriParams(name);
-                        ImmutableList<String> value = params == null || params.isEmpty() ? ImmutableList.of(defaultValue) : params;
-                        args.add(paramConverter.convertValue(value, parametrizedType));
+                        if (params == null || params.isEmpty()) {
+                            if (defaultValue == null) {
+                                args.add(null);
+                            } else {
+                                args.add(paramConverter.convertValue(Lists.newArrayList(defaultValue), parametrizedType));
+                            }
+                        } else {
+                            args.add(paramConverter.convertValue(params, parametrizedType));
+                        }
                     }
                 }
             }
