@@ -12,6 +12,7 @@ import com.liveaction.reactiff.server.general.example.AuthFilter;
 import com.liveaction.reactiff.server.general.example.FileTransferController;
 import com.liveaction.reactiff.server.general.example.TestController;
 import com.liveaction.reactiff.server.mock.Pojo;
+import com.liveaction.reactiff.server.rules.HttpException;
 import com.liveaction.reactiff.server.rules.ReactorUtils;
 import com.liveaction.reactiff.server.rules.WithCodecManager;
 import com.liveaction.reactiff.server.rules.WithReactiveServer;

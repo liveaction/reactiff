@@ -9,7 +9,6 @@ import com.liveaction.reactiff.codec.RawFileCodec;
 import com.liveaction.reactiff.codec.TextPlainCodec;
 import com.liveaction.reactiff.codec.jackson.JsonCodec;
 import com.liveaction.reactiff.codec.jackson.SmileBinaryCodec;
-import com.liveaction.reactiff.server.general.HttpException;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.rules.ExternalResource;
 import reactor.core.publisher.Flux;
