@@ -5,6 +5,7 @@ import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
+import com.liveaction.reactiff.server.context.ExecutionContextService;
 import com.liveaction.reactiff.server.internal.ReactiveHttpServerImpl;
 import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
 import reactor.netty.http.HttpProtocol;
@@ -25,6 +26,8 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
     private Collection<ReactiveFilter> filters = Sets.newHashSet();
 
     private Collection<ReactiveHandler> handlers = Sets.newHashSet();
+
+    private Collection<ExecutionContextService> executionContextServices = Sets.newHashSet();
 
     private Collection<ParamTypeConverter<?>> converters = Sets.newHashSet();
 
@@ -89,6 +92,20 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
             this.handlers.add(handler);
         } else {
             this.handlers.remove(handler);
+        }
+        return this;
+    }
+
+    public ReactiveHttpServer.Builder executionContextService(ExecutionContextService executionContextService) {
+        return this.executionContextService(executionContextService, true);
+    }
+
+    @Override
+    public ReactiveHttpServer.Builder executionContextService(ExecutionContextService executionContextService, boolean add) {
+        if (add) {
+            this.executionContextServices.add(executionContextService);
+        } else {
+            this.executionContextServices.remove(executionContextService);
         }
         return this;
     }

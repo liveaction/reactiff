@@ -7,6 +7,8 @@ import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.route.Route;
 import com.liveaction.reactiff.server.ReactiveHttpServer;
+import com.liveaction.reactiff.server.context.ExecutionContextService;
+import com.liveaction.reactiff.server.internal.context.ExecutionContextServiceManager;
 import com.liveaction.reactiff.server.internal.param.ParamConverter;
 import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
@@ -39,6 +41,7 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     private final HttpServer httpServer;
     private final Router router;
     private final ParamConverter paramConverter = new ParamConverter(ImmutableList.of());
+    private final ExecutionContextServiceManager executionContextServiceManager = new ExecutionContextServiceManager();
 
     private DisposableServer disposableServer;
 
@@ -54,7 +57,7 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
         this.port = port;
         this.protocols = protocols;
         this.executor = executor;
-        this.router = new Router(codecManager, paramConverter, this::chain, writeErrorStacktrace);
+        this.router = new Router(codecManager, paramConverter, this::chain, writeErrorStacktrace, executionContextServiceManager);
         this.httpServer = createServer(wiretap, compress);
     }
 
@@ -127,6 +130,16 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     @Override
     public void removeParamTypeConverter(ParamTypeConverter<?> paramTypeConverter) {
         paramConverter.removeConverter(paramTypeConverter);
+    }
+
+    @Override
+    public void addExecutionContextService(ExecutionContextService executionContextService) {
+        executionContextServiceManager.addExecutionContextService(executionContextService);
+    }
+
+    @Override
+    public void removeExecutionContextService(ExecutionContextService executionContextService) {
+        executionContextServiceManager.removeExecutionContextService(executionContextService);
     }
 
     private HttpServer createServer(boolean wiretap, boolean compress) {

@@ -18,6 +18,8 @@ import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.annotation.UriParam;
 import com.liveaction.reactiff.api.server.route.HttpRoute;
 import com.liveaction.reactiff.api.server.route.Route;
+import com.liveaction.reactiff.server.context.ExecutionContext;
+import com.liveaction.reactiff.server.context.ExecutionContextService;
 import com.liveaction.reactiff.server.internal.param.ParamConverter;
 import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import com.liveaction.reactiff.server.internal.utils.ResultUtils;
@@ -48,13 +50,16 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
     private final ParamConverter paramConverter;
     private final Function<FilterChain, FilterChain> filterChainer;
     private final boolean writeErrorStacktrace;
+    private final ExecutionContextService executionContextService;
 
     public RequestMappingSupport(CodecManager codecManager, ParamConverter paramConverter,
-                                 Function<FilterChain, FilterChain> chainFunction, boolean writeErrorStacktrace) {
+                                 Function<FilterChain, FilterChain> chainFunction, boolean writeErrorStacktrace,
+                                 ExecutionContextService executionContextService) {
         this.codecManager = codecManager;
         this.paramConverter = paramConverter;
         this.filterChainer = chainFunction;
         this.writeErrorStacktrace = writeErrorStacktrace;
+        this.executionContextService = executionContextService;
     }
 
     @Override
@@ -84,6 +89,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
 
     private Mono<Result> invokeHandlerMethod(ReactiveHandler reactiveHandler, Method method, Request request) {
         try {
+            ExecutionContext executionContext = executionContextService.prepare();
             TypeToken<?> returnType = TypeToken.of(method.getGenericReturnType());
             List<Object> args = Lists.newArrayList();
             Parameter[] parameters = method.getParameters();
@@ -108,10 +114,12 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                     } else if (parameter.getAnnotation(RequestBody.class) != null) {
                         if (parameterType.isAssignableFrom(Mono.class)) {
                             TypeToken<?> paramType = parametrizedType.resolveType(Mono.class.getTypeParameters()[0]);
-                            args.add(request.bodyToMono(paramType));
+                            args.add(request.bodyToMono(paramType)
+                                    .doOnNext(v -> executionContext.apply()));
                         } else if (parameterType.isAssignableFrom(Flux.class)) {
                             TypeToken<?> paramType = parametrizedType.resolveType(Flux.class.getTypeParameters()[0]);
-                            args.add(request.bodyToFlux(paramType));
+                            args.add(request.bodyToFlux(paramType)
+                                    .doOnNext(v -> executionContext.apply()));
                         } else {
                             throw new IllegalArgumentException(RequestBody.class.getSimpleName() + " only support Mono<T> or Flux<T> type");
                         }

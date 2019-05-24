@@ -4,6 +4,7 @@ import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.route.Route;
+import com.liveaction.reactiff.server.context.ExecutionContextService;
 import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
 import reactor.netty.http.HttpProtocol;
 
@@ -19,6 +20,10 @@ public interface ReactiveHttpServer extends Closeable {
     void removeParamTypeConverter(ParamTypeConverter<?> paramTypeConverter);
 
     List<Route> routes();
+
+    void addExecutionContextService(ExecutionContextService executionContextService);
+
+    void removeExecutionContextService(ExecutionContextService executionContextService);
 
     interface Builder {
 
@@ -37,6 +42,10 @@ public interface ReactiveHttpServer extends Closeable {
         Builder handler(ReactiveHandler handler);
 
         Builder handler(ReactiveHandler handler, boolean add);
+
+        Builder executionContextService(ExecutionContextService executionContextService);
+
+        Builder executionContextService(ExecutionContextService executionContextService, boolean add);
 
         Builder converter(ParamTypeConverter<?> converter);
 
