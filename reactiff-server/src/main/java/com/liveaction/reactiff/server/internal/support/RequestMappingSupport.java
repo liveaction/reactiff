@@ -123,7 +123,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         List<String> params = request.headers(name);
                         if (params == null || params.isEmpty()) {
                             if (defaultValue == null) {
-                                args.add(null);
+                                args.add(paramConverter.convertValue(Lists.newArrayList(), parametrizedType));
                             } else {
                                 args.add(paramConverter.convertValue(Lists.newArrayList(defaultValue), parametrizedType));
                             }
@@ -138,7 +138,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         ImmutableList<String> params = request.uriParams(name);
                         if (params == null || params.isEmpty()) {
                             if (defaultValue == null) {
-                                args.add(null);
+                                args.add(paramConverter.convertValue(Lists.newArrayList(), parametrizedType));
                             } else {
                                 args.add(paramConverter.convertValue(Lists.newArrayList(defaultValue), parametrizedType));
                             }

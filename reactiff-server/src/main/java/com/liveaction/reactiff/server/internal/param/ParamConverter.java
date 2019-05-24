@@ -55,7 +55,7 @@ public final class ParamConverter {
         } else if (Collection.class.isAssignableFrom(rawType)) {
             return createCollection(input, typeToken);
         } else {
-            return convertSingleValue(input.get(0), rawType);
+            return (input != null && input.size() != 0) ? convertSingleValue(input.get(0), rawType) : null;
         }
     }
 
