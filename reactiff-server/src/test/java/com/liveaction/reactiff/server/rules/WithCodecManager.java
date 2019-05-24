@@ -23,9 +23,11 @@ public final class WithCodecManager extends ExternalResource {
 
     public CodecManager codecManager;
 
-    private static ObjectMapper objectMapper = new ObjectMapper();
-
     public WithCodecManager() {
+        this(new ObjectMapper());
+    }
+
+    public WithCodecManager(ObjectMapper objectMapper) {
         codecManager = new CodecManagerImpl();
         codecManager.addCodec(new JsonCodec(objectMapper));
         codecManager.addCodec(new SmileBinaryCodec(objectMapper));
