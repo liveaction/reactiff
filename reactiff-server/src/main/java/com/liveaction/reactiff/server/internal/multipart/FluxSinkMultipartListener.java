@@ -1,5 +1,6 @@
 package com.liveaction.reactiff.server.internal.multipart;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -14,6 +15,7 @@ import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 import reactor.netty.ByteBufFlux;
 
 import java.io.IOException;
@@ -65,42 +67,44 @@ public final class FluxSinkMultipartListener implements NioMultipartParserListen
                 }
 
                 @Override
-                public Mono<Void> transferTo(Path dest) {
-                    ReadableByteChannel input = null;
-                    FileChannel output = null;
-                    try {
-                        input = Channels.newChannel(storage.getInputStream());
-                        output = FileChannel.open(dest, FILE_CHANNEL_OPTIONS);
-                        long size = (input instanceof FileChannel ? ((FileChannel) input).size() : Long.MAX_VALUE);
-                        long totalWritten = 0;
-                        while (totalWritten < size) {
-                            long written = output.transferFrom(input, totalWritten, size - totalWritten);
-                            if (written <= 0) {
-                                break;
-                            }
-                            totalWritten += written;
-                        }
-                    }
-                    catch (IOException ex) {
-                        return Mono.error(ex);
-                    }
-                    finally {
-                        if (input != null) {
-                            try {
-                                input.close();
-                            }
-                            catch (IOException ignored) {
+                public Mono<Void> transferTo(Path dest, Scheduler executor) {
+                    return Mono.fromCallable(() -> {
+                        ReadableByteChannel input = null;
+                        FileChannel output = null;
+                        try {
+                            input = Channels.newChannel(storage.getInputStream());
+                            output = FileChannel.open(dest, FILE_CHANNEL_OPTIONS);
+                            long size = (input instanceof FileChannel ? ((FileChannel) input).size() : Long.MAX_VALUE);
+                            long totalWritten = 0;
+                            while (totalWritten < size) {
+                                long written = output.transferFrom(input, totalWritten, size - totalWritten);
+                                if (written <= 0) {
+                                    break;
+                                }
+                                totalWritten += written;
                             }
                         }
-                        if (output != null) {
-                            try {
-                                output.close();
+                        catch (IOException ex) {
+                            throw Throwables.propagate(ex);
+                        }
+                        finally {
+                            if (input != null) {
+                                try {
+                                    input.close();
+                                }
+                                catch (IOException ignored) {
+                                }
                             }
-                            catch (IOException ignored) {
+                            if (output != null) {
+                                try {
+                                    output.close();
+                                }
+                                catch (IOException ignored) {
+                                }
                             }
                         }
-                    }
-                    return Mono.empty();
+                        return (Void) null;
+                    }).subscribeOn(executor);
                 }
 
                 @Override

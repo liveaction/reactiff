@@ -17,6 +17,7 @@
 package com.liveaction.reactiff.api.server.multipart;
 
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -44,10 +45,9 @@ public interface FilePart extends Part {
 	 * @param dest the target file
 	 * @return completion {@code Mono} with the result of the file transfer,
 	 * possibly {@link IllegalStateException} if the part isn't a file
-	 * @see #transferTo(Path)
 	 */
-	default Mono<Void> transferTo(File dest) {
-		return transferTo(dest.toPath());
+	default Mono<Void> transferTo(File dest, Scheduler executor) {
+		return transferTo(dest.toPath(), executor);
 	}
 
 	/**
@@ -58,8 +58,7 @@ public interface FilePart extends Part {
 	 * @return completion {@code Mono} with the result of the file transfer,
 	 * possibly {@link IllegalStateException} if the part isn't a file
 	 * @since 5.1
-	 * @see #transferTo(File)
 	 */
-	Mono<Void> transferTo(Path dest);
+	Mono<Void> transferTo(Path dest, Scheduler executor);
 
 }

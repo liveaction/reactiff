@@ -9,6 +9,7 @@ import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.multipart.FilePart;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +50,7 @@ public final class FileTransferController implements ReactiveHandler {
                 .filter(part -> part instanceof FilePart)
                 .cast(FilePart.class)
                 .sort(Comparator.comparing(FilePart::filename))
-                .flatMap(fp -> fp.transferTo(tmpFolder.resolve(fp.filename()))
+                .flatMap(fp -> fp.transferTo(tmpFolder.resolve(fp.filename()), Schedulers.immediate())
                         .thenReturn(tmpFolder.resolve(fp.filename()).toString()));
     }
 }
