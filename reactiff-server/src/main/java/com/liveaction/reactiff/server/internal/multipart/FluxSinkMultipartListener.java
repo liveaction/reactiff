@@ -56,6 +56,7 @@ public final class FluxSinkMultipartListener implements NioMultipartParserListen
     private Optional<Part> createPart(StreamStorage storage, Map<String, List<String>> httpHeaders) {
         String filename = MultipartUtils.getFileName(httpHeaders);
         if (filename != null) {
+            String fieldName = MultipartUtils.getFieldName(httpHeaders);
             ImmutableListMultimap.Builder<String, String> builder = ImmutableListMultimap.builder();
             httpHeaders.forEach(builder::putAll);
             ImmutableListMultimap<String, String> headers = builder.build();
@@ -108,7 +109,7 @@ public final class FluxSinkMultipartListener implements NioMultipartParserListen
 
                 @Override
                 public String name() {
-                    return filename;
+                    return fieldName;
                 }
 
                 @Override
