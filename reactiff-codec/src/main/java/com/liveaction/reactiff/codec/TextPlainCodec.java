@@ -21,20 +21,21 @@ public final class TextPlainCodec implements Codec {
         return typeToken != null && String.class.equals(typeToken.getRawType()) && contentType.toUpperCase().startsWith("TEXT/");
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> Mono<T> decodeMono(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return Mono.from(decode(byteBufFlux, typeToken));
-    }
-
-    @Override
-    public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return Flux.from(decode(byteBufFlux, typeToken));
+        if (String.class.equals(typeToken.getRawType())) {
+            return (Mono<T>) ByteBufFlux.fromInbound(byteBufFlux).aggregate().asString();
+        } else {
+            throw new IllegalArgumentException("Unable to decode to type '" + typeToken + "'. Only string supported");
+        }
     }
 
     @SuppressWarnings("unchecked")
-    private <T> Publisher<T> decode(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
+    @Override
+    public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         if (String.class.equals(typeToken.getRawType())) {
-            return (Publisher<T>) ByteBufFlux.fromInbound(byteBufFlux).asString();
+            return (Flux<T>) ByteBufFlux.fromInbound(byteBufFlux).asString();
         } else {
             throw new IllegalArgumentException("Unable to decode to type '" + typeToken + "'. Only string supported");
         }
