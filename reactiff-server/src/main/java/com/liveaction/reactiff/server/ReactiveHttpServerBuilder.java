@@ -164,6 +164,7 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
         filters.forEach(reactiveHttpServer::addReactiveFilter);
         handlers.forEach(reactiveHttpServer::addReactiveHandler);
         converters.forEach(reactiveHttpServer::addParamTypeConverter);
+        executionContextServices.forEach(reactiveHttpServer::addExecutionContextService);
         return reactiveHttpServer;
     }
 
