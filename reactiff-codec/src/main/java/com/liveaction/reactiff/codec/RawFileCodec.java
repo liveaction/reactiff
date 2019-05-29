@@ -4,6 +4,7 @@ import com.google.common.base.Throwables;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
 import com.liveaction.reactiff.api.server.Result;
+import com.liveaction.reactiff.api.server.utils.MimeType;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
@@ -11,7 +12,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
 
-import javax.activation.MimetypesFileTypeMap;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,7 +21,6 @@ public final class RawFileCodec implements Codec {
 
     private static final TypeToken<File> FILE = TypeToken.of(File.class);
     private static final TypeToken<Path> PATH = TypeToken.of(Path.class);
-    private static MimetypesFileTypeMap MIME_TYPE_MAP = new MimetypesFileTypeMap();
 
     @Override
     public int rank() {
@@ -113,7 +112,7 @@ public final class RawFileCodec implements Codec {
                     }
                     return result.copy()
                             .header(HttpHeaderNames.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                            .header(HttpHeaderNames.CONTENT_TYPE, MIME_TYPE_MAP.getContentType(fileName), false)
+                            .header(HttpHeaderNames.CONTENT_TYPE, new MimeType(fileName).get(), false)
                             .build();
                 });
 
