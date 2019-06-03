@@ -21,7 +21,7 @@ public final class MimeTypeTest {
             "file.js,application/javascript",
             "file.json,application/json",
             "file.xml,application/xml",
-            "file.yaml,application/yaml",
+            "file.yaml,application/x-yaml",
             "file,application/octet-stream",
             "file.idontknow,application/octet-stream"
     })

@@ -20,7 +20,7 @@ public final class MimeType {
             .put("js", "application/javascript")
             .put("json", "application/json")
             .put("xml", "application/xml")
-            .put("yaml", "application/yaml")
+            .put("yaml", "application/x-yaml")
             .build();
 
     private static MimetypesFileTypeMap FALLBACK_MAP = new MimetypesFileTypeMap();
