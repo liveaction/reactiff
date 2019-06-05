@@ -112,7 +112,7 @@ public final class RawFileCodec implements Codec {
                     }
                     return result.copy()
                             .header(HttpHeaderNames.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                            .header(HttpHeaderNames.CONTENT_TYPE, new MimeType(fileName).get(), false)
+                            .header(HttpHeaderNames.CONTENT_TYPE, new MimeType(fileName).toString(), false)
                             .build();
                 });
 

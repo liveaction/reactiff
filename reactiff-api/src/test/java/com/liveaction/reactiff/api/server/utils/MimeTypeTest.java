@@ -26,7 +26,7 @@ public final class MimeTypeTest {
             "file.idontknow,application/octet-stream"
     })
     @Test
-    public void shouldGetMimeType(String fileName, String mimeType) {
-        assertThat(new MimeType(fileName).get()).isEqualTo(mimeType);
+    public void shouldGetMimeTypeAsString(String fileName, String mimeType) {
+        assertThat(new MimeType(fileName).toString()).isEqualTo(mimeType);
     }
 }

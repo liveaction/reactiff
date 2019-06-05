@@ -1,6 +1,5 @@
 package com.liveaction.reactiff.api.server.utils;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 
 import javax.activation.MimetypesFileTypeMap;
@@ -31,21 +30,6 @@ public final class MimeType {
         this.fileName = Objects.requireNonNull(fileName);
     }
 
-    public String get() {
-        int lastDotPosition = fileName.lastIndexOf(".");
-
-        if (lastDotPosition > 0) {
-            String fileExtension = fileName.substring(lastDotPosition + 1).toLowerCase();
-
-            if (fileExtension.length() > 0) {
-                return Optional.ofNullable(MAIN_MAP.get(fileExtension))
-                        .orElse(FALLBACK_MAP.getContentType(fileName));
-            }
-        }
-
-        return FALLBACK_MAP.getContentType(fileName);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -61,8 +45,17 @@ public final class MimeType {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("fileName", fileName)
-                .toString();
+        int lastDotPosition = fileName.lastIndexOf(".");
+
+        if (lastDotPosition > 0) {
+            String fileExtension = fileName.substring(lastDotPosition + 1).toLowerCase();
+
+            if (fileExtension.length() > 0) {
+                return Optional.ofNullable(MAIN_MAP.get(fileExtension))
+                        .orElse(FALLBACK_MAP.getContentType(fileName));
+            }
+        }
+
+        return FALLBACK_MAP.getContentType(fileName);
     }
 }
