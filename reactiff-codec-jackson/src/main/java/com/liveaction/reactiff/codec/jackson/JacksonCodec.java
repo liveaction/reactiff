@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
+import reactor.util.function.Tuples;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -88,32 +89,46 @@ public final class JacksonCodec {
         }
     }
 
-    private <T> Flux<ByteBuf> encodeValue(Flux<T> valuess, Supplier<byte[]> beforeSupp, Supplier<byte[]> afterSupp) {
-        ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer();
-        ByteBufOutputStream byteBufOutputStream = new ByteBufOutputStream(byteBuf);
-        JsonGenerator generator;
-        try {
-            generator = jsonFactory.createGenerator((OutputStream) byteBufOutputStream);
-        } catch (IOException e) {
-            return Flux.error(e);
-        }
-        return valuess.concatMap(val -> {
+    private <T> Flux<ByteBuf> encodeValue(Flux<T> values, Supplier<byte[]> beforeSupp, Supplier<byte[]> afterSupp) {
+        return Flux.using(() -> {
+            ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer();
+            ByteBufOutputStream byteBufOutputStream = new ByteBufOutputStream(byteBuf);
+            JsonGenerator generator;
             try {
-                byteBuf.clear();
-                byte[] before = beforeSupp.get();
-                if (before != null) {
-                    byteBufOutputStream.write(before);
-                }
-
-                objectCodec.writeValue(generator, val);
-                generator.flush();
-                byte[] after = afterSupp.get();
-                if (after != null) {
-                    byteBufOutputStream.write(after);
-                }
-                return Mono.just(byteBuf.copy());
+                generator = jsonFactory.createGenerator((OutputStream) byteBufOutputStream);
+                return Tuples.of(byteBuf, byteBufOutputStream, generator);
             } catch (IOException e) {
-                return Mono.error(e);
+                throw Throwables.propagate(e);
+            }
+        }, tuple -> {
+            ByteBuf byteBuf = tuple.getT1();
+            JsonGenerator generator = tuple.getT3();
+            return values.concatMap(val -> {
+                try {
+                    byteBuf.clear();
+                    byte[] before = beforeSupp.get();
+                    if (before != null) {
+                        byteBuf.writeBytes(before);
+                    }
+
+                    objectCodec.writeValue(generator, val);
+                    generator.flush();
+                    byte[] after = afterSupp.get();
+                    if (after != null) {
+                        byteBuf.writeBytes(after);
+                    }
+                    return Mono.just(byteBuf.copy());
+                } catch (IOException e) {
+                    return Mono.error(e);
+                }
+            });
+        }, tuple -> {
+            try {
+                tuple.getT3().close();
+                tuple.getT2().close();
+                tuple.getT1().release();
+            } catch (IOException e) {
+                throw Throwables.propagate(e);
             }
         });
     }
