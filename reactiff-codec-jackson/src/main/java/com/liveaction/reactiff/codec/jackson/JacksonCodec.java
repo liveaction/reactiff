@@ -1,6 +1,9 @@
 package com.liveaction.reactiff.codec.jackson;
 
-import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.async.ByteArrayFeeder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
@@ -8,8 +11,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -18,14 +19,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
 public final class JacksonCodec {
 
@@ -73,49 +73,53 @@ public final class JacksonCodec {
 
     public <T> Publisher<ByteBuf> encode(Publisher<T> data, boolean tokenizeArrayElements) {
         if (MONO_TYPE_TOKEN.isAssignableFrom(data.getClass())) {
-            return encodeValue(Flux.from(data), () -> null, () -> null);
+            return Mono.from(data)
+                    .map(t -> encodeValue(t, null));
         } else {
             AtomicBoolean first = new AtomicBoolean(true);
             if (tokenizeArrayElements) {
                 return Flux.from(data)
-                        .transform(f -> encodeValue(f, () -> first.getAndSet(false) ? START_ARRAY : COMMA_SEPARATOR, () -> null))
-                        .concatWith(Mono.defer(() -> first.get() ? Mono.empty() : Mono.just(Unpooled.wrappedBuffer(END_ARRAY))));
+                        .flatMap(t -> {
+                                    if (first.getAndSet(false)) {
+                                        return Mono.just(encodeValue(t, START_ARRAY));
+                                    } else {
+                                        return Mono.just(encodeValue(t, COMMA_SEPARATOR));
+                                    }
+                                },
+                                Mono::error,
+                                () -> {
+                                    if (!first.get()) {
+                                        return Mono.just(Unpooled.wrappedBuffer(END_ARRAY));
+                                    } else {
+                                        return Mono.empty();
+                                    }
+                                });
 
             } else {
                 return Flux.from(data)
-                        .transform(f -> encodeValue(f, () -> null, () -> streamSeparator));
+                        .map(t -> {
+                            if (first.getAndSet(false)) {
+                                return encodeValue(t, streamSeparator);
+                            } else {
+                                return encodeValue(t, null);
+                            }
+                        });
             }
         }
     }
 
-    private <T> Flux<ByteBuf> encodeValue(Flux<T> valuess, Supplier<byte[]> beforeSupp, Supplier<byte[]> afterSupp) {
-        ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer();
-        ByteBufOutputStream byteBufOutputStream = new ByteBufOutputStream(byteBuf);
-        JsonGenerator generator;
+    private <T> ByteBuf encodeValue(T t, byte[] before) {
         try {
-            generator = jsonFactory.createGenerator((OutputStream) byteBufOutputStream);
-        } catch (IOException e) {
-            return Flux.error(e);
-        }
-        return valuess.concatMap(val -> {
-            try {
-                byteBuf.clear();
-                byte[] before = beforeSupp.get();
-                if (before != null) {
-                    byteBufOutputStream.write(before);
-                }
-
-                objectCodec.writeValue(generator, val);
-                generator.flush();
-                byte[] after = afterSupp.get();
-                if (after != null) {
-                    byteBufOutputStream.write(after);
-                }
-                return Mono.just(byteBuf.copy());
-            } catch (IOException e) {
-                return Mono.error(e);
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            if (before != null) {
+                byteArrayOutputStream.write(before);
             }
-        });
+
+            objectCodec.writeValue(jsonFactory.createGenerator(byteArrayOutputStream), t);
+            return Unpooled.wrappedBuffer(byteArrayOutputStream.toByteArray());
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to encode as JSON", e);
+        }
     }
 
     private static <T> TypeReference<T> toTypeReference(TypeToken<T> typeToken) {
