@@ -37,12 +37,10 @@ public final class JacksonCodec {
     private static final byte[] COMMA_SEPARATOR = {','};
     private static final byte[] END_ARRAY = {']'};
 
-    private final ObjectCodec objectCodec;
     private final JsonFactory jsonFactory;
     private final byte[] streamSeparator;
 
     public JacksonCodec(ObjectCodec objectCodec, JsonFactory jsonFactory, byte[] streamSeparator) {
-        this.objectCodec = objectCodec;
         this.jsonFactory = jsonFactory.setCodec(objectCodec);
         this.streamSeparator = streamSeparator;
     }
@@ -53,7 +51,7 @@ public final class JacksonCodec {
                 .asInputStream()
                 .map(inputStream -> {
                     try {
-                        return objectCodec.readValue(jsonFactory.createParser(inputStream), toTypeReference(typeToken));
+                        return jsonFactory.createParser(inputStream).readValueAs(toTypeReference(typeToken));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -62,7 +60,7 @@ public final class JacksonCodec {
 
     public <T> Flux<T> decodeFlux(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken, boolean readTopLevelArray) {
         try {
-            JsonAsyncParser<T> jsonAsyncParser = new JsonAsyncParser<>(objectCodec, jsonFactory, readTopLevelArray, typeToken);
+            JsonAsyncParser<T> jsonAsyncParser = new JsonAsyncParser<>(jsonFactory, readTopLevelArray, typeToken);
             return ByteBufFlux.fromInbound(byteBufFlux)
                     .asByteArray()
                     .flatMap(jsonAsyncParser::parse)
@@ -111,7 +109,7 @@ public final class JacksonCodec {
                         byteBuf.writeBytes(before);
                     }
 
-                    objectCodec.writeValue(generator, val);
+                    generator.writeObject(val);
                     generator.flush();
                     byte[] after = afterSupp.get();
                     if (after != null) {
@@ -144,10 +142,10 @@ public final class JacksonCodec {
 
     public static class JsonAsyncParser<T> implements Closeable {
 
+        private final JsonFactory jsonFactory;
         private final boolean readTopLevelArray;
         private final JsonParser parser;
         private final TypeToken<T> typeToken;
-        private final ObjectCodec objectCodec;
         private TokenBuffer tokenBuffer;
 
         boolean rootLevelArrayStarted = false;
@@ -160,8 +158,8 @@ public final class JacksonCodec {
         // See https://github.com/FasterXML/jackson-core/issues/478
         private final ByteArrayFeeder inputFeeder;
 
-        public JsonAsyncParser(ObjectCodec objectCodec, JsonFactory jsonFactory, boolean readTopLevelArray, TypeToken<T> typeToken) throws IOException {
-            this.objectCodec = objectCodec;
+        public JsonAsyncParser(JsonFactory jsonFactory, boolean readTopLevelArray, TypeToken<T> typeToken) throws IOException {
+            this.jsonFactory = jsonFactory;
             this.readTopLevelArray = readTopLevelArray;
             this.typeToken = typeToken;
             this.parser = jsonFactory.createNonBlockingByteArrayParser();
@@ -177,7 +175,8 @@ public final class JacksonCodec {
                 return Flux.fromIterable(tokenBuffers)
                         .flatMapIterable(tokenBuffer -> {
                             if (tokenBuffer.firstToken() != null) {
-                                JsonParser jsonParser = tokenBuffer.asParser(objectCodec);
+
+                                JsonParser jsonParser = tokenBuffer.asParser(jsonFactory.getCodec());
                                 return ImmutableList.copyOf(() -> {
                                     try {
                                         return jsonParser.readValuesAs(toTypeReference(typeToken));
@@ -257,7 +256,7 @@ public final class JacksonCodec {
                 inputFeeder.endOfInput();
                 parser.close();
             } catch (IOException e) {
-                LOGGER.error("Erro while closing parser", e);
+                LOGGER.error("Error while closing parser", e);
             }
         }
     }
