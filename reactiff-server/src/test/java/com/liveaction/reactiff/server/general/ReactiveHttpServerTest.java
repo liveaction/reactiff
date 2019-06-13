@@ -459,7 +459,7 @@ public final class ReactiveHttpServerTest {
 
     @Test
     public void shouldListAllRoutesWhenNoRouteMatch() throws IOException {
-        String actual = withReactiveServer.httpClient()
+        StepVerifier.create(withReactiveServer.httpClient()
                 .headers(httpHeaders -> httpHeaders.set(HttpHeaderNames.ACCEPT, "text/plain"))
                 .get()
                 .uri("/yes_not_exists")
@@ -467,8 +467,8 @@ public final class ReactiveHttpServerTest {
                     assertThat(httpClientResponse.status().code()).isEqualTo(404);
                     return withCodecManager.codecManager.decodeAsMono(String.class).apply(httpClientResponse, byteBufFlux);
                 })
-                .block();
-        assertThat(actual).isEqualTo(Files.toString(new File(getClass().getResource("/expected/not-found.txt").getFile()), Charsets.UTF_8));
+        ).expectNext(Files.toString(new File(getClass().getResource("/expected/not-found.txt").getFile()), Charsets.UTF_8))
+                .verifyComplete();
     }
 
     @Test

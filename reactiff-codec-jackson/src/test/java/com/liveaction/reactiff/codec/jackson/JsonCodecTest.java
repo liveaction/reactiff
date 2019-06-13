@@ -83,7 +83,6 @@ public class JsonCodecTest {
     @Test
     public void shouldSerializeComplexObject() throws IOException {
         Mono<ImmutableList<PojoMap>> toEncode = Flux.range(0, 3)
-                .delayElements(Duration.ofMillis(1000))
                 .map(i -> new PojoMap(ImmutableMap.of(MapKey.fromString("Hey:baby"), ImmutableMap.of("You", new Pojo("gag" + i, "oug")))))
                 .collectList()
                 .map(ImmutableList::copyOf);

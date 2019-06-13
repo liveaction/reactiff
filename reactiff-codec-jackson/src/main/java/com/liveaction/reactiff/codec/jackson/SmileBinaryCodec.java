@@ -1,6 +1,6 @@
 package com.liveaction.reactiff.codec.jackson;
 
-import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
@@ -15,8 +15,8 @@ public final class SmileBinaryCodec implements Codec {
 
     private final JacksonCodec jacksonCodec;
 
-    public SmileBinaryCodec(ObjectCodec objectCodec) {
-        this.jacksonCodec = new JacksonCodec(objectCodec, new SmileFactory(), new byte[0]);
+    public SmileBinaryCodec(ObjectMapper objectCodec) {
+        this.jacksonCodec = new JacksonCodec(objectCodec, new SmileFactory());
     }
 
     @Override
@@ -36,11 +36,11 @@ public final class SmileBinaryCodec implements Codec {
 
     @Override
     public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return jacksonCodec.decodeFlux(byteBufFlux, typeToken, false);
+        return jacksonCodec.decodeFlux(byteBufFlux, typeToken, true);
     }
 
     @Override
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
-        return jacksonCodec.encode(data, false);
+        return jacksonCodec.encode(data, true);
     }
 }

@@ -1,7 +1,7 @@
 package com.liveaction.reactiff.codec.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
 import io.netty.buffer.ByteBuf;
@@ -16,8 +16,8 @@ public final class JsonCodec implements Codec {
 
     private final JacksonCodec jacksonCodec;
 
-    public JsonCodec(ObjectCodec objectCodec) {
-        this.jacksonCodec = new JacksonCodec(objectCodec, new JsonFactory(), new byte[]{'\n'});
+    public JsonCodec(ObjectMapper objectCodec) {
+        this.jacksonCodec = new JacksonCodec(objectCodec, new JsonFactory());
     }
 
     @Override

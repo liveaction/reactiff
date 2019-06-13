@@ -1,15 +1,19 @@
 package com.liveaction.reactiff.codec.jackson;
 
-import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.async.ByteArrayFeeder;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.util.ByteArrayBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SequenceWriter;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -21,28 +25,22 @@ import reactor.util.function.Tuples;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
 public final class JacksonCodec {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JacksonCodec.class);
 
     private static final TypeToken<Mono> MONO_TYPE_TOKEN = TypeToken.of(Mono.class);
-    private static final byte[] START_ARRAY = {'['};
-    private static final byte[] COMMA_SEPARATOR = {','};
-    private static final byte[] END_ARRAY = {']'};
 
     private final JsonFactory jsonFactory;
-    private final byte[] streamSeparator;
+    private final ObjectWriter writer;
 
-    public JacksonCodec(ObjectCodec objectCodec, JsonFactory jsonFactory, byte[] streamSeparator) {
+    public JacksonCodec(ObjectMapper objectCodec, JsonFactory jsonFactory) {
+        writer = objectCodec.writer().with(jsonFactory);
         this.jsonFactory = jsonFactory.setCodec(objectCodec);
-        this.streamSeparator = streamSeparator;
     }
 
     public <T> Mono<T> decodeMono(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
@@ -72,63 +70,44 @@ public final class JacksonCodec {
 
     public <T> Publisher<ByteBuf> encode(Publisher<T> data, boolean tokenizeArrayElements) {
         if (MONO_TYPE_TOKEN.isAssignableFrom(data.getClass())) {
-            return encodeValue(Flux.from(data), () -> null, () -> null);
+            return encodeValue(Flux.from(data), false);
         } else {
-            AtomicBoolean first = new AtomicBoolean(true);
-            if (tokenizeArrayElements) {
-                return Flux.from(data)
-                        .transform(f -> encodeValue(f, () -> first.getAndSet(false) ? START_ARRAY : COMMA_SEPARATOR, () -> null))
-                        .concatWith(Mono.defer(() -> first.get() ? Mono.empty() : Mono.just(Unpooled.wrappedBuffer(END_ARRAY))));
-
-            } else {
-                return Flux.from(data)
-                        .transform(f -> encodeValue(f, () -> null, () -> streamSeparator));
-            }
+            return Flux.from(data)
+                    .transform(f -> encodeValue(f, tokenizeArrayElements));
         }
     }
 
-    private <T> Flux<ByteBuf> encodeValue(Flux<T> values, Supplier<byte[]> beforeSupp, Supplier<byte[]> afterSupp) {
+    private <T> Flux<ByteBuf> encodeValue(Flux<T> values, boolean wrapInArray) {
         return Flux.using(() -> {
-            ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer();
-            ByteBufOutputStream byteBufOutputStream = new ByteBufOutputStream(byteBuf);
-            JsonGenerator generator;
-            try {
-                generator = jsonFactory.createGenerator((OutputStream) byteBufOutputStream);
-                return Tuples.of(byteBuf, byteBufOutputStream, generator);
-            } catch (IOException e) {
-                throw Throwables.propagate(e);
-            }
-        }, tuple -> {
-            ByteBuf byteBuf = tuple.getT1();
-            JsonGenerator generator = tuple.getT3();
-            return values.concatMap(val -> {
-                try {
-                    byteBuf.clear();
-                    byte[] before = beforeSupp.get();
-                    if (before != null) {
-                        byteBuf.writeBytes(before);
-                    }
+                    ByteArrayBuilder output = new ByteArrayBuilder();
+                    SequenceWriter sequenceWriter = writer.writeValues(output);
+                    sequenceWriter.init(wrapInArray);
+                    return Tuples.of(output, sequenceWriter);
+                }, tuple -> {
+                    ByteArrayBuilder output = tuple.getT1();
+                    SequenceWriter sequenceWriter = tuple.getT2();
+                    return values.concatMap(val -> {
+                        try {
+                            output.reset();
+                            sequenceWriter.write(val);
+                            return Mono.just(Unpooled.wrappedBuffer(output.toByteArray()));
+                        } catch (IOException e) {
+                            return Mono.error(e);
+                        }
+                    }).concatWith(Mono.fromCallable(() -> {
+                        output.reset();
+                        try (SequenceWriter c = tuple.getT2()) {
+                        }
+                        return Unpooled.wrappedBuffer(output.toByteArray());
+                    }));
 
-                    generator.writeObject(val);
-                    generator.flush();
-                    byte[] after = afterSupp.get();
-                    if (after != null) {
-                        byteBuf.writeBytes(after);
+                },
+                tuple -> {
+                    try (ByteArrayBuilder a = tuple.getT1(); SequenceWriter c = tuple.getT2()) {
+                    } catch (IOException e) {
+                        LOGGER.error("Error when closing resources", e);
                     }
-                    return Mono.just(byteBuf.copy());
-                } catch (IOException e) {
-                    return Mono.error(e);
-                }
-            });
-        }, tuple -> {
-            try {
-                tuple.getT3().close();
-                tuple.getT2().close();
-                tuple.getT1().release();
-            } catch (IOException e) {
-                throw Throwables.propagate(e);
-            }
-        });
+                });
     }
 
     private static <T> TypeReference<T> toTypeReference(TypeToken<T> typeToken) {
@@ -212,6 +191,7 @@ public final class JacksonCodec {
         }
 
         private List<TokenBuffer> parseTokens(JsonParser parser, byte[] array) throws IOException {
+            System.out.println("parse " + new String(array));
             List<TokenBuffer> result = new ArrayList<>();
             inputFeeder.feedInput(array, 0, array.length);
             while (true) {

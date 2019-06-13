@@ -144,8 +144,8 @@ public class SmileBinaryCodecTest {
 
         Publisher<ByteBuf> encode = codec.encode(SmileBinaryCodec.APPLICATION_BINARY, Mono.just(just), new TypeToken<List<String>>() {
         });
-        List<String> block = codec.decodeFlux(SmileBinaryCodec.APPLICATION_BINARY, encode, new TypeToken<List<String>>() {
-        }).last().block();
+        List<String> block = codec.decodeMono(SmileBinaryCodec.APPLICATION_BINARY, encode, new TypeToken<List<String>>() {
+        }).block();
         System.out.println(block);
     }
 
