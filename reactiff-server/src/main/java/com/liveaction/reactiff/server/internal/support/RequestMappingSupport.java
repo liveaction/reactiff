@@ -97,7 +97,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                 Parameter parameter = parameters[i];
                 TypeToken<?> parameterType = TypeToken.of(parameter.getType());
                 TypeToken<?> parametrizedType = TypeToken.of(parameter.getParameterizedType());
-                if (parameterType.isAssignableFrom(Request.class)) {
+                if (parameterType.isSupertypeOf(Request.class)) {
                     args.add(request);
                 } else {
                     PathParam annotation;
@@ -112,11 +112,11 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         }
                         args.add(paramConverter.convertValue(ImmutableList.of(request.pathParam(name)), parametrizedType));
                     } else if (parameter.getAnnotation(RequestBody.class) != null) {
-                        if (parameterType.isAssignableFrom(Mono.class)) {
+                        if (parameterType.isSupertypeOf(Mono.class)) {
                             TypeToken<?> paramType = parametrizedType.resolveType(Mono.class.getTypeParameters()[0]);
                             args.add(request.bodyToMono(paramType)
                                     .doOnNext(v -> executionContext.apply()));
-                        } else if (parameterType.isAssignableFrom(Flux.class)) {
+                        } else if (parameterType.isSupertypeOf(Flux.class)) {
                             TypeToken<?> paramType = parametrizedType.resolveType(Flux.class.getTypeParameters()[0]);
                             args.add(request.bodyToFlux(paramType)
                                     .doOnNext(v -> executionContext.apply()));

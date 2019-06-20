@@ -27,7 +27,7 @@ public final class RawBinaryCodec implements Codec {
 
     @Override
     public boolean supports(String contentType, TypeToken<?> typeToken) {
-        return typeToken != null && BINARY_DATA.stream().anyMatch(t -> t.isAssignableFrom(typeToken));
+        return typeToken != null && BINARY_DATA.stream().anyMatch(t -> t.isSupertypeOf(typeToken));
     }
 
     @Override
@@ -35,12 +35,12 @@ public final class RawBinaryCodec implements Codec {
     public <T> Mono<T> decodeMono(String contentType, Publisher<ByteBuf> input, TypeToken<T> typeToken) {
         ByteBufMono byteBufMono = ByteBufFlux.fromInbound(input)
                 .aggregate();
-        if (BYTE_ARRAY.isAssignableFrom(typeToken)) {
+        if (BYTE_ARRAY.isSupertypeOf(typeToken)) {
             return (Mono<T>) byteBufMono
                     .asByteArray();
-        } else if (BYTE_BUFF.isAssignableFrom(typeToken)) {
+        } else if (BYTE_BUFF.isSupertypeOf(typeToken)) {
             return (Mono<T>) byteBufMono;
-        } else if (BYTE_BUFFER_TYPE_TOKEN.isAssignableFrom(typeToken)) {
+        } else if (BYTE_BUFFER_TYPE_TOKEN.isSupertypeOf(typeToken)) {
             return (Mono<T>) byteBufMono
                     .asByteBuffer();
         } else {
@@ -52,12 +52,12 @@ public final class RawBinaryCodec implements Codec {
     @SuppressWarnings("unchecked")
     public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> input, TypeToken<T> typeToken) {
         ByteBufFlux byteBufFlux = ByteBufFlux.fromInbound(input);
-        if (BYTE_ARRAY.isAssignableFrom(typeToken)) {
+        if (BYTE_ARRAY.isSupertypeOf(typeToken)) {
             return (Flux<T>) byteBufFlux
                     .asByteArray();
-        } else if (BYTE_BUFF.isAssignableFrom(typeToken)) {
+        } else if (BYTE_BUFF.isSupertypeOf(typeToken)) {
             return (Flux<T>) byteBufFlux;
-        } else if (BYTE_BUFFER_TYPE_TOKEN.isAssignableFrom(typeToken)) {
+        } else if (BYTE_BUFFER_TYPE_TOKEN.isSupertypeOf(typeToken)) {
             return (Flux<T>) byteBufFlux
                     .asByteBuffer();
         } else {
@@ -67,11 +67,11 @@ public final class RawBinaryCodec implements Codec {
 
     @Override
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
-        if (BYTE_ARRAY.isAssignableFrom(typeToken)) {
+        if (BYTE_ARRAY.isSupertypeOf(typeToken)) {
             return ByteBufFlux.fromInbound(data);
-        } else if (BYTE_BUFF.isAssignableFrom(typeToken)) {
+        } else if (BYTE_BUFF.isSupertypeOf(typeToken)) {
             return ByteBufFlux.fromInbound(data);
-        } else if (BYTE_BUFFER_TYPE_TOKEN.isAssignableFrom(typeToken)) {
+        } else if (BYTE_BUFFER_TYPE_TOKEN.isSupertypeOf(typeToken)) {
             return ByteBufFlux.fromInbound(Flux.from(data)
                     .map(t -> Unpooled.wrappedBuffer((ByteBuffer) t)));
         } else {
