@@ -33,7 +33,7 @@ public final class RawFileCodec implements Codec {
     }
 
     private boolean isFileOrPath(TypeToken<?> typeToken) {
-        return typeToken != null && (FILE.isAssignableFrom(typeToken) || PATH.isAssignableFrom(typeToken));
+        return typeToken != null && (FILE.isSupertypeOf(typeToken) || PATH.isSupertypeOf(typeToken));
     }
 
     @Override
@@ -69,7 +69,7 @@ public final class RawFileCodec implements Codec {
                                 Throwables.propagate(e);
                             }
                         });
-                if (FILE.isAssignableFrom(typeToken)) {
+                if (FILE.isSupertypeOf(typeToken)) {
                     return writeFlux.thenReturn((T) file);
                 } else {
                     return writeFlux.thenReturn((T) file.toPath());
@@ -85,11 +85,11 @@ public final class RawFileCodec implements Codec {
     @Override
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
         Mono<Path> path;
-        if (FILE.isAssignableFrom(typeToken)) {
+        if (FILE.isSupertypeOf(typeToken)) {
             path = Mono.from(data)
                     .cast(File.class)
                     .map(File::toPath);
-        } else if(PATH.isAssignableFrom(typeToken)) {
+        } else if(PATH.isSupertypeOf(typeToken)) {
             path = Mono.from(data)
                     .cast(Path.class);
         } else {
