@@ -69,7 +69,7 @@ public final class JacksonCodec {
     }
 
     public <T> Publisher<ByteBuf> encode(Publisher<T> data, boolean tokenizeArrayElements) {
-        if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
+        if (MONO_TYPE_TOKEN.isAssignableFrom(data.getClass())) {
             return encodeValue(Flux.from(data), false);
         } else {
             return Flux.from(data)
