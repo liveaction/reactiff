@@ -19,6 +19,7 @@ import reactor.core.scheduler.Scheduler;
 import reactor.netty.ByteBufFlux;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -64,6 +65,11 @@ public final class FluxSinkMultipartListener implements NioMultipartParserListen
                 @Override
                 public String filename() {
                     return filename;
+                }
+
+                @Override
+                public InputStream asInputStream() {
+                    return storage.getInputStream();
                 }
 
                 @Override

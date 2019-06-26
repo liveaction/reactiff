@@ -20,6 +20,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
 import java.io.File;
+import java.io.InputStream;
 import java.nio.file.Path;
 
 /**
@@ -36,6 +37,8 @@ public interface FilePart extends Part {
 	 * Return the original filename in the client's filesystem.
 	 */
 	String filename();
+
+	InputStream asInputStream();
 
 	/**
 	 * Convenience method to copy the content of the file in this part to the
