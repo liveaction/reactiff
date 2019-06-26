@@ -36,11 +36,11 @@ public final class JacksonCodec {
     private static final TypeToken<Mono> MONO_TYPE_TOKEN = TypeToken.of(Mono.class);
 
     private final JsonFactory jsonFactory;
-    private final ObjectWriter writer;
+    private final ObjectMapper objectMapper;
 
-    public JacksonCodec(ObjectMapper objectCodec, JsonFactory jsonFactory) {
-        writer = objectCodec.writer().with(jsonFactory);
-        this.jsonFactory = jsonFactory.setCodec(objectCodec);
+    public JacksonCodec(ObjectMapper objectMapper, JsonFactory jsonFactory) {
+        this.objectMapper = objectMapper;
+        this.jsonFactory = jsonFactory.setCodec(objectMapper);
     }
 
     public <T> Mono<T> decodeMono(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
@@ -69,15 +69,16 @@ public final class JacksonCodec {
     }
 
     public <T> Publisher<ByteBuf> encode(Publisher<T> data, boolean tokenizeArrayElements) {
+        ObjectWriter writer = objectMapper.writer().with(jsonFactory);
         if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
-            return encodeValue(Flux.from(data), false);
+            return encodeValue(Flux.from(data), false, writer);
         } else {
             return Flux.from(data)
-                    .transform(f -> encodeValue(f, tokenizeArrayElements));
+                    .transform(f -> encodeValue(f, tokenizeArrayElements, writer));
         }
     }
 
-    private <T> Flux<ByteBuf> encodeValue(Flux<T> values, boolean wrapInArray) {
+    private <T> Flux<ByteBuf> encodeValue(Flux<T> values, boolean wrapInArray, ObjectWriter writer) {
         return Flux.using(() -> {
                     ByteArrayBuilder output = new ByteArrayBuilder();
                     SequenceWriter sequenceWriter = writer.writeValues(output);
