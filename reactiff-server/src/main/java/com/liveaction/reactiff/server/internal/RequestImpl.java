@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.synchronoss.cloud.nio.multipart.Multipart;
 import org.synchronoss.cloud.nio.multipart.MultipartContext;
+import org.synchronoss.cloud.nio.multipart.MultipartUtils;
 import org.synchronoss.cloud.nio.multipart.NioMultipartParser;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -80,7 +81,11 @@ public final class RequestImpl implements Request {
     @Override
     public Mono<Map<String, Part>> parts() {
         int contentLength = getContentLength(httpServerRequest.requestHeaders());
-        MultipartContext context = new MultipartContext(httpServerRequest.requestHeaders().get(HttpHeaderNames.CONTENT_TYPE),
+        String contentType = httpServerRequest.requestHeaders().get(HttpHeaderNames.CONTENT_TYPE);
+        if (!MultipartUtils.isMultipart(contentType)) {
+            return Mono.empty();
+        }
+        MultipartContext context = new MultipartContext(contentType,
                 contentLength,
                 httpServerRequest.requestHeaders().get(HttpHeaderNames.CONTENT_ENCODING));
         return Flux.<Part>create(sink -> {
