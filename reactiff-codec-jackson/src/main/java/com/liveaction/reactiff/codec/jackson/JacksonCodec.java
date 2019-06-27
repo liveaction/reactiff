@@ -52,10 +52,11 @@ public class JacksonCodec {
     public <T> Mono<T> decodeMono(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         return ByteBufFlux.fromInbound(byteBufFlux)
                 .aggregate()
-                .asInputStream()
-                .map(inputStream -> {
+                .asByteArray()
+                .map(bytes -> {
                     try {
-                        return jsonFactory.createParser(inputStream).readValueAs(toTypeReference(typeToken));
+                        // https://github.com/reactor/reactor-netty/issues/746
+                        return jsonFactory.createParser(bytes).readValueAs(toTypeReference(typeToken));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
