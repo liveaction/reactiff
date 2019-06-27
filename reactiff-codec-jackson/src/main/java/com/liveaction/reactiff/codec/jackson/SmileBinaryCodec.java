@@ -9,14 +9,12 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public final class SmileBinaryCodec implements Codec {
+public final class SmileBinaryCodec extends JacksonCodec implements Codec {
 
     public static final String APPLICATION_BINARY = "application/octet-stream";
 
-    private final JacksonCodec jacksonCodec;
-
     public SmileBinaryCodec(ObjectMapper objectCodec) {
-        this.jacksonCodec = new JacksonCodec(objectCodec, new SmileFactory());
+        super(objectCodec, new SmileFactory());
     }
 
     @Override
@@ -31,16 +29,16 @@ public final class SmileBinaryCodec implements Codec {
 
     @Override
     public <T> Mono<T> decodeMono(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return jacksonCodec.decodeMono(byteBufFlux, typeToken);
+        return super.decodeMono(byteBufFlux, typeToken);
     }
 
     @Override
     public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return jacksonCodec.decodeFlux(byteBufFlux, typeToken, true);
+        return super.decodeFlux(byteBufFlux, typeToken, true);
     }
 
     @Override
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
-        return jacksonCodec.encode(data, true);
+        return super.encode(data, true);
     }
 }

@@ -29,18 +29,24 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class JacksonCodec {
+public class JacksonCodec {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JacksonCodec.class);
 
     private static final TypeToken<Mono> MONO_TYPE_TOKEN = TypeToken.of(Mono.class);
 
-    private final JsonFactory jsonFactory;
-    private final ObjectMapper objectMapper;
+    private JsonFactory jsonFactory;
+    private ObjectWriter objectWriter;
+
 
     public JacksonCodec(ObjectMapper objectMapper, JsonFactory jsonFactory) {
-        this.objectMapper = objectMapper;
-        this.jsonFactory = jsonFactory.setCodec(objectMapper);
+        this.jsonFactory = jsonFactory;
+        reloadMapper(objectMapper);
+    }
+
+    public void reloadMapper(ObjectMapper objectMapper) {
+        this.objectWriter = objectMapper.writer().with(jsonFactory);
+        jsonFactory.setCodec(objectMapper);
     }
 
     public <T> Mono<T> decodeMono(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
@@ -69,19 +75,18 @@ public final class JacksonCodec {
     }
 
     public <T> Publisher<ByteBuf> encode(Publisher<T> data, boolean tokenizeArrayElements) {
-        ObjectWriter writer = objectMapper.writer().with(jsonFactory);
         if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
-            return encodeValue(Flux.from(data), false, writer);
+            return encodeValue(Flux.from(data), false);
         } else {
             return Flux.from(data)
-                    .transform(f -> encodeValue(f, tokenizeArrayElements, writer));
+                    .transform(f -> encodeValue(f, tokenizeArrayElements));
         }
     }
 
-    private <T> Flux<ByteBuf> encodeValue(Flux<T> values, boolean wrapInArray, ObjectWriter writer) {
+    private <T> Flux<ByteBuf> encodeValue(Flux<T> values, boolean wrapInArray) {
         return Flux.using(() -> {
                     ByteArrayBuilder output = new ByteArrayBuilder();
-                    SequenceWriter sequenceWriter = writer.writeValues(output);
+                    SequenceWriter sequenceWriter = objectWriter.writeValues(output);
                     sequenceWriter.init(wrapInArray);
                     return Tuples.of(output, sequenceWriter);
                 }, tuple -> {
@@ -99,7 +104,8 @@ public final class JacksonCodec {
                         output.reset();
                         try (SequenceWriter c = tuple.getT2()) {
                         }
-                        return Unpooled.wrappedBuffer(output.toByteArray());
+                        byte[] array = output.toByteArray();
+                        return array.length == 0 ? null : Unpooled.wrappedBuffer(array);
                     }));
 
                 },
