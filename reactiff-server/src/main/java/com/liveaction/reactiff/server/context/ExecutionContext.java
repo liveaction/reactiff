@@ -22,4 +22,6 @@ package com.liveaction.reactiff.server.context;
 public interface ExecutionContext {
 
     void apply();
+
+    void unapply();
 }

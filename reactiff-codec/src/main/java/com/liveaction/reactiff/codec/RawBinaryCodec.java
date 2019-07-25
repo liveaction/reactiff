@@ -6,6 +6,8 @@ import com.liveaction.reactiff.api.codec.Codec;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
@@ -48,6 +50,8 @@ public final class RawBinaryCodec implements Codec {
         }
     }
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(RawBinaryCodec.class);
+
     @Override
     @SuppressWarnings("unchecked")
     public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> input, TypeToken<T> typeToken) {
@@ -59,10 +63,19 @@ public final class RawBinaryCodec implements Codec {
             return (Flux<T>) byteBufFlux;
         } else if (BYTE_BUFFER_TYPE_TOKEN.isSupertypeOf(typeToken)) {
             return (Flux<T>) byteBufFlux
-                    .asByteBuffer();
+                    .asByteBuffer()
+//                    .doOnNext(bb -> LOGGER.warn("received {}", Arrays.toString(toBytes(bb))))
+                    ;
         } else {
             throw new IllegalArgumentException("Unable to encode to type '" + typeToken + "'");
         }
+    }
+
+    private byte[] toBytes(ByteBuffer byteBuffer) {
+        byte[] bytes = new byte[byteBuffer.remaining()];
+        byteBuffer.get(bytes);
+        byteBuffer.rewind();
+        return bytes;
     }
 
     @Override
@@ -73,6 +86,7 @@ public final class RawBinaryCodec implements Codec {
             return ByteBufFlux.fromInbound(data);
         } else if (BYTE_BUFFER_TYPE_TOKEN.isSupertypeOf(typeToken)) {
             return ByteBufFlux.fromInbound(Flux.from(data)
+//                    .doOnNext(bb -> LOGGER.warn("sent {}", Arrays.toString(toBytes((ByteBuffer) bb))))
                     .map(t -> Unpooled.wrappedBuffer((ByteBuffer) t)));
         } else {
             throw new IllegalArgumentException("Unable to encode type '" + typeToken + "'");
