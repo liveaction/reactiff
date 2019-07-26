@@ -25,16 +25,6 @@ public final class ExecutionContextServiceManager implements ExecutionContextSer
         ImmutableList<ExecutionContext> executionContexts = ImmutableList.copyOf(executionContextServices.stream()
                 .map(ExecutionContextService::prepare)
                 .collect(Collectors.toList()));
-        return new ExecutionContext() {
-            @Override
-            public void apply() {
-                executionContexts.forEach(ExecutionContext::apply);
-            }
-
-            @Override
-            public void unapply() {
-                executionContexts.forEach(ExecutionContext::unapply);
-            }
-        };
+        return () -> executionContexts.forEach(ExecutionContext::apply);
     }
 }

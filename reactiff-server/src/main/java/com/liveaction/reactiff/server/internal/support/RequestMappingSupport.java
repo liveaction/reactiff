@@ -28,8 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.HttpServerRoutes;
@@ -92,14 +90,6 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
     private Mono<Result> invokeHandlerMethod(ReactiveHandler reactiveHandler, Method method, Request request) {
         try {
             ExecutionContext executionContext = executionContextService.prepare();
-            Scheduler executionContextWrapper = Schedulers.fromExecutor(runnable -> {
-                try {
-                    executionContext.apply();
-                    runnable.run();
-                } finally {
-                    executionContext.unapply();
-                }
-            });
             TypeToken<?> returnType = TypeToken.of(method.getGenericReturnType());
             List<Object> args = Lists.newArrayList();
             Parameter[] parameters = method.getParameters();
@@ -125,11 +115,11 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                         if (parameterType.isSupertypeOf(Mono.class)) {
                             TypeToken<?> paramType = parametrizedType.resolveType(Mono.class.getTypeParameters()[0]);
                             args.add(request.bodyToMono(paramType)
-                                    .publishOn(executionContextWrapper));
+                                    .doOnNext(v -> executionContext.apply()));
                         } else if (parameterType.isSupertypeOf(Flux.class)) {
                             TypeToken<?> paramType = parametrizedType.resolveType(Flux.class.getTypeParameters()[0]);
                             args.add(request.bodyToFlux(paramType)
-                                    .publishOn(executionContextWrapper));
+                                    .doOnNext(v -> executionContext.apply()));
                         } else {
                             throw new IllegalArgumentException(RequestBody.class.getSimpleName() + " only support Mono<T> or Flux<T> type");
                         }
