@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.SequenceWriter;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
 import com.google.common.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -27,7 +28,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class JacksonCodec {
 
@@ -68,7 +71,7 @@ public class JacksonCodec {
             JsonAsyncParser<T> jsonAsyncParser = new JsonAsyncParser<>(jsonFactory, readTopLevelArray, typeToken);
             return ByteBufFlux.fromInbound(byteBufFlux)
                     .asByteArray()
-                    .flatMap(jsonAsyncParser::parse)
+                    .flatMapIterable(jsonAsyncParser::parse)
                     .doOnTerminate(jsonAsyncParser::close);
         } catch (IOException e) {
             return Flux.error(e);
@@ -79,8 +82,7 @@ public class JacksonCodec {
         if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
             return encodeValue(Flux.from(data), false);
         } else {
-            return Flux.from(data)
-                    .transform(f -> encodeValue(f, tokenizeArrayElements));
+            return encodeValue(Flux.from(data), tokenizeArrayElements);
         }
     }
 
@@ -156,26 +158,23 @@ public class JacksonCodec {
         }
 
 
-        Flux<T> parse(byte[] bytes) {
+        Collection<T> parse(byte[] bytes) {
             try {
                 List<TokenBuffer> tokenBuffers = parseTokens(parser, bytes);
-                return Flux.fromIterable(tokenBuffers)
-                        .flatMapIterable(tokenBuffer -> {
+                return tokenBuffers.stream()
+                        .flatMap(tokenBuffer -> {
                             if (tokenBuffer.firstToken() != null) {
 
                                 JsonParser jsonParser = tokenBuffer.asParser(jsonFactory.getCodec());
-                                return ImmutableList.copyOf(() -> {
-                                    try {
-                                        return jsonParser.readValuesAs(toTypeReference(typeToken));
-                                    } catch (IOException e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                });
+                                try {
+                                    return Streams.stream(jsonParser.readValuesAs(toTypeReference(typeToken)));
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
                             } else {
-                                return ImmutableList.of();
+                                return Stream.<T>of();
                             }
-
-                        });
+                        }).collect(ImmutableList.toImmutableList());
             } catch (IOException e) {
                 throw Throwables.propagate(e);
             }
