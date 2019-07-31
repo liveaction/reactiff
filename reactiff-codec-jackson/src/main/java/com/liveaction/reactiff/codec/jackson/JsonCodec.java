@@ -50,7 +50,6 @@ public final class JsonCodec extends JacksonCodec implements Codec {
         } else {
             return Flux.error(new IllegalArgumentException("Unsupported ContentType '" + contentType + "'"));
         }
-
     }
 
 }

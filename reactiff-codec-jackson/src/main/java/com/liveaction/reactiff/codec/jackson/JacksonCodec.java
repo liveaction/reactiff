@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 public class JacksonCodec {
 
@@ -39,11 +41,17 @@ public class JacksonCodec {
 
     private JsonFactory jsonFactory;
     private ObjectWriter objectWriter;
+    private DeserializerWrapper deserializerWrapper;
 
 
     public JacksonCodec(ObjectMapper objectMapper, JsonFactory jsonFactory) {
         this.jsonFactory = jsonFactory;
         reloadMapper(objectMapper);
+    }
+
+    public JacksonCodec withDeserializerWrapper(DeserializerWrapper deserializerWrapper) {
+        this.deserializerWrapper = deserializerWrapper;
+        return this;
     }
 
     public void reloadMapper(ObjectMapper objectMapper) {
@@ -54,20 +62,13 @@ public class JacksonCodec {
     public <T> Mono<T> decodeMono(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         return ByteBufFlux.fromInbound(byteBufFlux)
                 .aggregate()
-                .asByteArray()
-                .map(bytes -> {
-                    try {
-                        // https://github.com/reactor/reactor-netty/issues/746
-                        return jsonFactory.createParser(bytes).readValueAs(toTypeReference(typeToken));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                .asByteArray()// https://github.com/reactor/reactor-netty/issues/746
+                .map(bytes -> deserialize(() -> jsonFactory.createParser(bytes).readValueAs(toTypeReference(typeToken))));
     }
 
     public <T> Flux<T> decodeFlux(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken, boolean readTopLevelArray) {
         try {
-            JsonAsyncParser<T> jsonAsyncParser = new JsonAsyncParser<>(jsonFactory, readTopLevelArray, typeToken);
+            JsonAsyncParser<T> jsonAsyncParser = new JsonAsyncParser<>(jsonFactory, readTopLevelArray, typeToken, this::deserialize);
             return ByteBufFlux.fromInbound(byteBufFlux)
                     .asByteArray()
                     .flatMapIterable(jsonAsyncParser::parse)
@@ -119,6 +120,19 @@ public class JacksonCodec {
                 });
     }
 
+    private <T> T deserialize(Callable<T> callable) {
+        T res;
+        try {
+            Optional.ofNullable(deserializerWrapper).ifPresent(DeserializerWrapper::apply);
+            res = callable.call();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            Optional.ofNullable(deserializerWrapper).ifPresent(DeserializerWrapper::unapply);
+        }
+        return res;
+    }
+
     private static <T> TypeReference<T> toTypeReference(TypeToken<T> typeToken) {
         return new TypeReference<T>() {
             @Override
@@ -133,6 +147,7 @@ public class JacksonCodec {
         private final JsonFactory jsonFactory;
         private final boolean readTopLevelArray;
         private final JsonParser parser;
+        private final Function<Callable<T>, T> deserializerFunction;
         private final TypeToken<T> typeToken;
         private TokenBuffer tokenBuffer;
 
@@ -146,11 +161,12 @@ public class JacksonCodec {
         // See https://github.com/FasterXML/jackson-core/issues/478
         private final ByteArrayFeeder inputFeeder;
 
-        public JsonAsyncParser(JsonFactory jsonFactory, boolean readTopLevelArray, TypeToken<T> typeToken) throws IOException {
+        public JsonAsyncParser(JsonFactory jsonFactory, boolean readTopLevelArray, TypeToken<T> typeToken, Function<Callable<T>, T> deserializerFunction) throws IOException {
             this.jsonFactory = jsonFactory;
             this.readTopLevelArray = readTopLevelArray;
             this.typeToken = typeToken;
             this.parser = jsonFactory.createNonBlockingByteArrayParser();
+            this.deserializerFunction = deserializerFunction;
             this.inputFeeder = (ByteArrayFeeder) this.parser.getNonBlockingInputFeeder();
 
             this.tokenBuffer = new TokenBuffer(this.parser);
@@ -174,11 +190,7 @@ public class JacksonCodec {
             Optional<T> res;
             if (tokenBuffer.firstToken() != null) {
                 JsonParser jsonParser = tokenBuffer.asParser(jsonFactory.getCodec());
-                try {
-                    res = Optional.of(jsonParser.readValueAs(toTypeReference(typeToken)));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                res = Optional.of(deserializerFunction.apply(() -> jsonParser.readValueAs(toTypeReference(typeToken))));
             } else {
                 res = Optional.empty();
             }
