@@ -73,7 +73,8 @@ public final class RawBinaryCodec implements Codec {
             return ByteBufFlux.fromInbound(data);
         } else if (BYTE_BUFFER_TYPE_TOKEN.isSupertypeOf(typeToken)) {
             return ByteBufFlux.fromInbound(Flux.from(data)
-                    .map(t -> Unpooled.wrappedBuffer((ByteBuffer) t)));
+                    .cast(ByteBuffer.class)
+                    .map(Unpooled::wrappedBuffer));
         } else {
             throw new IllegalArgumentException("Unable to encode type '" + typeToken + "'");
         }
