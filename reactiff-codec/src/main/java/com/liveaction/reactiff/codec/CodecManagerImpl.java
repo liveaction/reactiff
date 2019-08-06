@@ -2,7 +2,6 @@ package com.liveaction.reactiff.codec;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
 import com.liveaction.reactiff.api.codec.CodecManager;
@@ -27,6 +26,7 @@ public final class CodecManagerImpl implements CodecManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CodecManagerImpl.class);
     private static final String DEFAULT_CONTENT_TYPE = "application/json";
+    private static final String ACCEPT_ALL_HEADER = "*/*";
     private static final ImmutableList<String> DEFAULT_ACCEPT_HEADERS = ImmutableList.of("application/json", "text/plain");
 
     private final Set<Codec> codecs = new ConcurrentSkipListSet<>(Comparator.comparingInt(Codec::rank));
@@ -92,10 +92,11 @@ public final class CodecManagerImpl implements CodecManager {
     }
 
     private Collection<String> getAcceptHeaders(HttpHeaders requestHttpHeaders) {
-        return ImmutableSet.<String>builder()
-                .addAll(DEFAULT_ACCEPT_HEADERS)
-                .addAll(requestHttpHeaders.getAll(HttpHeaderNames.ACCEPT))
-                .build();
+        if (requestHttpHeaders.get(HttpHeaderNames.ACCEPT).equals(ACCEPT_ALL_HEADER)) {
+            return DEFAULT_ACCEPT_HEADERS;
+        } else {
+            return requestHttpHeaders.getAll(HttpHeaderNames.ACCEPT);
+        }
     }
 
     @Override
@@ -110,7 +111,7 @@ public final class CodecManagerImpl implements CodecManager {
     @Override
     public <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders httpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         Codec codec = getCodec(contentType, typeToken);
-        LOGGER.info("Found an encoder for Content-Type='{}'", contentType);
+        LOGGER.debug("Found an encoder for Content-Type='{}'", contentType);
         httpHeaders.set(HttpHeaderNames.CONTENT_TYPE, contentType);
         return encodeAs(codec, contentType, data, typeToken);
     }
