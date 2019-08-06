@@ -1,6 +1,8 @@
 package com.liveaction.reactiff.codec;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
 import com.liveaction.reactiff.api.codec.CodecManager;
@@ -24,11 +26,12 @@ import java.util.stream.StreamSupport;
 public final class CodecManagerImpl implements CodecManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CodecManagerImpl.class);
-    private static final String DEFAULT = "application/json";
+    private static final String DEFAULT_CONTENT_TYPE = "application/json";
+    private static final ImmutableList<String> DEFAULT_ACCEPT_HEADERS = ImmutableList.of("application/json", "text/plain");
 
     private final Set<Codec> codecs = new ConcurrentSkipListSet<>(Comparator.comparingInt(Codec::rank));
 
-    private String defaultContentType = DEFAULT;
+    private String defaultContentType = DEFAULT_CONTENT_TYPE;
 
     @Override
     public void addCodec(Codec codec) {
@@ -81,18 +84,25 @@ public final class CodecManagerImpl implements CodecManager {
     public <T> Mono<Result<T>> enrichResult(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Result<T> result) {
         String contentType = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType == null) {
-            contentType = negociateContentType(requestHttpHeaders.getAll(HttpHeaderNames.ACCEPT), result.type());
+            contentType = negociateContentType(getAcceptHeaders(requestHttpHeaders), result.type());
         }
         return getOptionalCodec(contentType, result.type())
                 .map(codec -> codec.enrich(result))
                 .orElse(Mono.just(result));
     }
 
+    private Collection<String> getAcceptHeaders(HttpHeaders requestHttpHeaders) {
+        return ImmutableSet.<String>builder()
+                .addAll(DEFAULT_ACCEPT_HEADERS)
+                .addAll(requestHttpHeaders.getAll(HttpHeaderNames.ACCEPT))
+                .build();
+    }
+
     @Override
     public <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         String contentType = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType == null) {
-            contentType = negociateContentType(requestHttpHeaders.getAll(HttpHeaderNames.ACCEPT), typeToken);
+            contentType = negociateContentType(getAcceptHeaders(requestHttpHeaders), typeToken);
         }
         return encodeAs(contentType, responseHttpHeaders, data, typeToken);
     }
@@ -100,7 +110,7 @@ public final class CodecManagerImpl implements CodecManager {
     @Override
     public <T> Publisher<ByteBuf> encodeAs(String contentType, HttpHeaders httpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         Codec codec = getCodec(contentType, typeToken);
-        LOGGER.debug("Found an encoder for Content-Type='{}'", contentType);
+        LOGGER.info("Found an encoder for Content-Type='{}'", contentType);
         httpHeaders.set(HttpHeaderNames.CONTENT_TYPE, contentType);
         return encodeAs(codec, contentType, data, typeToken);
     }
@@ -109,7 +119,7 @@ public final class CodecManagerImpl implements CodecManager {
     public <T> Publisher<ByteBuf> encodeAs(HttpHeaders requestHttpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         String contentType = requestHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType == null) {
-            contentType = negociateContentType(requestHttpHeaders.getAll(HttpHeaderNames.ACCEPT), typeToken);
+            contentType = negociateContentType(getAcceptHeaders(requestHttpHeaders), typeToken);
         }
         return encodeAs(getCodec(contentType, typeToken), contentType, data, typeToken);
     }
