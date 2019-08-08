@@ -78,7 +78,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
     public void register(HttpServerRoutes httpServerRoutes, ReactiveHandler reactiveHandler, HttpRoute route) {
         Method method = route.handlerMethod();
         FilterChain routeChain = (request) -> invokeHandlerMethod(reactiveHandler, method, request)
-                .doOnError(error -> LOGGER.warn("An error occurred while calling {}:{}", reactiveHandler.getClass().getSimpleName(), method.getName(), error));
+                .doOnError(error -> LOGGER.debug("An error occurred while calling {}:{}, {}", reactiveHandler.getClass().getSimpleName(), method.getName(), error.getMessage()));
         BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> {
             Optional<Route> matchingRoute = Optional.of(Route.http(0, HttpMethod.valueOf(req.method().name()), route.path(), method));
             return FilterUtils.applyFilters(req, res, codecManager, filterChainer, routeChain, matchingRoute, writeErrorStacktrace);
