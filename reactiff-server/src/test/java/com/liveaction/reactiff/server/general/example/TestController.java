@@ -41,6 +41,21 @@ public final class TestController implements ReactiveHandler {
         return Mono.error(new NoSuchElementException("Element untel not found"));
     }
 
+    @RequestMapping(method = HttpMethod.GET, path = "/yes/exception-flux-delay")
+    public Flux<String> exceptionFluxDelay(Request request) {
+        return Flux.merge(Flux.just("a"), Flux.just("b"), Flux.error(new IllegalArgumentException("Element untel not found")));
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/yes/exception-mono-delay")
+    public Result<String> exceptionMonoDelay(Request request) {
+        return Result.ok(Mono.error(new IllegalArgumentException("Element untel not found")), String.class);
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/yes/exception-mono")
+    public Mono<String> exceptionMono(Request request) {
+        return Mono.error(new IllegalArgumentException("Element untel not found"));
+    }
+
     @RequestMapping(method = HttpMethod.GET, path = "/yes/unauthorized")
     public Mono<Void> unauthorizedException(Request request) {
         return Mono.error(new IllegalAccessException("Access forbidden by me"));

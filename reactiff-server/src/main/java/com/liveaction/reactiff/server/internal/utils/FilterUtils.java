@@ -17,8 +17,6 @@ import reactor.netty.NettyPipeline;
 import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -48,9 +46,10 @@ public final class FilterUtils {
                         message = HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase();
                     }
                     if (writeErrorStacktrace) {
-                        StringWriter stringWriter = new StringWriter();
-                        throwable.printStackTrace(new PrintWriter(stringWriter));
-                        return Mono.just(Result.withStatus(status, message, stringWriter.toString()));
+                        return Mono.just(Result.<Throwable>builder()
+                                .status(status, message)
+                                .data(Mono.just(throwable), Throwable.class)
+                                .build());
                     } else {
                         return Mono.just(Result.withStatus(status, message));
                     }

@@ -29,6 +29,7 @@ import org.junit.rules.TemporaryFolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClientResponse;
+import reactor.netty.http.client.PrematureCloseException;
 import reactor.test.StepVerifier;
 
 import java.io.ByteArrayInputStream;
@@ -184,6 +185,40 @@ public final class ReactiveHttpServerTest {
                 .uri("/yes/nosuchflux")
                 .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
                 .expectErrorMessage("404 : Not Found")
+                .verify();
+    }
+
+    @Test
+    public void shouldReceiveException_during_flux_delayed() {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .get()
+                .uri("/yes/exception-flux-delay")
+                .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
+                .expectNext("a")
+                .expectNext("b")
+                .expectError(PrematureCloseException.class) // We do not propagate error from inner publisher yet
+                .verify();
+    }
+
+    @Test
+    public void shouldReceiveException_during_mono_delayed() {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .get()
+                .uri("/yes/exception-flux-delay")
+                .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
+                .expectNext("a")
+                .expectNext("b")
+                .expectError(PrematureCloseException.class) // We do not propagate error from inner publisher yet
+                .verify();
+    }
+
+    @Test
+    public void shouldReceiveException_during_mono() {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .get()
+                .uri("/yes/exception-mono")
+                .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
+                .expectErrorMessage("500 : Internal Server Error") // We do not propagate error from flux yet
                 .verify();
     }
 
