@@ -92,10 +92,11 @@ public final class CodecManagerImpl implements CodecManager {
     }
 
     private Collection<String> getAcceptHeaders(HttpHeaders requestHttpHeaders) {
-        if (requestHttpHeaders.get(HttpHeaderNames.ACCEPT).equals(ACCEPT_ALL_HEADER)) {
+        List<String> acceptHeaders = requestHttpHeaders.getAll(HttpHeaderNames.ACCEPT);
+        if (acceptHeaders.size() == 1 && acceptHeaders.get(0).equals(ACCEPT_ALL_HEADER)) {
             return DEFAULT_ACCEPT_HEADERS;
         } else {
-            return requestHttpHeaders.getAll(HttpHeaderNames.ACCEPT);
+            return acceptHeaders;
         }
     }
 
