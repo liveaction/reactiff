@@ -42,12 +42,12 @@ public class JsonCodecTest {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonCodec jsonCodec = new JsonCodec(objectMapper);
         StepVerifier.create(Flux.from(jsonCodec.encode("application/json", Mono.just(new ModuledPojo("myType", "myVal")), TypeToken.of(ModuledPojo.class))))
-                .expectError(InvalidDefinitionException.class)
+                .expectErrorMatches(err -> err.getCause() instanceof InvalidDefinitionException)
                 .verify();
 
         objectMapper.registerModule(new PojoJacksonModule());
         StepVerifier.create(Flux.from(jsonCodec.encode("application/json", Mono.just(new ModuledPojo("myType", "myVal")), TypeToken.of(ModuledPojo.class))))
-                .expectError(InvalidDefinitionException.class)
+                .expectErrorMatches(err -> err.getCause() instanceof InvalidDefinitionException)
                 .verify();
 
         objectMapper = new ObjectMapper();
