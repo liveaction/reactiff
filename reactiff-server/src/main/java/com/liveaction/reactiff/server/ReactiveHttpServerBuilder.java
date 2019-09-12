@@ -21,15 +21,15 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
 
     private int port = -1;
 
-    private Collection<HttpProtocol> protocols = Sets.newHashSet();
+    private Collection<HttpProtocol> protocols = Sets.newConcurrentHashSet();
 
-    private Collection<ReactiveFilter> filters = Sets.newHashSet();
+    private Collection<ReactiveFilter> filters = Sets.newConcurrentHashSet();
 
-    private Collection<ReactiveHandler> handlers = Sets.newHashSet();
+    private Collection<ReactiveHandler> handlers = Sets.newConcurrentHashSet();
 
-    private Collection<ExecutionContextService> executionContextServices = Sets.newHashSet();
+    private Collection<ExecutionContextService> executionContextServices = Sets.newConcurrentHashSet();
 
-    private Collection<ParamTypeConverter<?>> converters = Sets.newHashSet();
+    private Collection<ParamTypeConverter<?>> converters = Sets.newConcurrentHashSet();
 
     private Executor executor;
 
