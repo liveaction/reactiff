@@ -26,6 +26,15 @@
         <jackson.version>2.9.9</jackson.version>
     </properties>
 
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <url>https://github.com/liveaction/reactiff</url>
+
     <build>
         <plugins>
             <plugin>
