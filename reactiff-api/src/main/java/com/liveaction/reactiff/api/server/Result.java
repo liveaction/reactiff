@@ -24,11 +24,26 @@ public abstract class Result<T> {
                 .build();
     }
 
+
     public static Result<String> withStatus(int status, String reasonPhrase, String message) {
         return Result.<String>builder()
                 .status(status, reasonPhrase)
                 .data(Mono.just(message), String.class)
                 .header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN.toString())
+                .build();
+    }
+
+    public static <T> Result<T> withPayload(int status, Publisher<T> data, Class<T> clazz) {
+        return Result.<T>builder()
+                .status(HttpResponseStatus.valueOf(status))
+                .data(data, clazz)
+                .build();
+    }
+
+    public static <T> Result<T> withPayload(int status, Publisher<T> data, TypeToken<T> token) {
+        return Result.<T>builder()
+                .status(HttpResponseStatus.valueOf(status))
+                .data(data, token)
                 .build();
     }
 
