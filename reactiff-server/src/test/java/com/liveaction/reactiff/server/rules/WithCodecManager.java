@@ -1,6 +1,7 @@
 package com.liveaction.reactiff.server.rules;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.CodecManager;
 import com.liveaction.reactiff.codec.CodecManagerImpl;
 import com.liveaction.reactiff.codec.RawBinaryCodec;
@@ -8,7 +9,6 @@ import com.liveaction.reactiff.codec.RawFileCodec;
 import com.liveaction.reactiff.codec.TextPlainCodec;
 import com.liveaction.reactiff.codec.jackson.JsonCodec;
 import com.liveaction.reactiff.codec.jackson.SmileBinaryCodec;
-import com.liveaction.reactiff.server.general.HttpException;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.rules.ExternalResource;
 import reactor.core.publisher.Flux;
@@ -22,9 +22,11 @@ public final class WithCodecManager extends ExternalResource {
 
     public CodecManager codecManager;
 
-    private static ObjectMapper objectMapper = new ObjectMapper();
-
     public WithCodecManager() {
+        this(new ObjectMapper());
+    }
+
+    public WithCodecManager(ObjectMapper objectMapper) {
         codecManager = new CodecManagerImpl();
         codecManager.addCodec(new JsonCodec(objectMapper));
         codecManager.addCodec(new SmileBinaryCodec(objectMapper));
@@ -34,10 +36,14 @@ public final class WithCodecManager extends ExternalResource {
     }
 
     public <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> checkErrorAndDecodeAsMono(Class<T> clazz) {
+        return checkErrorAndDecodeAsMono(TypeToken.of(clazz));
+    }
+
+    public <T> BiFunction<HttpClientResponse, ByteBufFlux, Mono<T>> checkErrorAndDecodeAsMono(TypeToken<T> typeToken) {
         return (response, flux) -> {
             HttpResponseStatus status = response.status();
             if (status.code() == 200) {
-                return codecManager.decodeAsMono(clazz).apply(response, flux);
+                return codecManager.decodeAsMono(typeToken).apply(response, flux);
             } else {
                 return Mono.error(new HttpException(status.code(), status.code() + " : " + status.reasonPhrase()));
             }

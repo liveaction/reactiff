@@ -3,7 +3,10 @@ package com.liveaction.reactiff.codec;
 import com.google.common.base.Throwables;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
+import com.liveaction.reactiff.api.server.Result;
+import com.liveaction.reactiff.api.server.utils.MimeType;
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -12,13 +15,12 @@ import reactor.netty.ByteBufFlux;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.file.Path;
 
 public final class RawFileCodec implements Codec {
 
     private static final TypeToken<File> FILE = TypeToken.of(File.class);
+    private static final TypeToken<Path> PATH = TypeToken.of(Path.class);
 
     @Override
     public int rank() {
@@ -27,7 +29,11 @@ public final class RawFileCodec implements Codec {
 
     @Override
     public boolean supports(String contentType, TypeToken<?> typeToken) {
-        return FILE.isAssignableFrom(typeToken);
+        return isFileOrPath(typeToken);
+    }
+
+    private boolean isFileOrPath(TypeToken<?> typeToken) {
+        return typeToken != null && (FILE.isSupertypeOf(typeToken) || PATH.isSupertypeOf(typeToken));
     }
 
     @Override
@@ -37,25 +43,25 @@ public final class RawFileCodec implements Codec {
 
     @Override
     public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return Flux.from(decode(byteBufFlux, typeToken));
+        return Flux.error(new IllegalArgumentException("Cannot get a flux from file"));
     }
 
     @SuppressWarnings("unchecked")
     private <T> Publisher<T> decode(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        if (FILE.isAssignableFrom(typeToken)) {
+        if (isFileOrPath(typeToken)) {
             try {
                 File file = File.createTempFile("reactiff-upload", ".raw");
                 FileOutputStream out = new FileOutputStream(file);
-                return Flux.from(byteBufFlux)
-                        .reduceWith(() -> out, (o, array) -> {
+                Mono<Void> writeFlux = Flux.from(byteBufFlux)
+                        .concatMap(bytes -> {
                             try {
-                                array.readBytes(o, array.readableBytes());
+                                bytes.readBytes(out, bytes.readableBytes());
                             } catch (IOException e) {
-                                throw Throwables.propagate(e);
+                                return Mono.error(e);
                             }
-                            return o;
+                            return Mono.empty();
                         })
-                        .map(o -> (T) file)
+                        .then()
                         .doFinally(signalType -> {
                             try {
                                 out.close();
@@ -63,6 +69,11 @@ public final class RawFileCodec implements Codec {
                                 Throwables.propagate(e);
                             }
                         });
+                if (FILE.isSupertypeOf(typeToken)) {
+                    return writeFlux.thenReturn((T) file);
+                } else {
+                    return writeFlux.thenReturn((T) file.toPath());
+                }
             } catch (IOException e) {
                 throw Throwables.propagate(e);
             }
@@ -73,33 +84,37 @@ public final class RawFileCodec implements Codec {
 
     @Override
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
-        if (FILE.isAssignableFrom(typeToken)) {
-            return ByteBufFlux.fromInbound(Mono.from(data).flatMapMany(t -> readFileAsFlux((File) t)));
+        Mono<Path> path;
+        if (FILE.isSupertypeOf(typeToken)) {
+            path = Mono.from(data)
+                    .cast(File.class)
+                    .map(File::toPath);
+        } else if(PATH.isSupertypeOf(typeToken)) {
+            path = Mono.from(data)
+                    .cast(Path.class);
         } else {
             throw new IllegalArgumentException("Unable to encode type '" + typeToken + "'");
         }
+        return path.flatMapMany(ByteBufFlux::fromPath);
     }
 
-    private Flux<byte[]> readFileAsFlux(File file) {
-        return Flux.create(fluxSink -> {
-            try {
-                RandomAccessFile aFile = new RandomAccessFile(file, "r");
-                FileChannel inChannel = aFile.getChannel();
-                ByteBuffer buffer = ByteBuffer.allocate(4096);
-                while (inChannel.read(buffer) > 0) {
-                    buffer.flip();
-                    int len = buffer.limit();
-                    byte[] bytes = new byte[len];
-                    System.arraycopy(buffer.array(), buffer.arrayOffset(), bytes, 0, len);
-                    buffer.clear(); // do something with the data and clear/compact it.
-                    fluxSink.next(bytes);
-                }
-                inChannel.close();
-                aFile.close();
-                fluxSink.complete();
-            } catch (IOException e) {
-                fluxSink.error(e);
-            }
-        });
+    @Override
+    public <T> Mono<Result<T>> enrich(Result<T> result) {
+        return ((Mono<?>) result.data())
+                .map(item -> {
+                    String fileName;
+                    if (item instanceof File) {
+                        fileName = ((File) item).getName();
+                    } else if (item instanceof Path) {
+                        fileName = ((Path) item).getFileName().toString();
+                    } else {
+                        throw new IllegalArgumentException("Only Path and File is accepted");
+                    }
+                    return result.copy()
+                            .header(HttpHeaderNames.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                            .header(HttpHeaderNames.CONTENT_TYPE, new MimeType(fileName).toString(), false)
+                            .build();
+                });
+
     }
 }

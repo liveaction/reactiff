@@ -3,6 +3,7 @@ package com.liveaction.reactiff.api.server;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
+import com.liveaction.reactiff.api.server.multipart.Part;
 import com.liveaction.reactiff.api.server.route.Route;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpVersion;
@@ -36,6 +37,8 @@ public interface Request {
     ImmutableList<String> uriParams(String name);
 
     String pathParam(String name);
+
+    Mono<Map<String, Part>> parts();
 
     ImmutableMap<String, ImmutableList<String>> uriParams();
 

@@ -6,7 +6,7 @@ import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.route.Route;
-import com.liveaction.reactiff.server.RequestImpl;
+import com.liveaction.reactiff.server.internal.RequestImpl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.reactivestreams.Publisher;
@@ -17,8 +17,6 @@ import reactor.netty.NettyPipeline;
 import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -39,32 +37,36 @@ public final class FilterUtils {
                                                boolean writeErrorStacktrace) {
         Request request = new RequestImpl(req, codecManager, matchingRoute);
         FilterChain filterChain = chainFunction.apply(chain);
-        return filterChain.chain(request)
+        Mono<Result<?>> enrichedResult = filterChain.chain(request)
                 .onErrorResume(throwable -> {
                     int status = 500;
-                    LOGGER.error("Unexpected error", throwable);
+                    LOGGER.error("Unexpected error for {}", req.uri(), throwable);
                     String message = throwable.getMessage();
                     if (message == null) {
                         message = HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase();
                     }
                     if (writeErrorStacktrace) {
-                        StringWriter stringWriter = new StringWriter();
-                        throwable.printStackTrace(new PrintWriter(stringWriter));
-                        return Mono.just(Result.withStatus(status, message, stringWriter.toString()));
+                        return Mono.just(Result.<Throwable>builder()
+                                .status(status, message)
+                                .data(Mono.just(throwable), Throwable.class)
+                                .build());
                     } else {
                         return Mono.just(Result.withStatus(status, message));
                     }
                 })
-                .flatMap(filteredResult -> {
-                    filteredResult.headers().forEach(res::header);
-                    HttpServerResponse httpServerResponse = res.status(filteredResult.status());
-                    Publisher<?> data = filteredResult.data();
+                .flatMap(result -> (Mono<Result<?>>) codecManager.enrichResult(req.requestHeaders(), res.responseHeaders(), result));
+        return enrichedResult
+                .flatMap(result -> {
+                    HttpServerResponse httpServerResponse = res.status(result.status());
+                    result.headers().forEach(res::addHeader);
+                    result.cookies().forEach(res::addCookie);
+                    Publisher<?> data = result.data();
                     if (data == null) {
                         return Mono.from(httpServerResponse.send());
                     } else {
                         return Mono.from(httpServerResponse
                                 .options(NettyPipeline.SendOptions::flushOnEach)
-                                .send(encodeResult(req, res, codecManager, filteredResult)));
+                                .send(encodeResult(req, res, codecManager, result)));
                     }
                 });
     }

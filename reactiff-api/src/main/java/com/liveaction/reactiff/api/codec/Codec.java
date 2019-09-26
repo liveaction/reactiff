@@ -1,6 +1,7 @@
 package com.liveaction.reactiff.api.codec;
 
 import com.google.common.reflect.TypeToken;
+import com.liveaction.reactiff.api.server.Result;
 import io.netty.buffer.ByteBuf;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -18,4 +19,7 @@ public interface Codec {
 
     <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken);
 
+    default <T> Mono<Result<T>> enrich(Result<T> result) {
+        return Mono.just(result);
+    }
 }

@@ -3,6 +3,7 @@ package com.liveaction.reactiff.server.rules;
 import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.server.ReactiveHttpServer;
+import com.liveaction.reactiff.server.context.ExecutionContextService;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import org.junit.rules.ExternalResource;
 import reactor.netty.http.HttpProtocol;
@@ -27,6 +28,16 @@ public final class WithReactiveServer extends ExternalResource {
 
     public WithReactiveServer withHandler(ReactiveHandler reactiveHandler) {
         server.addReactiveHandler(reactiveHandler);
+        return this;
+    }
+
+    public WithReactiveServer withExecutionContetService(ExecutionContextService executionContetService) {
+        server.addExecutionContextService(executionContetService);
+        return this;
+    }
+
+    public WithReactiveServer removeHandler(ReactiveHandler reactiveHandler) {
+        server.removeReactiveHandler(reactiveHandler);
         return this;
     }
 

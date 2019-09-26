@@ -1,5 +1,6 @@
 package com.liveaction.reactiff.server.general.example;
 
+import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
@@ -7,14 +8,21 @@ import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.Result;
 import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.annotation.WsMapping;
+import com.liveaction.reactiff.api.server.multipart.FormFieldPart;
 import com.liveaction.reactiff.server.mock.Pojo;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.websocket.WebsocketInbound;
 import reactor.netty.http.websocket.WebsocketOutbound;
 
+import java.time.Duration;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 public final class TestController implements ReactiveHandler {
 
@@ -33,12 +41,27 @@ public final class TestController implements ReactiveHandler {
         return Mono.error(new NoSuchElementException("Element untel not found"));
     }
 
+    @RequestMapping(method = HttpMethod.GET, path = "/yes/exception-flux-delay")
+    public Flux<String> exceptionFluxDelay(Request request) {
+        return Flux.merge(Flux.just("a"), Flux.just("b"), Flux.error(new IllegalArgumentException("Element untel not found")));
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/yes/exception-mono-delay")
+    public Result<String> exceptionMonoDelay(Request request) {
+        return Result.ok(Mono.error(new IllegalArgumentException("Element untel not found")), String.class);
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/yes/exception-mono")
+    public Mono<String> exceptionMono(Request request) {
+        return Mono.error(new IllegalArgumentException("Element untel not found"));
+    }
+
     @RequestMapping(method = HttpMethod.GET, path = "/yes/unauthorized")
     public Mono<Void> unauthorizedException(Request request) {
         return Mono.error(new IllegalAccessException("Access forbidden by me"));
     }
 
-    @RequestMapping(method = HttpMethod.GET, path = "/yes/{name}", rank = 1)
+    @RequestMapping(method = HttpMethod.GET, path = "/yes/{name}")
     public Flux<String> yes(Request request) {
         return Flux.just("Hey " + request.pathParam("name"), "Hey baby !");
     }
@@ -115,6 +138,29 @@ public final class TestController implements ReactiveHandler {
     @RequestMapping(method = HttpMethod.POST, path = "/monovoid")
     public Mono<Void> executeVoid() {
         return Mono.empty();
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/setCookie")
+    public Mono<Result> setCookie() {
+        Cookie c = new DefaultCookie("cookieName", "cookieValue");
+        c.setHttpOnly(true);
+        c.setSecure(true);
+        c.setMaxAge(Duration.ofHours(1).getSeconds());
+        return Mono.just(Result.builder()
+                .status(HttpResponseStatus.OK.code(), "OK")
+                .cookie(c)
+                .build());
+    }
+
+    @RequestMapping(method = HttpMethod.POST, path = "/multipart")
+    public Mono<Map<String, String>> getMultipartFields(Request request) {
+        return request.parts()
+                .flatMapIterable(Map::values)
+                .filter(part -> part instanceof FormFieldPart)
+                .cast(FormFieldPart.class)
+                .map(ffp -> Maps.immutableEntry(ffp.name(), ffp.value()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
     }
 
 }

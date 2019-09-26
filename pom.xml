@@ -7,25 +7,33 @@
     <groupId>com.liveaction</groupId>
     <artifactId>reactiff</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.1</version>
+    <version>1.1</version>
     <modules>
         <module>reactiff-api</module>
         <module>reactiff-server</module>
         <module>reactiff-codec</module>
-        <module>reactiff-client</module>
         <module>reactiff-codec-jackson</module>
     </modules>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty.version>4.1.33.Final</netty.version>
-        <reactor-core.version>3.2.8.RELEASE</reactor-core.version>
+        <netty.version>4.1.39.Final</netty.version>
+        <reactor-core.version>3.2.12.RELEASE</reactor-core.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <guava.version>18.0</guava.version>
-        <reactor-netty.version>0.8.6.RELEASE</reactor-netty.version>
-        <jackson.version>2.9.8</jackson.version>
+        <guava.version>28.0-jre</guava.version>
+        <reactor-netty.version>0.8.11.RELEASE</reactor-netty.version>
+        <jackson.version>2.9.9</jackson.version>
     </properties>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <url>https://github.com/liveaction/reactiff</url>
 
     <build>
         <plugins>
@@ -228,6 +236,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.synchronoss.cloud</groupId>
+                <artifactId>nio-multipart-parser</artifactId>
+                <version>1.1.0</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-test</artifactId>
                 <version>${reactor-core.version}</version>
@@ -243,6 +257,12 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>pl.pragmatists</groupId>
+                <artifactId>JUnitParams</artifactId>
+                <version>1.1.1</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

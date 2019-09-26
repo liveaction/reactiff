@@ -31,14 +31,16 @@ public class WsMappingSupport implements HandlerSupportFunction<WsMapping, WebSo
     @Override
     @SuppressWarnings("unchecked")
     public void register(HttpServerRoutes httpServerRoutes, ReactiveHandler reactiveHandler, WebSocketRoute route) {
-        httpServerRoutes.ws(route.path(), (req, res) -> {
+        httpServerRoutes.ws(route.path(), (wsIn, wsOut) -> {
+            Publisher<Void> result;
             try {
-                return (Publisher<Void>) route.handlerMethod.invoke(reactiveHandler, req, res);
+                result = (Publisher<Void>) route.handlerMethod.invoke(reactiveHandler, wsIn, wsOut);
             } catch (IllegalAccessException e) {
-                return Mono.error(e);
+                result = Mono.error(e);
             } catch (InvocationTargetException e) {
-                return Mono.error(e.getTargetException());
+                result = Mono.error(e.getTargetException());
             }
+            return result;
         });
         LOGGER.trace("Registered route {}", route);
     }

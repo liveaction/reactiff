@@ -3,9 +3,12 @@ package com.liveaction.reactiff.codec.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.async.ByteArrayFeeder;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.util.ByteArrayBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SequenceWriter;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -18,53 +21,57 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
+import reactor.util.function.Tuples;
 
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
 
-public final class JacksonCodec {
+public class JacksonCodec {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JacksonCodec.class);
 
     private static final TypeToken<Mono> MONO_TYPE_TOKEN = TypeToken.of(Mono.class);
-    private static final byte[] START_ARRAY = {'['};
-    private static final byte[] COMMA_SEPARATOR = {','};
-    private static final byte[] END_ARRAY = {']'};
 
-    private final ObjectCodec objectCodec;
-    private final JsonFactory jsonFactory;
-    private final byte[] streamSeparator;
+    private JsonFactory jsonFactory;
+    private ObjectWriter objectWriter;
+    private DeserializerWrapper deserializerWrapper;
 
-    public JacksonCodec(ObjectCodec objectCodec, JsonFactory jsonFactory, byte[] streamSeparator) {
-        this.objectCodec = objectCodec;
-        this.jsonFactory = jsonFactory.setCodec(objectCodec);
-        this.streamSeparator = streamSeparator;
+
+    public JacksonCodec(ObjectMapper objectMapper, JsonFactory jsonFactory) {
+        this.jsonFactory = jsonFactory;
+        reloadMapper(objectMapper);
+    }
+
+    public JacksonCodec withDeserializerWrapper(DeserializerWrapper deserializerWrapper) {
+        this.deserializerWrapper = deserializerWrapper;
+        return this;
+    }
+
+    public void reloadMapper(ObjectMapper objectMapper) {
+        this.objectWriter = objectMapper.writer().with(jsonFactory);
+        jsonFactory.setCodec(objectMapper);
     }
 
     public <T> Mono<T> decodeMono(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         return ByteBufFlux.fromInbound(byteBufFlux)
                 .aggregate()
-                .asInputStream()
-                .map(inputStream -> {
-                    try {
-                        return objectCodec.readValue(jsonFactory.createParser(inputStream), toTypeReference(typeToken));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                .asByteArray()// https://github.com/reactor/reactor-netty/issues/746
+                .map(bytes -> deserialize(() -> jsonFactory.createParser(bytes).readValueAs(toTypeReference(typeToken))));
     }
 
     public <T> Flux<T> decodeFlux(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken, boolean readTopLevelArray) {
         try {
-            JsonAsyncParser<T> jsonAsyncParser = new JsonAsyncParser<>(objectCodec, jsonFactory, readTopLevelArray, typeToken);
+            JsonAsyncParser<T> jsonAsyncParser = new JsonAsyncParser<>(jsonFactory, readTopLevelArray, typeToken, this::deserialize);
             return ByteBufFlux.fromInbound(byteBufFlux)
                     .asByteArray()
-                    .flatMap(jsonAsyncParser::parse)
+                    .flatMapIterable(jsonAsyncParser::parse)
                     .doOnTerminate(jsonAsyncParser::close);
         } catch (IOException e) {
             return Flux.error(e);
@@ -72,54 +79,58 @@ public final class JacksonCodec {
     }
 
     public <T> Publisher<ByteBuf> encode(Publisher<T> data, boolean tokenizeArrayElements) {
-        if (MONO_TYPE_TOKEN.isAssignableFrom(data.getClass())) {
-            return Mono.from(data)
-                    .map(t -> encodeValue(t, null));
+        if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
+            return encodeValue(Flux.from(data), false);
         } else {
-            AtomicBoolean first = new AtomicBoolean(true);
-            if (tokenizeArrayElements) {
-                return Flux.from(data)
-                        .flatMap(t -> {
-                                    if (first.getAndSet(false)) {
-                                        return Mono.just(encodeValue(t, START_ARRAY));
-                                    } else {
-                                        return Mono.just(encodeValue(t, COMMA_SEPARATOR));
-                                    }
-                                },
-                                Mono::error,
-                                () -> {
-                                    if (!first.get()) {
-                                        return Mono.just(Unpooled.wrappedBuffer(END_ARRAY));
-                                    } else {
-                                        return Mono.empty();
-                                    }
-                                });
-
-            } else {
-                return Flux.from(data)
-                        .map(t -> {
-                            if (first.getAndSet(false)) {
-                                return encodeValue(t, streamSeparator);
-                            } else {
-                                return encodeValue(t, null);
-                            }
-                        });
-            }
+            return encodeValue(Flux.from(data), tokenizeArrayElements);
         }
     }
 
-    private <T> ByteBuf encodeValue(T t, byte[] before) {
-        try {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            if (before != null) {
-                byteArrayOutputStream.write(before);
-            }
+    private <T> Flux<ByteBuf> encodeValue(Flux<T> values, boolean wrapInArray) {
+        return Flux.using(() -> {
+                    ByteArrayBuilder output = new ByteArrayBuilder();
+                    SequenceWriter sequenceWriter = objectWriter.writeValues(output);
+                    sequenceWriter.init(wrapInArray);
+                    return Tuples.of(output, sequenceWriter);
+                }, tuple -> {
+                    ByteArrayBuilder output = tuple.getT1();
+                    SequenceWriter sequenceWriter = tuple.getT2();
+                    return values.concatMap(val -> {
+                        try {
+                            output.reset();
+                            sequenceWriter.write(val);
+                            return Mono.just(Unpooled.wrappedBuffer(output.toByteArray()));
+                        } catch (IOException e) {
+                            return Mono.error(e);
+                        }
+                    }).concatWith(Mono.fromCallable(() -> {
+                        output.reset();
+                        try (SequenceWriter c = tuple.getT2()) {
+                        }
+                        byte[] array = output.toByteArray();
+                        return array.length == 0 ? null : Unpooled.wrappedBuffer(array);
+                    }));
 
-            objectCodec.writeValue(jsonFactory.createGenerator(byteArrayOutputStream), t);
-            return Unpooled.wrappedBuffer(byteArrayOutputStream.toByteArray());
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to encode as JSON", e);
+                },
+                tuple -> {
+                    try (ByteArrayBuilder a = tuple.getT1(); SequenceWriter c = tuple.getT2()) {
+                    } catch (IOException e) {
+                        LOGGER.error("Error when closing resources", e);
+                    }
+                });
+    }
+
+    private <T> T deserialize(Callable<T> callable) {
+        T res;
+        try {
+            Optional.ofNullable(deserializerWrapper).ifPresent(DeserializerWrapper::apply);
+            res = callable.call();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            Optional.ofNullable(deserializerWrapper).ifPresent(DeserializerWrapper::unapply);
         }
+        return res;
     }
 
     private static <T> TypeReference<T> toTypeReference(TypeToken<T> typeToken) {
@@ -133,10 +144,11 @@ public final class JacksonCodec {
 
     public static class JsonAsyncParser<T> implements Closeable {
 
+        private final JsonFactory jsonFactory;
         private final boolean readTopLevelArray;
         private final JsonParser parser;
+        private final Function<Callable<T>, T> deserializerFunction;
         private final TypeToken<T> typeToken;
-        private final ObjectCodec objectCodec;
         private TokenBuffer tokenBuffer;
 
         boolean rootLevelArrayStarted = false;
@@ -149,39 +161,40 @@ public final class JacksonCodec {
         // See https://github.com/FasterXML/jackson-core/issues/478
         private final ByteArrayFeeder inputFeeder;
 
-        public JsonAsyncParser(ObjectCodec objectCodec, JsonFactory jsonFactory, boolean readTopLevelArray, TypeToken<T> typeToken) throws IOException {
-            this.objectCodec = objectCodec;
+        public JsonAsyncParser(JsonFactory jsonFactory, boolean readTopLevelArray, TypeToken<T> typeToken, Function<Callable<T>, T> deserializerFunction) throws IOException {
+            this.jsonFactory = jsonFactory;
             this.readTopLevelArray = readTopLevelArray;
             this.typeToken = typeToken;
             this.parser = jsonFactory.createNonBlockingByteArrayParser();
+            this.deserializerFunction = deserializerFunction;
             this.inputFeeder = (ByteArrayFeeder) this.parser.getNonBlockingInputFeeder();
 
             this.tokenBuffer = new TokenBuffer(this.parser);
         }
 
 
-        Flux<T> parse(byte[] bytes) {
+        Collection<T> parse(byte[] bytes) {
             try {
                 List<TokenBuffer> tokenBuffers = parseTokens(parser, bytes);
-                return Flux.fromIterable(tokenBuffers)
-                        .flatMapIterable(tokenBuffer -> {
-                            if (tokenBuffer.firstToken() != null) {
-                                JsonParser jsonParser = tokenBuffer.asParser(objectCodec);
-                                return ImmutableList.copyOf(() -> {
-                                    try {
-                                        return jsonParser.readValuesAs(toTypeReference(typeToken));
-                                    } catch (IOException e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                });
-                            } else {
-                                return ImmutableList.of();
-                            }
-
-                        });
+                return tokenBuffers.stream()
+                        .map(this::parseTokenBuffer)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(ImmutableList.toImmutableList());
             } catch (IOException e) {
                 throw Throwables.propagate(e);
             }
+        }
+
+        private Optional<T> parseTokenBuffer(TokenBuffer tokenBuffer) {
+            Optional<T> res;
+            if (tokenBuffer.firstToken() != null) {
+                JsonParser jsonParser = tokenBuffer.asParser(jsonFactory.getCodec());
+                res = Optional.of(deserializerFunction.apply(() -> jsonParser.readValueAs(toTypeReference(typeToken))));
+            } else {
+                res = Optional.empty();
+            }
+            return res;
         }
 
         private void updateDepth(JsonToken token) {
@@ -246,7 +259,7 @@ public final class JacksonCodec {
                 inputFeeder.endOfInput();
                 parser.close();
             } catch (IOException e) {
-                LOGGER.error("Erro while closing parser", e);
+                LOGGER.error("Error while closing parser", e);
             }
         }
     }

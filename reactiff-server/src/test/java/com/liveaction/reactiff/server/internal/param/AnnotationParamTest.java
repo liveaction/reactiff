@@ -221,7 +221,6 @@ public final class AnnotationParamTest {
                 .expectNext("My String")
                 .expectComplete()
                 .verify();
-
     }
 
     @Test
@@ -235,7 +234,6 @@ public final class AnnotationParamTest {
                 .expectNext(10)
                 .expectComplete()
                 .verify();
-
     }
 
     @Test
@@ -249,7 +247,6 @@ public final class AnnotationParamTest {
                 .expectNext(2.345)
                 .expectComplete()
                 .verify();
-
     }
 
     @Test
@@ -263,8 +260,83 @@ public final class AnnotationParamTest {
                 .expectNext(true)
                 .expectComplete()
                 .verify();
-
     }
 
+    @Test
+    public void shouldGetUriParams() {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .get()
+                .uri("/annotated/uriparam?param=test1&param=test2")
+                .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
+                .expectNext("test1")
+                .expectNext("test2")
+                .expectComplete()
+                .verify();
+    }
 
+    @Test
+    public void shouldGetHeaderParams() {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json")
+                        .set("Param", ImmutableList.of("test1", "test2")))
+                .get()
+                .uri("/annotated/headerparam")
+                .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
+                .expectNext("test1")
+                .expectNext("test2")
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldGetUriParamsDefaultValue() {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .get()
+                .uri("/annotated/uriparam/default")
+                .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
+                .expectNext("defaultTest")
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldGetHeaderParamsDefaultValue() {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .get()
+                .uri("/annotated/headerparam/default")
+                .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
+                .expectNext("defaultTest")
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldGetUriParamsOverDefault() {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .get()
+                .uri("/annotated/uriparam/default?param=test1&param=test2")
+                .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
+                .expectNext("test1")
+                .expectNext("test2")
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldGetHeaderParamsOverDefault() {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json")
+                        .set("Param", ImmutableList.of("test1", "test2")))
+                .get()
+                .uri("/annotated/headerparam/default")
+                .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
+                .expectNext("test1")
+                .expectNext("test2")
+                .expectComplete()
+                .verify();
+    }
 }

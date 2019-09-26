@@ -1,7 +1,7 @@
 package com.liveaction.reactiff.codec.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
 import io.netty.buffer.ByteBuf;
@@ -9,15 +9,14 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public final class JsonCodec implements Codec {
+public final class JsonCodec extends JacksonCodec implements Codec {
 
     public static final String APPLICATION_STREAM_JSON = "application/stream+json";
     public static final String APPLICATION_JSON = "application/json";
 
-    private final JacksonCodec jacksonCodec;
 
-    public JsonCodec(ObjectCodec objectCodec) {
-        this.jacksonCodec = new JacksonCodec(objectCodec, new JsonFactory(), new byte[]{'\n'});
+    public JsonCodec(ObjectMapper objectCodec) {
+        super(objectCodec, new JsonFactory());
     }
 
     @Override
@@ -32,13 +31,13 @@ public final class JsonCodec implements Codec {
 
     @Override
     public <T> Mono<T> decodeMono(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
-        return jacksonCodec.decodeMono(byteBufFlux, typeToken);
+        return super.decodeMono(byteBufFlux, typeToken);
     }
 
     @Override
     public <T> Flux<T> decodeFlux(String contentType, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         if (APPLICATION_JSON.equalsIgnoreCase(contentType) || APPLICATION_STREAM_JSON.equalsIgnoreCase(contentType)) {
-            return jacksonCodec.decodeFlux(byteBufFlux, typeToken, APPLICATION_JSON.equalsIgnoreCase(contentType));
+            return super.decodeFlux(byteBufFlux, typeToken, APPLICATION_JSON.equalsIgnoreCase(contentType));
         } else {
             return Flux.error(new IllegalArgumentException("Unsupported ContentType '" + contentType + "'"));
         }
@@ -47,11 +46,10 @@ public final class JsonCodec implements Codec {
     @Override
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
         if (APPLICATION_JSON.equalsIgnoreCase(contentType) || APPLICATION_STREAM_JSON.equalsIgnoreCase(contentType)) {
-            return jacksonCodec.encode(data, APPLICATION_JSON.equalsIgnoreCase(contentType));
+            return super.encode(data, APPLICATION_JSON.equalsIgnoreCase(contentType));
         } else {
             return Flux.error(new IllegalArgumentException("Unsupported ContentType '" + contentType + "'"));
         }
-
     }
 
 }

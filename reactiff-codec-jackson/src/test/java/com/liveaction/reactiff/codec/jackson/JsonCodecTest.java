@@ -1,15 +1,14 @@
 package com.liveaction.reactiff.codec.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.common.reflect.TypeToken;
-import com.liveaction.reactiff.codec.jackson.model.MapKey;
-import com.liveaction.reactiff.codec.jackson.model.Pojo;
-import com.liveaction.reactiff.codec.jackson.model.PojoMap;
+import com.liveaction.reactiff.codec.jackson.model.*;
 import io.netty.buffer.ByteBuf;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
@@ -36,6 +35,32 @@ public class JsonCodecTest {
         objectCodec.registerModule(new GuavaModule());
         objectCodec.registerModule(new ParameterNamesModule());
         tested = new JsonCodec(objectCodec);
+    }
+
+    @Test
+    public void shouldUseNewModule() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonCodec jsonCodec = new JsonCodec(objectMapper);
+        StepVerifier.create(Flux.from(jsonCodec.encode("application/json", Mono.just(new ModuledPojo("myType", "myVal")), TypeToken.of(ModuledPojo.class))))
+                .expectErrorMatches(err -> err.getCause() instanceof InvalidDefinitionException)
+                .verify();
+
+        objectMapper.registerModule(new PojoJacksonModule());
+        StepVerifier.create(Flux.from(jsonCodec.encode("application/json", Mono.just(new ModuledPojo("myType", "myVal")), TypeToken.of(ModuledPojo.class))))
+                .expectErrorMatches(err -> err.getCause() instanceof InvalidDefinitionException)
+                .verify();
+
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new PojoJacksonModule());
+        jsonCodec.reloadMapper(objectMapper);
+        StepVerifier.create(Flux.from(jsonCodec.encode("application/json", Mono.just(new ModuledPojo("myType", "myVal")), TypeToken.of(ModuledPojo.class)))
+                .map(byteBuf -> {
+                    byte[] bytes = new byte[byteBuf.readableBytes()];
+                    byteBuf.getBytes(0, bytes);
+                    return new String(bytes);
+                }))
+                .expectNext("\"myType_myVal\"")
+                .verifyComplete();
     }
 
     @Test
@@ -83,7 +108,6 @@ public class JsonCodecTest {
     @Test
     public void shouldSerializeComplexObject() throws IOException {
         Mono<ImmutableList<PojoMap>> toEncode = Flux.range(0, 3)
-                .delayElements(Duration.ofMillis(1000))
                 .map(i -> new PojoMap(ImmutableMap.of(MapKey.fromString("Hey:baby"), ImmutableMap.of("You", new Pojo("gag" + i, "oug")))))
                 .collectList()
                 .map(ImmutableList::copyOf);

@@ -1,6 +1,7 @@
 package com.liveaction.reactiff.server;
 
 import com.google.common.collect.ImmutableList;
+import com.liveaction.reactiff.server.internal.RequestImpl;
 import com.liveaction.reactiff.server.rules.WithCodecManager;
 import io.netty.handler.codec.http.HttpMethod;
 import org.assertj.core.api.Assertions;

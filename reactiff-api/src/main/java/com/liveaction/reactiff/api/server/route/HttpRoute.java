@@ -21,7 +21,7 @@ public final class HttpRoute extends Route {
 
     @Override
     public int rank() {
-        return 0;
+        return rank;
     }
 
     @Override

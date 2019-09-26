@@ -14,27 +14,27 @@ public final class ResultUtils {
 
     @SuppressWarnings("unchecked")
     public static Mono<Result> toResult(TypeToken<?> returnType, Object result) {
-        if (MONO_TYPE_TOKEN.isAssignableFrom(returnType)) {
+        if (MONO_TYPE_TOKEN.isSupertypeOf(returnType)) {
             TypeToken<?> paramType = returnType.resolveType(Mono.class.getTypeParameters()[0]);
-            if (RESULT_TYPE_TOKEN.isAssignableFrom(paramType)) {
+            if (RESULT_TYPE_TOKEN.isSupertypeOf(paramType)) {
                 return (Mono<Result>) result;
             }
             Mono<?> publisher = (Mono) result;
             return publisher
-                    .map(mono -> (Result)toTypedResult(Mono.just(mono), paramType))
-                    .switchIfEmpty(Mono.just(toTypedResult(null, paramType)));
+                    .map(val -> (Result)toTypedResult(Mono.just(val), paramType))
+                    .switchIfEmpty(Mono.just(toTypedResult(null, paramType))); // for Mono<Void>
 
-        } else if (PUBLISHER_TYPE_TOKEN.isAssignableFrom(returnType)) {
+        } else if (PUBLISHER_TYPE_TOKEN.isSupertypeOf(returnType)) {
             TypeToken<?> paramType = returnType.resolveType(Publisher.class.getTypeParameters()[0]);
-            if (RESULT_TYPE_TOKEN.isAssignableFrom(paramType)) {
+            if (RESULT_TYPE_TOKEN.isSupertypeOf(paramType)) {
                 return Mono.error(new IllegalStateException("A ReactiveHandler cannot return Flux<Result>, use Mono<Result> instead"));
             }
             return Mono.just(toTypedResult(result, paramType));
 
-        } else if (RESULT_TYPE_TOKEN.isAssignableFrom(returnType)) {
+        } else if (RESULT_TYPE_TOKEN.isSupertypeOf(returnType)) {
             Result httpResult = (Result) result;
             return Mono.just(httpResult);
-        } else if(void.class == returnType.getRawType() || VOID_TYPE_TOKEN.isAssignableFrom(returnType)) {
+        } else if(void.class == returnType.getRawType() || VOID_TYPE_TOKEN.isSupertypeOf(returnType)) {
             return Mono.just(Result.ok(null, returnType));
         } else {
             return Mono.just(toTypedResult(Mono.just(result), returnType));
