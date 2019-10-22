@@ -23,7 +23,7 @@
         <slf4j.version>1.7.25</slf4j.version>
         <guava.version>28.0-jre</guava.version>
         <reactor-netty.version>0.8.11.RELEASE</reactor-netty.version>
-        <jackson.version>2.9.9</jackson.version>
+        <jackson.version>2.10.0</jackson.version>
     </properties>
 
     <licenses>
