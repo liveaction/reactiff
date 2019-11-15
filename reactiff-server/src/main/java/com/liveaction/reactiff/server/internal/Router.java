@@ -101,7 +101,7 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
     private void registerMethod(HttpServerRoutes httpServerRoutes, ReactiveHandler reactiveHandler) {
         getRoutes(reactiveHandler)
                 .forEach(handledRoute -> {
-                    LoggerFactory.getLogger(Router.class).info("Register route {}", handledRoute.route);
+                    LoggerFactory.getLogger(Router.class).debug("Register route {}", handledRoute.route);
                     handledRoute.register(httpServerRoutes, reactiveHandler);
                 });
     }
