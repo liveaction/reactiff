@@ -57,6 +57,8 @@ public interface ReactiveHttpServer extends Closeable {
 
         Builder wiretap(boolean wiretap);
 
+        Builder displayRoutes(boolean displayRoutes);
+
         Builder compress(boolean compress);
 
         Builder writeErrorStacktrace(boolean writeErrorStacktrace);

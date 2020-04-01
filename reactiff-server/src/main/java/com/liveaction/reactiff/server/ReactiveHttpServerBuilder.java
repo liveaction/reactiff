@@ -37,7 +37,10 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
 
     private boolean compress = false;
 
+    private boolean displayRoutes = false;
+
     private boolean writeErrorStacktrace = true;
+
 
     @Nullable
     private CodecManager codecManager;
@@ -150,6 +153,12 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
     }
 
     @Override
+    public ReactiveHttpServer.Builder displayRoutes(boolean displayRoutes) {
+        this.displayRoutes = displayRoutes;
+        return this;
+    }
+
+    @Override
     public ReactiveHttpServer.Builder writeErrorStacktrace(boolean writeErrorStacktrace) {
         this.writeErrorStacktrace = writeErrorStacktrace;
         return this;
@@ -160,7 +169,7 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
         if (codecManager == null) {
             codecManager = new CodecManagerImpl();
         }
-        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, executor, wiretap, compress, writeErrorStacktrace);
+        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, executor, wiretap, compress, displayRoutes, writeErrorStacktrace);
         filters.forEach(reactiveHttpServer::addReactiveFilter);
         handlers.forEach(reactiveHttpServer::addReactiveHandler);
         converters.forEach(reactiveHttpServer::addParamTypeConverter);
