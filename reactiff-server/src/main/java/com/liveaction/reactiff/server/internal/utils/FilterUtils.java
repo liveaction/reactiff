@@ -13,7 +13,6 @@ import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
-import reactor.netty.NettyPipeline;
 import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 
@@ -65,7 +64,6 @@ public final class FilterUtils {
                         return Mono.from(httpServerResponse.send());
                     } else {
                         return Mono.from(httpServerResponse
-                                .options(NettyPipeline.SendOptions::flushOnEach)
                                 .send(encodeResult(req, res, codecManager, result)));
                     }
                 });

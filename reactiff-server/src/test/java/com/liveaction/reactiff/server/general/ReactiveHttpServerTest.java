@@ -164,7 +164,7 @@ public final class ReactiveHttpServerTest {
                 .get()
                 .uri("/failed")
                 .response(withCodecManager.checkErrorAndDecodeAsMono(String.class)))
-                .expectErrorMessage("500 : Internal Server Error")
+                .expectErrorMessage("500 : Always fail")
                 .verify();
     }
 
@@ -218,7 +218,7 @@ public final class ReactiveHttpServerTest {
                 .get()
                 .uri("/yes/exception-mono")
                 .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
-                .expectErrorMessage("500 : Internal Server Error") // We do not propagate error from flux yet
+                .expectErrorMessage("500 : Element untel not found") // We do not propagate error from flux yet
                 .verify();
     }
 
@@ -488,7 +488,7 @@ public final class ReactiveHttpServerTest {
                 .get()
                 .uri("/yes_not_exists")
                 .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
-                .expectErrorMessage("404 : Not Found")
+                .expectErrorMessage("404 : '/yes_not_exists' not found")
                 .verify();
     }
 

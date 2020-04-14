@@ -52,12 +52,13 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
                                   Executor executor,
                                   boolean wiretap,
                                   boolean compress,
+                                  boolean displayRoutes,
                                   boolean writeErrorStacktrace) {
         this.host = host;
         this.port = port;
         this.protocols = protocols;
         this.executor = executor;
-        this.router = new Router(codecManager, paramConverter, this::chain, writeErrorStacktrace, executionContextServiceManager);
+        this.router = new Router(codecManager, paramConverter, this::chain, writeErrorStacktrace, executionContextServiceManager, displayRoutes);
         this.httpServer = createServer(wiretap, compress);
     }
 

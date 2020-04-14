@@ -1,5 +1,6 @@
 package com.liveaction.reactiff.server.internal;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -53,12 +54,13 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
     private HttpServerRoutes httpServerRoutes = HttpServerRoutes.newRoutes();
 
     private final boolean writeErrorStacktrace;
+    private final boolean displayRoutes;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Router.class);
 
 
     public Router(CodecManager codecManager, ParamConverter paramConverter, Function<FilterChain, FilterChain> filterFunction,
-                  boolean writeErrorStacktrace, ExecutionContextService executionContextService) {
+                  boolean writeErrorStacktrace, ExecutionContextService executionContextService, boolean displayRoutes) {
         this.codecManager = codecManager;
         this.filterFunction = filterFunction;
         this.handlerSupportFunctions = ImmutableSet.of(
@@ -66,6 +68,7 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
                 new WsMappingSupport()
         );
         this.writeErrorStacktrace = writeErrorStacktrace;
+        this.displayRoutes = displayRoutes;
     }
 
     public void addReactiveHander(ReactiveHandler reactiveHandler) {
@@ -101,7 +104,7 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
     private void registerMethod(HttpServerRoutes httpServerRoutes, ReactiveHandler reactiveHandler) {
         getRoutes(reactiveHandler)
                 .forEach(handledRoute -> {
-                    LoggerFactory.getLogger(Router.class).info("Register route {}", handledRoute.route);
+                    LoggerFactory.getLogger(Router.class).debug("Register route {}", handledRoute.route);
                     handledRoute.register(httpServerRoutes, reactiveHandler);
                 });
     }
@@ -129,8 +132,9 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
 
     private Mono<Result> notFound(Request request) {
         List<Route> routes = routes();
+        String routesStr = displayRoutes ? formatRoutes(routes) : "";
 
-        ImmutableMap<String, String> parameters = ImmutableMap.of("requestMethod", request.method().name(), "requestUri", request.uri(), "routes", formatRoutes(routes));
+        ImmutableMap<String, String> parameters = ImmutableMap.of("requestMethod", request.method().name(), "requestUri", request.uri(), "routes", routesStr);
         return TEMPLATE_ENGINE.process(NOT_FOUND_TEMPLATE, parameters)
                 .map(page -> Result.<String>builder()
                         .status(404, String.format("'%s' not found", request.uri()))

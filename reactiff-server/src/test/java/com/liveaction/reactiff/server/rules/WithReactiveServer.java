@@ -16,6 +16,7 @@ public final class WithReactiveServer extends ExternalResource {
     public WithReactiveServer(WithCodecManager withCodecManager) {
         server = ReactiveHttpServer.create()
                 .compress(true)
+                .displayRoutes(true)
                 .protocols(HttpProtocol.HTTP11)
                 .codecManager(withCodecManager.codecManager)
                 .build();
