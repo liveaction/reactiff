@@ -112,6 +112,7 @@ public abstract class Result<T> {
         builder.status(status());
         builder.data(data(), type());
         headers().forEach(builder::header);
+        cookies().forEach(builder::cookie);
         return builder;
     }
 
