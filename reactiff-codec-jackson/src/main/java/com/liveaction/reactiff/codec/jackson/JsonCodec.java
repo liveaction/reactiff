@@ -48,7 +48,7 @@ public final class JsonCodec extends JacksonCodec implements Codec {
         if (APPLICATION_JSON.equalsIgnoreCase(contentType) || APPLICATION_STREAM_JSON.equalsIgnoreCase(contentType)) {
             return super.encode(data, APPLICATION_JSON.equalsIgnoreCase(contentType));
         } else {
-            return Flux.error(new IllegalArgumentException("Unsupported ContentType '" + contentType + "'"));
+            return Mono.error(new IllegalArgumentException("Unsupported ContentType '" + contentType + "'"));
         }
     }
 

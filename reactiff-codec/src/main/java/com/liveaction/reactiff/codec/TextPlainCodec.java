@@ -11,6 +11,8 @@ import reactor.netty.ByteBufFlux;
 
 public final class TextPlainCodec implements Codec {
 
+    private static final TypeToken<Mono> MONO_TYPE_TOKEN = TypeToken.of(Mono.class);
+
     @Override
     public int rank() {
         return 0;
@@ -44,7 +46,11 @@ public final class TextPlainCodec implements Codec {
     @Override
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
         if (String.class.equals(typeToken.getRawType())) {
-            return ByteBufFlux.fromInbound(Flux.from(data).map(t -> t.toString().getBytes(Charsets.UTF_8)));
+            if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
+                return ByteBufFlux.fromInbound(Mono.from(data).map(t -> t.toString().getBytes(Charsets.UTF_8)))
+                        .aggregate();
+            }
+                return ByteBufFlux.fromInbound(Flux.from(data).map(t -> t.toString().getBytes(Charsets.UTF_8)));
         } else {
             throw new IllegalArgumentException("Unable to encode from type '" + typeToken + "'. Only string supported");
         }

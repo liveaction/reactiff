@@ -2,6 +2,7 @@ package com.liveaction.reactiff.codec.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.async.ByteArrayFeeder;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -80,7 +81,54 @@ public class JacksonCodec {
 
     public <T> Publisher<ByteBuf> encode(Publisher<T> data, boolean tokenizeArrayElements) {
         if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
-            return encodeValue(Flux.from(data), false);
+//            return Mono.using(() -> {
+//                        ByteArrayBuilder output = new ByteArrayBuilder();
+//                        SequenceWriter sequenceWriter = objectWriter.writeValues(output);
+//                        sequenceWriter.init(false);
+//                        return Tuples.of(output, sequenceWriter);
+//                    }, tuple -> {
+//                        ByteArrayBuilder output = tuple.getT1();
+//                        SequenceWriter sequenceWriter = tuple.getT2();
+//                        return Mono.from(data).flatMap(val -> {
+//                            try {
+//                                output.reset();
+//                                sequenceWriter.write(val);
+//                                return Mono.just(Unpooled.wrappedBuffer(output.toByteArray()));
+//                            } catch (IOException e) {
+//                                return Mono.error(e);
+//                            }
+//                        }).doOnTerminate(() -> {
+//                            output.reset();
+//                            // used to close() the SequenceWriter in implicit finally clause
+//                            try (SequenceWriter c = tuple.getT2()) {
+//                            } catch (IOException e) {
+//                                LOGGER.error("Error when closing resources", e);
+//                            }
+//                        });
+//                    },
+//                    tuple -> {
+//                        try (ByteArrayBuilder a = tuple.getT1(); SequenceWriter c = tuple.getT2()) {
+//                        } catch (IOException e) {
+//                            LOGGER.error("Error when closing resources", e);
+//                        }
+//                    }).doOnSubscribe(s -> {
+//                LOGGER.error("SSSSUUUUUUBBBBSSSCCCRRRIIIBBBEEE !!!!!!!!" + s);
+//            });
+
+            return Mono.from(data)
+                    .flatMap(obj -> {
+                        try {
+
+                            return Mono.just(Unpooled.wrappedBuffer(objectWriter.writeValueAsBytes(obj)));
+                        } catch (JsonProcessingException e) {
+                            LOGGER.error(String.format("Error in serialization: %s could not be serialized because %s", obj, e.getMessage()));
+                            LOGGER.debug(String.format("Error in serialization: %s could not be serialized", obj), e);
+                            return Mono.error(e);
+                        }
+                    });
+
+//            return encodeValue(Flux.from(data), false);
+
         } else {
             return encodeValue(Flux.from(data), tokenizeArrayElements);
         }
@@ -105,6 +153,7 @@ public class JacksonCodec {
                         }
                     }).concatWith(Mono.fromCallable(() -> {
                         output.reset();
+                        // used to close() the SequenceWriter in implicit finally clause
                         try (SequenceWriter c = tuple.getT2()) {
                         }
                         byte[] array = output.toByteArray();

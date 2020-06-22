@@ -19,6 +19,7 @@ public final class RawBinaryCodec implements Codec {
     private static final TypeToken<ByteBuf> BYTE_BUFF = TypeToken.of(ByteBuf.class);
     private static final TypeToken<ByteBuffer> BYTE_BUFFER_TYPE_TOKEN = TypeToken.of(ByteBuffer.class);
     private static final ImmutableSet<TypeToken<?>> BINARY_DATA = ImmutableSet.of(BYTE_ARRAY, BYTE_BUFF, BYTE_BUFFER_TYPE_TOKEN);
+    private static final TypeToken<Mono> MONO_TYPE_TOKEN = TypeToken.of(Mono.class);
 
     @Override
     public int rank() {
@@ -67,11 +68,19 @@ public final class RawBinaryCodec implements Codec {
 
     @Override
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
-        if (BYTE_ARRAY.isSupertypeOf(typeToken)) {
-            return ByteBufFlux.fromInbound(data);
-        } else if (BYTE_BUFF.isSupertypeOf(typeToken)) {
+        if (BYTE_ARRAY.isSupertypeOf(typeToken) || BYTE_BUFF.isSupertypeOf(typeToken)) {
+            if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
+                return ByteBufFlux.fromInbound(data)
+                        .aggregate();
+            }
             return ByteBufFlux.fromInbound(data);
         } else if (BYTE_BUFFER_TYPE_TOKEN.isSupertypeOf(typeToken)) {
+            if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
+                return ByteBufFlux.fromInbound(Mono.from(data)
+                        .cast(ByteBuffer.class)
+                        .map(Unpooled::wrappedBuffer))
+                        .aggregate();
+            }
             return ByteBufFlux.fromInbound(Flux.from(data)
                     .cast(ByteBuffer.class)
                     .map(Unpooled::wrappedBuffer));
@@ -79,5 +88,4 @@ public final class RawBinaryCodec implements Codec {
             throw new IllegalArgumentException("Unable to encode type '" + typeToken + "'");
         }
     }
-
 }
