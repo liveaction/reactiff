@@ -530,7 +530,7 @@ public final class ReactiveHttpServerTest {
     }
 
     @Test
-    public void shouldHandlerWebSocket() {
+    public void shouldHandleWebSocket() {
         Flux<WebSocketFrame> frames = withReactiveServer.httpClient()
                 .baseUrl("ws://localhost:" + withReactiveServer.server.port())
                 .websocket()
@@ -542,6 +542,19 @@ public final class ReactiveHttpServerTest {
                 .expectNext(new TextWebSocketFrame("Je m'appelle"))
                 .expectNext(new TextWebSocketFrame("Jean Baptiste Poquelin"))
                 .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldHandleWebSocketAuth() {
+        Flux<WebSocketFrame> frames = withReactiveServer.httpClient()
+                .baseUrl("ws://localhost:" + withReactiveServer.server.port())
+                .websocket()
+                .uri("/websocket-auth")
+                .handle((websocketInbound, websocketOutbound) -> websocketInbound.receiveFrames());
+
+        StepVerifier.create(frames)
+                .expectErrorMessage("Invalid handshake response getStatus: 401 Unauthorized")
                 .verify();
     }
 

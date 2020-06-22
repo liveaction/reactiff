@@ -72,6 +72,13 @@ public final class TestController implements ReactiveHandler {
                 .then(out.sendClose());
     }
 
+    @WsMapping(path = "/websocket-auth")
+    @RequiresAuth(authorized = false)
+    public Publisher<Void> yesWebSocketAuth(WebsocketInbound in, WebsocketOutbound out) {
+        return out.sendString(Flux.just("Salut !", "Je m'appelle", "Jean Baptiste Poquelin"))
+                .then(out.sendClose());
+    }
+
     @RequestMapping(method = HttpMethod.POST, path = "/yes")
     public Flux<Pojo> postPojo(Request request) {
         return request.bodyToFlux(new TypeToken<Pojo>() {
