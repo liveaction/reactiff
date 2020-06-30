@@ -81,40 +81,6 @@ public class JacksonCodec {
 
     public <T> Publisher<ByteBuf> encode(Publisher<T> data, boolean tokenizeArrayElements) {
         if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
-//            return Mono.using(() -> {
-//                        ByteArrayBuilder output = new ByteArrayBuilder();
-//                        SequenceWriter sequenceWriter = objectWriter.writeValues(output);
-//                        sequenceWriter.init(false);
-//                        return Tuples.of(output, sequenceWriter);
-//                    }, tuple -> {
-//                        ByteArrayBuilder output = tuple.getT1();
-//                        SequenceWriter sequenceWriter = tuple.getT2();
-//                        return Mono.from(data).flatMap(val -> {
-//                            try {
-//                                output.reset();
-//                                sequenceWriter.write(val);
-//                                return Mono.just(Unpooled.wrappedBuffer(output.toByteArray()));
-//                            } catch (IOException e) {
-//                                return Mono.error(e);
-//                            }
-//                        }).doOnTerminate(() -> {
-//                            output.reset();
-//                            // used to close() the SequenceWriter in implicit finally clause
-//                            try (SequenceWriter c = tuple.getT2()) {
-//                            } catch (IOException e) {
-//                                LOGGER.error("Error when closing resources", e);
-//                            }
-//                        });
-//                    },
-//                    tuple -> {
-//                        try (ByteArrayBuilder a = tuple.getT1(); SequenceWriter c = tuple.getT2()) {
-//                        } catch (IOException e) {
-//                            LOGGER.error("Error when closing resources", e);
-//                        }
-//                    }).doOnSubscribe(s -> {
-//                LOGGER.error("SSSSUUUUUUBBBBSSSCCCRRRIIIBBBEEE !!!!!!!!" + s);
-//            });
-
             return Mono.from(data)
                     .flatMap(obj -> {
                         try {
@@ -126,9 +92,6 @@ public class JacksonCodec {
                             return Mono.error(e);
                         }
                     });
-
-//            return encodeValue(Flux.from(data), false);
-
         } else {
             return encodeValue(Flux.from(data), tokenizeArrayElements);
         }
