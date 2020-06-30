@@ -12,6 +12,7 @@ Available routes:
 	POST /upload/multipart         => FileTransferController.uploadPath(Request request)                          : Flux<String>
 	GET  /boolean                  => TestController.getBoolean(Request request)                                  : Mono<Boolean>
 	GET  /booleans                 => TestController.getBooleans(Request request)                                 : Flux<Boolean>
+	GET  /download                 => TestController.download()                                                   : Mono<Result<byte[]>>
 	GET  /failed                   => TestController.failed()                                                     : Mono<Result<String>>
 	GET  /non                      => TestController.unauthorized()                                               : Mono<String>
 	GET  /oui                      => TestController.authorized()                                                 : Mono<String>

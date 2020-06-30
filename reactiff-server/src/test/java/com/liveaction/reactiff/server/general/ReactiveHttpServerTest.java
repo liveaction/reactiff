@@ -192,6 +192,17 @@ public final class ReactiveHttpServerTest {
     }
 
     @Test
+    public void shouldDownload() throws InterruptedException {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .get()
+                .uri("/download")
+                .response(withCodecManager.checkErrorAndDecodeAsMono(byte[].class))
+                .map(String::new))
+                .expectNext("this is a byte array test")
+                .verifyComplete();
+    }
+
+    @Test
     public void shouldReceiveException_during_flux_delayed() {
         StepVerifier.create(withReactiveServer.httpClient()
                 .get()
@@ -379,7 +390,7 @@ public final class ReactiveHttpServerTest {
         StepVerifier.create(ReactorUtils.asString(actual))
                 .assertNext(content -> {
                     try {
-                        assertThat(content).isEqualTo(Files.toString(expected, Charsets.UTF_8));
+                        assertThat(content).isEqualTo(Files.asCharSource(expected, Charsets.UTF_8).read());
                     } catch (IOException e) {
                         fail("Unable to read expected file : " + e);
                     }
@@ -509,7 +520,7 @@ public final class ReactiveHttpServerTest {
                     assertThat(httpClientResponse.status().code()).isEqualTo(404);
                     return withCodecManager.codecManager.decodeAsMono(String.class).apply(httpClientResponse, byteBufFlux);
                 })
-        ).expectNext(Files.toString(new File(getClass().getResource("/expected/not-found.txt").getFile()), Charsets.UTF_8))
+        ).expectNext(Files.asCharSource(new File(getClass().getResource("/expected/not-found.txt").getFile()), Charsets.UTF_8).read())
                 .verifyComplete();
     }
 
@@ -700,7 +711,7 @@ public final class ReactiveHttpServerTest {
                 .expectNext(tmpFolder.resolve("file2").toString())
                 .expectComplete()
                 .verify();
-        assertThat(Files.readFirstLine(tmpFolder.resolve("file1").toFile(), Charset.defaultCharset())).isEqualTo("test file");
-        assertThat(Files.readFirstLine(tmpFolder.resolve("file2").toFile(), Charset.defaultCharset())).isEqualTo("test file 2");
+        assertThat(Files.asCharSource(tmpFolder.resolve("file1").toFile(), Charset.defaultCharset()).readFirstLine()).isEqualTo("test file");
+        assertThat(Files.asCharSource(tmpFolder.resolve("file2").toFile(), Charset.defaultCharset()).readFirstLine()).isEqualTo("test file 2");
     }
 }

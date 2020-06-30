@@ -4,6 +4,7 @@ import com.google.common.base.Charsets;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -47,10 +48,12 @@ public final class TextPlainCodec implements Codec {
     public <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken) {
         if (String.class.equals(typeToken.getRawType())) {
             if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
-                return ByteBufFlux.fromInbound(Mono.from(data).map(t -> t.toString().getBytes(Charsets.UTF_8)))
-                        .aggregate();
+                return Mono.from(data)
+                        .map(t -> Unpooled.wrappedBuffer(t.toString().getBytes(Charsets.UTF_8)));
+            } else {
+                return Flux.from(data)
+                        .map(t -> Unpooled.wrappedBuffer(t.toString().getBytes(Charsets.UTF_8)));
             }
-                return ByteBufFlux.fromInbound(Flux.from(data).map(t -> t.toString().getBytes(Charsets.UTF_8)));
         } else {
             throw new IllegalArgumentException("Unable to encode from type '" + typeToken + "'. Only string supported");
         }
