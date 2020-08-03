@@ -177,7 +177,7 @@ public final class ReactiveHttpServerTest {
                 .get()
                 .uri("/yes/nosuch")
                 .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
-                .expectErrorMessage("404 : Not Found")
+                .expectErrorMessage("404 : No such mono")
                 .verify();
     }
 
@@ -187,7 +187,7 @@ public final class ReactiveHttpServerTest {
                 .get()
                 .uri("/yes/nosuchflux")
                 .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
-                .expectErrorMessage("404 : Not Found")
+                .expectErrorMessage("404 : No such flux")
                 .verify();
     }
 
@@ -244,7 +244,7 @@ public final class ReactiveHttpServerTest {
                 .get()
                 .uri("/yes/unauthorized")
                 .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
-                .expectErrorMessage("401 : Unauthorized")
+                .expectErrorMessage("401 : Access forbidden by me")
                 .verify();
     }
 
@@ -572,7 +572,7 @@ public final class ReactiveHttpServerTest {
                 .handle((websocketInbound, websocketOutbound) -> websocketInbound.receiveFrames());
 
         StepVerifier.create(frames)
-                .expectErrorMessage("Invalid handshake response getStatus: 401 Unauthorized")
+                .expectErrorMessage("Invalid handshake response getStatus: 401 RequiresAuth is not authorized")
                 .verify();
     }
 
@@ -593,7 +593,7 @@ public final class ReactiveHttpServerTest {
                 .get()
                 .uri("/non")
                 .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
-                .expectErrorMessage("401 : Unauthorized")
+                .expectErrorMessage("401 : RequiresAuth is not authorized")
                 .verify();
     }
 

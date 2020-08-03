@@ -10,14 +10,12 @@ import com.liveaction.reactiff.api.server.annotation.RequestMapping;
 import com.liveaction.reactiff.api.server.annotation.WsMapping;
 import com.liveaction.reactiff.api.server.multipart.FormFieldPart;
 import com.liveaction.reactiff.server.mock.Pojo;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.websocket.WebsocketInbound;
 import reactor.netty.http.websocket.WebsocketOutbound;
@@ -36,12 +34,12 @@ public final class TestController implements ReactiveHandler {
 
     @RequestMapping(method = HttpMethod.GET, path = "/yes/nosuch")
     public Mono<Void> noSuchElementException(Request request) {
-        return Mono.error(new NoSuchElementException("Element untel not found"));
+        return Mono.error(new NoSuchElementException("No such mono"));
     }
 
     @RequestMapping(method = HttpMethod.GET, path = "/yes/nosuchflux")
     public Mono<Result<Void>> noSuchElementExceptionFlux(Request request) {
-        return Mono.error(new NoSuchElementException("Element untel not found"));
+        return Mono.error(new NoSuchElementException("No such flux"));
     }
 
     @RequestMapping(method = HttpMethod.GET, path = "/yes/exception-flux-delay")
