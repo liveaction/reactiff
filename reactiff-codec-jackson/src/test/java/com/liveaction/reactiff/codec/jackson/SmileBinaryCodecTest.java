@@ -5,8 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import com.google.common.base.Throwables;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableRangeSet;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Range;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.codec.jackson.model.Pojo;
 import io.netty.buffer.ByteBuf;
@@ -204,7 +208,7 @@ public class SmileBinaryCodecTest {
                 generator = smileMapper.getFactory().createGenerator((OutputStream) byteBufOutputStream);
                 return Tuples.of(byteBuf, byteBufOutputStream, generator);
             } catch (IOException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         }, tuple -> {
             ByteBuf byteBuf = tuple.getT1();
@@ -225,7 +229,7 @@ public class SmileBinaryCodecTest {
                 tuple.getT2().close();
                 tuple.getT1().release();
             } catch (IOException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         });
     }

@@ -1,6 +1,5 @@
 package com.liveaction.reactiff.server.general.example;
 
-import com.google.common.base.Throwables;
 import com.liveaction.reactiff.api.server.HttpMethod;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.Request;
@@ -29,7 +28,7 @@ public final class FileTransferController implements ReactiveHandler {
             tempFile = Files.createFile(tmpFolder.resolve("table.csv")).toFile();
             Files.write(tempFile.toPath(), "test file".getBytes());
         } catch (IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

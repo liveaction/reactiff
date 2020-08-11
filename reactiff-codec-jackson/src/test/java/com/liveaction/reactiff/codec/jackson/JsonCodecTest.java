@@ -114,7 +114,7 @@ public class JsonCodecTest {
         String actual = ByteBufFlux.fromInbound(tested.encode("application/json", toEncode, new TypeToken<ImmutableList<PojoMap>>() {
         })).aggregate().asString(UTF_8).block();
 
-        Assertions.assertThat(actual).isEqualTo(Files.toString(new File(getClass().getResource("/expected_pojomap.json").getFile()), UTF_8));
+        Assertions.assertThat(actual).isEqualTo(Files.asCharSource(new File(getClass().getResource("/expected_pojomap.json").getFile()), UTF_8).read());
     }
 
 }
