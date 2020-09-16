@@ -18,11 +18,11 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty.version>4.1.51.Final</netty.version>
-        <reactor-core.version>3.3.9.RELEASE</reactor-core.version>
+        <netty.version>4.1.52.Final</netty.version>
+        <reactor-core.version>3.3.10.RELEASE</reactor-core.version>
         <slf4j.version>1.7.30</slf4j.version>
         <guava.version>28.0-jre</guava.version>
-        <reactor-netty.version>0.9.11.RELEASE</reactor-netty.version>
+        <reactor-netty.version>0.9.12.RELEASE</reactor-netty.version>
         <jackson.version>2.11.2</jackson.version>
     </properties>
 
@@ -250,7 +250,7 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>2.23.4</version>
+                <version>3.5.10</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -268,7 +268,7 @@
             <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
-                <version>3.6.1</version>
+                <version>3.17.2</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
