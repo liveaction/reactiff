@@ -56,6 +56,9 @@ public final class FilterUtils {
                 .flatMap(result -> (Mono<Result<?>>) codecManager.enrichResult(req.requestHeaders(), res.responseHeaders(), result));
         return enrichedResult
                 .flatMap(result -> {
+                    if (res.isWebsocket()) {
+                        return Mono.empty();
+                    }
                     HttpServerResponse httpServerResponse = res.status(result.status());
                     result.headers().forEach(res::addHeader);
                     result.cookies().forEach(res::addCookie);

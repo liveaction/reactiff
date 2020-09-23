@@ -12,18 +12,20 @@ import com.liveaction.reactiff.server.internal.context.ExecutionContextServiceMa
 import com.liveaction.reactiff.server.internal.param.ParamConverter;
 import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.netty.DisposableServer;
 import reactor.netty.http.HttpProtocol;
-import reactor.netty.http.HttpResources;
 import reactor.netty.http.server.HttpServer;
-import reactor.netty.resources.LoopResources;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -152,23 +154,12 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
             httpServer = httpServer.compress(true);
         }
         httpServer = httpServer
-                .tcpConfiguration(tcpServer ->
-                        tcpServer.bootstrap(serverBootstrap -> {
-                            if (executor == null) {
-                                return serverBootstrap;
-                            } else {
-                                // From Reactor-Netty-tcp HttpServerBind
-                                LoopResources loops = HttpResources.get();
-
-                                boolean useNative =
-                                        LoopResources.DEFAULT_NATIVE;
-
-                                EventLoopGroup elg = loops.onServer(useNative);
-
-                                return serverBootstrap.group(new EpollEventLoopGroup(0, executor))
-                                        .channel(loops.onServerChannel(elg));
-                            }
-                        }))
+                .tcpConfiguration(tcpServer -> {
+                    if (executor != null) {
+                        tcpServer = tcpServer.runOn(new EpollEventLoopGroup(0, executor));
+                    }
+                    return tcpServer;
+                })
                 .protocol(protocols.toArray(new HttpProtocol[0]))
                 .host(host);
 

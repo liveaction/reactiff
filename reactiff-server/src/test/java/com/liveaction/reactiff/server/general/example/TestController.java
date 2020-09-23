@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.websocket.WebsocketInbound;
 import reactor.netty.http.websocket.WebsocketOutbound;
 
@@ -33,12 +34,12 @@ public final class TestController implements ReactiveHandler {
 
     @RequestMapping(method = HttpMethod.GET, path = "/yes/nosuch")
     public Mono<Void> noSuchElementException(Request request) {
-        return Mono.error(new NoSuchElementException("Element untel not found"));
+        return Mono.error(new NoSuchElementException("No such mono"));
     }
 
     @RequestMapping(method = HttpMethod.GET, path = "/yes/nosuchflux")
     public Mono<Result<Void>> noSuchElementExceptionFlux(Request request) {
-        return Mono.error(new NoSuchElementException("Element untel not found"));
+        return Mono.error(new NoSuchElementException("No such flux"));
     }
 
     @RequestMapping(method = HttpMethod.GET, path = "/yes/exception-flux-delay")
@@ -68,6 +69,13 @@ public final class TestController implements ReactiveHandler {
 
     @WsMapping(path = "/websocket")
     public Publisher<Void> yesWebSocket(WebsocketInbound in, WebsocketOutbound out) {
+        return out.sendString(Flux.just("Salut !", "Je m'appelle", "Jean Baptiste Poquelin"))
+                .then(out.sendClose());
+    }
+
+    @WsMapping(path = "/websocket-auth")
+    @RequiresAuth(authorized = false)
+    public Publisher<Void> yesWebSocketAuth(WebsocketInbound in, WebsocketOutbound out) {
         return out.sendString(Flux.just("Salut !", "Je m'appelle", "Jean Baptiste Poquelin"))
                 .then(out.sendClose());
     }
@@ -125,6 +133,15 @@ public final class TestController implements ReactiveHandler {
     public Flux<byte[]> upload(Request request) {
         return request.bodyToFlux(new TypeToken<byte[]>() {
         });
+    }
+
+    @RequestMapping(method = HttpMethod.GET, path = "/download")
+    public Mono<Result<byte[]>> download() {
+        String test = "this is a byte array test";
+        return Mono.fromCallable(() -> Result.<byte[]>builder()
+                .data(Mono.just(test.getBytes()), byte[].class)
+                .build())
+                .subscribeOn(Schedulers.elastic());
     }
 
     @RequestMapping(method = HttpMethod.POST, path = "/void")

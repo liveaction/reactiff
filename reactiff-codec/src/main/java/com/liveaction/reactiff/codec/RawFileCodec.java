@@ -1,6 +1,5 @@
 package com.liveaction.reactiff.codec;
 
-import com.google.common.base.Throwables;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Codec;
 import com.liveaction.reactiff.api.server.Result;
@@ -66,7 +65,7 @@ public final class RawFileCodec implements Codec {
                             try {
                                 out.close();
                             } catch (IOException e) {
-                                Throwables.propagate(e);
+                                throw new RuntimeException(e);
                             }
                         });
                 if (FILE.isSupertypeOf(typeToken)) {
@@ -75,7 +74,7 @@ public final class RawFileCodec implements Codec {
                     return writeFlux.thenReturn((T) file.toPath());
                 }
             } catch (IOException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         } else {
             throw new IllegalArgumentException("Unable to encode to type '" + typeToken + "'");

@@ -1,7 +1,6 @@
 package com.liveaction.reactiff.server.rules;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Throwables;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Body;
 import com.liveaction.reactiff.server.internal.utils.ResultUtils;
@@ -29,7 +28,7 @@ public final class ReactorUtils {
                     try {
                         IOUtils.copy(inputStream, out);
                     } catch (IOException e) {
-                        throw Throwables.propagate(e);
+                        throw new RuntimeException(e);
                     }
                     return out.toByteArray();
                 });

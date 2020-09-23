@@ -1,6 +1,5 @@
 package com.liveaction.reactiff.server.internal.template;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import reactor.core.publisher.Mono;
@@ -22,7 +21,7 @@ public final class TemplateEngineImpl implements com.liveaction.reactiff.api.ser
                         try {
                             return CharStreams.toString(new InputStreamReader(resource));
                         } catch (IOException e) {
-                            throw Throwables.propagate(e);
+                            throw new RuntimeException(e);
                         }
                     })
                     .map(template -> {

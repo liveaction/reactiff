@@ -91,7 +91,7 @@ public final class FluxSinkMultipartListener implements NioMultipartParserListen
                             }
                         }
                         catch (IOException ex) {
-                            throw Throwables.propagate(ex);
+                            throw new RuntimeException(ex);
                         }
                         finally {
                             if (input != null) {

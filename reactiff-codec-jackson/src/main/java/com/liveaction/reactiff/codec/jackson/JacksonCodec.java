@@ -2,6 +2,7 @@ package com.liveaction.reactiff.codec.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.async.ByteArrayFeeder;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -10,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SequenceWriter;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeToken;
 import io.netty.buffer.ByteBuf;
@@ -80,7 +80,17 @@ public class JacksonCodec {
 
     public <T> Publisher<ByteBuf> encode(Publisher<T> data, boolean tokenizeArrayElements) {
         if (MONO_TYPE_TOKEN.isSupertypeOf(data.getClass())) {
-            return encodeValue(Flux.from(data), false);
+            return Mono.from(data)
+                    .flatMap(obj -> {
+                        try {
+
+                            return Mono.just(Unpooled.wrappedBuffer(objectWriter.writeValueAsBytes(obj)));
+                        } catch (JsonProcessingException e) {
+                            LOGGER.error(String.format("Error in serialization: %s could not be serialized because %s", obj, e.getMessage()));
+                            LOGGER.debug(String.format("Error in serialization: %s could not be serialized", obj), e);
+                            return Mono.error(e);
+                        }
+                    });
         } else {
             return encodeValue(Flux.from(data), tokenizeArrayElements);
         }
@@ -105,6 +115,7 @@ public class JacksonCodec {
                         }
                     }).concatWith(Mono.fromCallable(() -> {
                         output.reset();
+                        // used to close() the SequenceWriter in implicit finally clause
                         try (SequenceWriter c = tuple.getT2()) {
                         }
                         byte[] array = output.toByteArray();
@@ -182,7 +193,7 @@ public class JacksonCodec {
                         .map(Optional::get)
                         .collect(ImmutableList.toImmutableList());
             } catch (IOException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         }
 

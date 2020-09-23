@@ -1,6 +1,5 @@
 package com.liveaction.reactiff.server.internal;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -26,7 +25,11 @@ import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.HttpServerRoutes;
 
 import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -47,7 +50,7 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
 
     private final ImmutableSet<HandlerSupportFunction<? extends Annotation, ? extends Route>> handlerSupportFunctions;
 
-    private final Set<ReactiveHandler> reactiveHandlers = Collections.synchronizedSortedSet(new TreeSet<>());
+    private final Set<ReactiveHandler> reactiveHandlers = new ConcurrentSkipListSet<>();
 
     private final CodecManager codecManager;
     private final Function<FilterChain, FilterChain> filterFunction;
@@ -65,7 +68,7 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
         this.filterFunction = filterFunction;
         this.handlerSupportFunctions = ImmutableSet.of(
                 new RequestMappingSupport(codecManager, paramConverter, filterFunction, writeErrorStacktrace, executionContextService),
-                new WsMappingSupport()
+                new WsMappingSupport(filterFunction, codecManager)
         );
         this.writeErrorStacktrace = writeErrorStacktrace;
         this.displayRoutes = displayRoutes;

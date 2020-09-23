@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import reactor.core.publisher.Flux;
@@ -158,7 +159,9 @@ public final class ReactiveHttpServerTest {
                 .verify();
     }
 
+    // Ignored until https://github.com/reactor/reactor-netty/issues/1180 is closed in reactor-netty 0.9.10.RELEASE
     @Test
+    @Ignore
     public void shouldCatchErrorWhenHandlerThrowAnException() {
         StepVerifier.create(withReactiveServer.httpClient()
                 .get()
@@ -174,7 +177,7 @@ public final class ReactiveHttpServerTest {
                 .get()
                 .uri("/yes/nosuch")
                 .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
-                .expectErrorMessage("404 : Not Found")
+                .expectErrorMessage("404 : No such mono")
                 .verify();
     }
 
@@ -184,8 +187,19 @@ public final class ReactiveHttpServerTest {
                 .get()
                 .uri("/yes/nosuchflux")
                 .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
-                .expectErrorMessage("404 : Not Found")
+                .expectErrorMessage("404 : No such flux")
                 .verify();
+    }
+
+    @Test
+    public void shouldDownload() throws InterruptedException {
+        StepVerifier.create(withReactiveServer.httpClient()
+                .get()
+                .uri("/download")
+                .response(withCodecManager.checkErrorAndDecodeAsMono(byte[].class))
+                .map(String::new))
+                .expectNext("this is a byte array test")
+                .verifyComplete();
     }
 
     @Test
@@ -212,7 +226,9 @@ public final class ReactiveHttpServerTest {
                 .verify();
     }
 
+    // Ignored until https://github.com/reactor/reactor-netty/issues/1180 is closed in reactor-netty 0.9.10.RELEASE
     @Test
+    @Ignore
     public void shouldReceiveException_during_mono() {
         StepVerifier.create(withReactiveServer.httpClient()
                 .get()
@@ -228,7 +244,7 @@ public final class ReactiveHttpServerTest {
                 .get()
                 .uri("/yes/unauthorized")
                 .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
-                .expectErrorMessage("401 : Unauthorized")
+                .expectErrorMessage("401 : Access forbidden by me")
                 .verify();
     }
 
@@ -374,7 +390,7 @@ public final class ReactiveHttpServerTest {
         StepVerifier.create(ReactorUtils.asString(actual))
                 .assertNext(content -> {
                     try {
-                        assertThat(content).isEqualTo(Files.toString(expected, Charsets.UTF_8));
+                        assertThat(content).isEqualTo(Files.asCharSource(expected, Charsets.UTF_8).read());
                     } catch (IOException e) {
                         fail("Unable to read expected file : " + e);
                     }
@@ -482,7 +498,9 @@ public final class ReactiveHttpServerTest {
                 .verify();
     }
 
+    // Ignored until https://github.com/reactor/reactor-netty/issues/1180 is closed in reactor-netty 0.9.10.RELEASE
     @Test
+    @Ignore
     public void shouldReceiveNotFoundWhenNoRouteMatch() {
         StepVerifier.create(withReactiveServer.httpClient()
                 .get()
@@ -502,7 +520,7 @@ public final class ReactiveHttpServerTest {
                     assertThat(httpClientResponse.status().code()).isEqualTo(404);
                     return withCodecManager.codecManager.decodeAsMono(String.class).apply(httpClientResponse, byteBufFlux);
                 })
-        ).expectNext(Files.toString(new File(getClass().getResource("/expected/not-found.txt").getFile()), Charsets.UTF_8))
+        ).expectNext(Files.asCharSource(new File(getClass().getResource("/expected/not-found.txt").getFile()), Charsets.UTF_8).read())
                 .verifyComplete();
     }
 
@@ -530,7 +548,7 @@ public final class ReactiveHttpServerTest {
     }
 
     @Test
-    public void shouldHandlerWebSocket() {
+    public void shouldHandleWebSocket() {
         Flux<WebSocketFrame> frames = withReactiveServer.httpClient()
                 .baseUrl("ws://localhost:" + withReactiveServer.server.port())
                 .websocket()
@@ -542,6 +560,19 @@ public final class ReactiveHttpServerTest {
                 .expectNext(new TextWebSocketFrame("Je m'appelle"))
                 .expectNext(new TextWebSocketFrame("Jean Baptiste Poquelin"))
                 .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldHandleWebSocketAuth() {
+        Flux<WebSocketFrame> frames = withReactiveServer.httpClient()
+                .baseUrl("ws://localhost:" + withReactiveServer.server.port())
+                .websocket()
+                .uri("/websocket-auth")
+                .handle((websocketInbound, websocketOutbound) -> websocketInbound.receiveFrames());
+
+        StepVerifier.create(frames)
+                .expectErrorMessage("Invalid handshake response getStatus: 401 RequiresAuth is not authorized")
                 .verify();
     }
 
@@ -562,7 +593,7 @@ public final class ReactiveHttpServerTest {
                 .get()
                 .uri("/non")
                 .response(withCodecManager.checkErrorAndDecodeAsFlux(String.class)))
-                .expectErrorMessage("401 : Unauthorized")
+                .expectErrorMessage("401 : RequiresAuth is not authorized")
                 .verify();
     }
 
@@ -680,7 +711,7 @@ public final class ReactiveHttpServerTest {
                 .expectNext(tmpFolder.resolve("file2").toString())
                 .expectComplete()
                 .verify();
-        assertThat(Files.readFirstLine(tmpFolder.resolve("file1").toFile(), Charset.defaultCharset())).isEqualTo("test file");
-        assertThat(Files.readFirstLine(tmpFolder.resolve("file2").toFile(), Charset.defaultCharset())).isEqualTo("test file 2");
+        assertThat(Files.asCharSource(tmpFolder.resolve("file1").toFile(), Charset.defaultCharset()).readFirstLine()).isEqualTo("test file");
+        assertThat(Files.asCharSource(tmpFolder.resolve("file2").toFile(), Charset.defaultCharset()).readFirstLine()).isEqualTo("test file 2");
     }
 }
