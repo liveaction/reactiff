@@ -172,7 +172,7 @@ public final class CodecManagerImpl implements CodecManager {
         Codec codec = codecs.stream()
                 .filter(myCodec -> myCodec.supports(contentType, typeToken))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unable to found a decoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'"));
+                .orElseThrow(() -> new IllegalArgumentException("Unable to find a decoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'"));
         LOGGER.debug("Found a decoder for Content-Type='{}'", contentType);
         return codec;
     }
