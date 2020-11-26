@@ -136,7 +136,7 @@ public final class CodecManagerImpl implements CodecManager {
 
     private <T> Codec getCodec(String contentType, TypeToken<T> typeToken) {
         return getOptionalCodec(contentType, typeToken)
-                .orElseThrow(() -> new IllegalArgumentException("Unable to found an encoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'"));
+                .orElseThrow(() -> new IllegalArgumentException("Unable to find an encoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'"));
     }
 
     private <T> Optional<Codec> getOptionalCodec(String contentType, TypeToken<T> typeToken) {
