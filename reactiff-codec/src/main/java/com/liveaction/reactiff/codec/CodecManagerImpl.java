@@ -54,8 +54,8 @@ public final class CodecManagerImpl implements CodecManager {
     @Override
     public <T> Mono<T> decodeAsMono(HttpHeaders httpHeaders, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         String contentType = findContentType(httpHeaders);
-        Codec codec = findCodec(contentType, typeToken);
-        return codec.decodeMono(contentType, byteBufFlux, typeToken);
+        return findCodec(contentType, typeToken)
+                .flatMap(codec -> codec.decodeMono(contentType, byteBufFlux, typeToken));
     }
 
     @Override
@@ -66,8 +66,8 @@ public final class CodecManagerImpl implements CodecManager {
     @Override
     public <T> Flux<T> decodeAsFlux(HttpHeaders httpHeaders, Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken) {
         String contentType = findContentType(httpHeaders);
-        Codec codec = findCodec(contentType, typeToken);
-        return codec.decodeFlux(contentType, byteBufFlux, typeToken);
+        return findCodec(contentType, typeToken)
+                .flatMapMany(codec -> codec.decodeFlux(contentType, byteBufFlux, typeToken));
     }
 
     @Override
@@ -84,7 +84,7 @@ public final class CodecManagerImpl implements CodecManager {
     public <T> Mono<Result<T>> enrichResult(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Result<T> result) {
         String contentType = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType == null) {
-            contentType = negociateContentType(getAcceptHeaders(requestHttpHeaders), result.type());
+            contentType = negotiateContentType(getAcceptHeaders(requestHttpHeaders), result.type());
         }
         return getOptionalCodec(contentType, result.type())
                 .map(codec -> codec.enrich(result))
@@ -104,7 +104,7 @@ public final class CodecManagerImpl implements CodecManager {
     public <T> Publisher<ByteBuf> encode(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         String contentType = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType == null) {
-            contentType = negociateContentType(getAcceptHeaders(requestHttpHeaders), typeToken);
+            contentType = negotiateContentType(getAcceptHeaders(requestHttpHeaders), typeToken);
         }
         return encodeAs(contentType, responseHttpHeaders, data, typeToken);
     }
@@ -121,7 +121,7 @@ public final class CodecManagerImpl implements CodecManager {
     public <T> Publisher<ByteBuf> encodeAs(HttpHeaders requestHttpHeaders, Publisher<T> data, TypeToken<T> typeToken) {
         String contentType = requestHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType == null) {
-            contentType = negociateContentType(getAcceptHeaders(requestHttpHeaders), typeToken);
+            contentType = negotiateContentType(getAcceptHeaders(requestHttpHeaders), typeToken);
         }
         return encodeAs(getCodec(contentType, typeToken), contentType, data, typeToken);
     }
@@ -146,7 +146,7 @@ public final class CodecManagerImpl implements CodecManager {
 
     }
 
-    private String negociateContentType(Collection<String> acceptHeader, TypeToken<?> typeToken) {
+    private String negotiateContentType(Collection<String> acceptHeader, TypeToken<?> typeToken) {
         return acceptHeader.stream()
                 .flatMap(s -> StreamSupport.stream(Splitter.on(',').split(s).spliterator(), false))
                 .map(String::trim)
@@ -168,13 +168,13 @@ public final class CodecManagerImpl implements CodecManager {
                 .orElse(defaultContentType);
     }
 
-    private Codec findCodec(String contentType, TypeToken<?> typeToken) {
-        Codec codec = codecs.stream()
+    private Mono<Codec> findCodec(String contentType, TypeToken<?> typeToken) {
+        return codecs.stream()
                 .filter(myCodec -> myCodec.supports(contentType, typeToken))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unable to find a decoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'"));
-        LOGGER.debug("Found a decoder for Content-Type='{}'", contentType);
-        return codec;
+                .map(Mono::just)
+                .orElseGet(() -> Mono.error(new IllegalArgumentException("Unable to find a decoder that supports Content-Type '" + contentType + "' and type '" + typeToken + "'")))
+                .doOnNext(v -> LOGGER.debug("Found a decoder for Content-Type='{}'", contentType));
     }
 
 }
