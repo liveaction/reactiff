@@ -63,7 +63,14 @@ public class JacksonCodec {
         return ByteBufFlux.fromInbound(byteBufFlux)
                 .aggregate()
                 .asByteArray()// https://github.com/reactor/reactor-netty/issues/746
-                .map(bytes -> deserialize(() -> jsonFactory.createParser(bytes).readValueAs(toTypeReference(typeToken))));
+                .handle((bytes, sink) -> {
+                    T value = deserialize(() -> jsonFactory.createParser(bytes).readValueAs(toTypeReference(typeToken)));
+                    if (value == null) {
+                        sink.complete();
+                    } else {
+                        sink.next(value);
+                    }
+                });
     }
 
     public <T> Flux<T> decodeFlux(Publisher<ByteBuf> byteBufFlux, TypeToken<T> typeToken, boolean readTopLevelArray) {
