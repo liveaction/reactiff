@@ -20,6 +20,7 @@ import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.HttpServerRoutes;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -63,11 +65,11 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
 
 
     public Router(CodecManager codecManager, ParamConverter paramConverter, Function<FilterChain, FilterChain> filterFunction,
-                  boolean writeErrorStacktrace, ExecutionContextService executionContextService, boolean displayRoutes) {
+                  boolean writeErrorStacktrace, ExecutionContextService executionContextService, boolean displayRoutes, Scheduler workScheduler) {
         this.codecManager = codecManager;
         this.filterFunction = filterFunction;
         this.handlerSupportFunctions = ImmutableSet.of(
-                new RequestMappingSupport(codecManager, paramConverter, filterFunction, writeErrorStacktrace, executionContextService),
+                new RequestMappingSupport(codecManager, paramConverter, filterFunction, writeErrorStacktrace, executionContextService, workScheduler),
                 new WsMappingSupport(filterFunction, codecManager)
         );
         this.writeErrorStacktrace = writeErrorStacktrace;
