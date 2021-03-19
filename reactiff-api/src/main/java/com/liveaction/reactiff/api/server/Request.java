@@ -49,8 +49,8 @@ public interface Request {
      */
     List<String> headers(CharSequence name);
 
-    // delegates methods
 
+    // delegates methods
     InetSocketAddress hostAddress();
 
     InetSocketAddress remoteAddress();
@@ -81,4 +81,5 @@ public interface Request {
 
     ImmutableList<Locale.LanguageRange> getLanguageRanges();
 
+    Mono<Map<String, List<String>>> getFormData();
 }
