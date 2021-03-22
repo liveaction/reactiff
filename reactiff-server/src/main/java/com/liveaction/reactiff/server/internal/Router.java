@@ -70,7 +70,7 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
         this.filterFunction = filterFunction;
         this.handlerSupportFunctions = ImmutableSet.of(
                 new RequestMappingSupport(codecManager, paramConverter, filterFunction, writeErrorStacktrace, executionContextService, workScheduler),
-                new WsMappingSupport(filterFunction, codecManager)
+                new WsMappingSupport(filterFunction, codecManager, workScheduler)
         );
         this.writeErrorStacktrace = writeErrorStacktrace;
         this.displayRoutes = displayRoutes;
