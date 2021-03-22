@@ -232,7 +232,7 @@ public final class RequestImpl implements Request {
     }
 
     @Override
-    public Mono<Map<String, List<String>>> getFormData() {
+    public Mono<ImmutableMap<String, ImmutableList<String>>> getFormData() {
         // Until this gets fixed in https://github.com/reactor/reactor-netty/pull/1411
         String contentType = httpServerRequest.requestHeaders().get(HttpHeaderNames.CONTENT_TYPE);
         if(!method().equals(HttpMethod.POST) || !contentType.toLowerCase().contains("application/x-www-form-urlencoded")) {
@@ -244,7 +244,12 @@ public final class RequestImpl implements Request {
                 .asByteArray()
                 .map(bytes -> {
                     try {
-                        return new QueryStringDecoder(new String(bytes, charset), false).parameters();
+                        final Map<String, List<String>> parameters = new QueryStringDecoder(new String(bytes, charset), false).parameters();
+                        final ImmutableMap.Builder<String, ImmutableList<String>> builder = ImmutableMap.builder();
+                        for (Map.Entry<String, List<String>> entry : parameters.entrySet()) {
+                            builder.put(entry.getKey(), ImmutableList.copyOf(entry.getValue()));
+                        }
+                        return builder.build();
                     } catch (Exception e) {
                         throw e;
                     }

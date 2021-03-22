@@ -81,5 +81,5 @@ public interface Request {
 
     ImmutableList<Locale.LanguageRange> getLanguageRanges();
 
-    Mono<Map<String, List<String>>> getFormData();
+    Mono<ImmutableMap<String, ImmutableList<String>>> getFormData();
 }
