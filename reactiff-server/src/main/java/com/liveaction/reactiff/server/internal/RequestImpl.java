@@ -236,7 +236,7 @@ public final class RequestImpl implements Request {
         // Until this gets fixed in https://github.com/reactor/reactor-netty/pull/1411
         String contentType = httpServerRequest.requestHeaders().get(HttpHeaderNames.CONTENT_TYPE);
         if(!method().equals(HttpMethod.POST) || !contentType.toLowerCase().contains("application/x-www-form-urlencoded")) {
-            return Mono.empty();
+            return Mono.just(ImmutableMap.of());
         }
         final Charset charset = HttpUtil.getCharset(contentType, CharsetUtil.UTF_8);
         return httpServerRequest.receive()
