@@ -21,7 +21,7 @@ public final class ResultUtils {
             }
             Mono<?> publisher = (Mono) result;
             return publisher
-                    .map(val -> (Result)toTypedResult(Mono.just(val), paramType))
+                    .map(val -> (Result) toTypedResult(Mono.just(val), paramType))
                     .switchIfEmpty(Mono.just(toTypedResult(null, paramType))); // for Mono<Void>
 
         } else if (PUBLISHER_TYPE_TOKEN.isSupertypeOf(returnType)) {
@@ -34,7 +34,7 @@ public final class ResultUtils {
         } else if (RESULT_TYPE_TOKEN.isSupertypeOf(returnType)) {
             Result httpResult = (Result) result;
             return Mono.just(httpResult);
-        } else if(void.class == returnType.getRawType() || VOID_TYPE_TOKEN.isSupertypeOf(returnType)) {
+        } else if (void.class == returnType.getRawType() || VOID_TYPE_TOKEN.isSupertypeOf(returnType)) {
             return Mono.just(Result.ok(null, returnType));
         } else {
             return Mono.just(toTypedResult(Mono.just(result), returnType));
