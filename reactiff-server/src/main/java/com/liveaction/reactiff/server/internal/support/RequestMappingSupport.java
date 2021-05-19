@@ -84,8 +84,8 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                 (request) -> Mono.defer(() -> invokeHandlerMethod(reactiveHandler, method, request))
                         .doOnError(error -> LOGGER.debug("An error occurred while calling {}:{}, {}", reactiveHandler.getClass().getSimpleName(), method.getName(), error.getMessage()))
                 : (request) -> Mono.defer(() -> invokeHandlerMethod(reactiveHandler, method, request))
-                        .subscribeOn(workScheduler)
-                        .doOnError(error -> LOGGER.debug("An error occurred while calling {}:{}, {}", reactiveHandler.getClass().getSimpleName(), method.getName(), error.getMessage()));
+                .subscribeOn(workScheduler)
+                .doOnError(error -> LOGGER.debug("An error occurred while calling {}:{}, {}", reactiveHandler.getClass().getSimpleName(), method.getName(), error.getMessage()));
 
         BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> {
             Optional<Route> matchingRoute = Optional.of(Route.http(0, HttpMethod.valueOf(req.method().name()), route.path(), method));
@@ -165,7 +165,23 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                 }
             }
             Object rawResult = method.invoke(reactiveHandler, args.toArray());
-            return ResultUtils.toResult(returnType, rawResult);
+            return ResultUtils.toResult(returnType, rawResult)
+                    // This allows the thread subscribing the inner Publisher to get our ExecutionContext
+                    .map(res -> {
+                        if (res.data() != null) {
+                            Result.Builder copy = res.copy();
+                            if (res.data() instanceof Flux) {
+                                copy.data(Flux.from(res.data())
+                                        .doOnSubscribe(s -> executionContext.apply()), res.type());
+                            } else {
+                                copy.data(Mono.from(res.data())
+                                        .doOnSubscribe(s -> executionContext.apply()), res.type());
+                            }
+                            return copy.build();
+                        }
+                        return res;
+                    })
+                    .doOnSubscribe(s -> executionContext.apply());
         } catch (InvocationTargetException e) {
             return Mono.error(e.getTargetException());
         } catch (Throwable e) {
