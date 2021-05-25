@@ -15,6 +15,7 @@ import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.scheduler.Scheduler;
 import reactor.netty.DisposableServer;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.server.HttpServer;
@@ -38,7 +39,8 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     private final String host;
     private final int port;
     private final Collection<HttpProtocol> protocols;
-    private final Executor executor;
+    private final Executor ioExecutor;
+    private final Scheduler workScheduler;
 
     private final HttpServer httpServer;
     private final Router router;
@@ -51,7 +53,8 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
                                   int port,
                                   Collection<HttpProtocol> protocols,
                                   CodecManager codecManager,
-                                  Executor executor,
+                                  Executor ioExecutor,
+                                  Scheduler workScheduler,
                                   boolean wiretap,
                                   boolean compress,
                                   boolean displayRoutes,
@@ -59,8 +62,9 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
         this.host = host;
         this.port = port;
         this.protocols = protocols;
-        this.executor = executor;
-        this.router = new Router(codecManager, paramConverter, this::chain, writeErrorStacktrace, executionContextServiceManager, displayRoutes);
+        this.ioExecutor = ioExecutor;
+        this.workScheduler = workScheduler;
+        this.router = new Router(codecManager, paramConverter, this::chain, writeErrorStacktrace, executionContextServiceManager, displayRoutes, workScheduler);
         this.httpServer = createServer(wiretap, compress);
     }
 
@@ -155,8 +159,8 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
         }
         httpServer = httpServer
                 .tcpConfiguration(tcpServer -> {
-                    if (executor != null) {
-                        tcpServer = tcpServer.runOn(new EpollEventLoopGroup(0, executor));
+                    if (ioExecutor != null) {
+                        tcpServer = tcpServer.runOn(new EpollEventLoopGroup(0, ioExecutor));
                     }
                     return tcpServer;
                 })

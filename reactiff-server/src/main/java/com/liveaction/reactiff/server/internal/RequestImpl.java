@@ -10,11 +10,9 @@ import com.liveaction.reactiff.api.server.Request;
 import com.liveaction.reactiff.api.server.multipart.Part;
 import com.liveaction.reactiff.api.server.route.Route;
 import com.liveaction.reactiff.server.internal.multipart.FluxSinkMultipartListener;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.synchronoss.cloud.nio.multipart.Multipart;
@@ -27,6 +25,7 @@ import reactor.netty.http.server.HttpServerRequest;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -230,6 +229,31 @@ public final class RequestImpl implements Request {
                 .map(Locale.LanguageRange::parse)
                 .map(ImmutableList::copyOf)
                 .orElseGet(ImmutableList::of);
+    }
+
+    @Override
+    public Mono<ImmutableMap<String, ImmutableList<String>>> getFormData() {
+        // Until this gets fixed in https://github.com/reactor/reactor-netty/pull/1411
+        String contentType = httpServerRequest.requestHeaders().get(HttpHeaderNames.CONTENT_TYPE);
+        if(!method().equals(HttpMethod.POST) || !contentType.toLowerCase().contains("application/x-www-form-urlencoded")) {
+            return Mono.just(ImmutableMap.of());
+        }
+        final Charset charset = HttpUtil.getCharset(contentType, CharsetUtil.UTF_8);
+        return httpServerRequest.receive()
+                .aggregate()
+                .asByteArray()
+                .map(bytes -> {
+                    try {
+                        final Map<String, List<String>> parameters = new QueryStringDecoder(new String(bytes, charset), false).parameters();
+                        final ImmutableMap.Builder<String, ImmutableList<String>> builder = ImmutableMap.builder();
+                        for (Map.Entry<String, List<String>> entry : parameters.entrySet()) {
+                            builder.put(entry.getKey(), ImmutableList.copyOf(entry.getValue()));
+                        }
+                        return builder.build();
+                    } catch (Exception e) {
+                        throw e;
+                    }
+                });
     }
 
 }

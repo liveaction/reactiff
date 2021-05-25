@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.HttpServerRoutes;
@@ -51,15 +52,17 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
     private final Function<FilterChain, FilterChain> filterChainer;
     private final boolean writeErrorStacktrace;
     private final ExecutionContextService executionContextService;
+    private final Scheduler workScheduler;
 
     public RequestMappingSupport(CodecManager codecManager, ParamConverter paramConverter,
                                  Function<FilterChain, FilterChain> chainFunction, boolean writeErrorStacktrace,
-                                 ExecutionContextService executionContextService) {
+                                 ExecutionContextService executionContextService, Scheduler workScheduler) {
         this.codecManager = codecManager;
         this.paramConverter = paramConverter;
         this.filterChainer = chainFunction;
         this.writeErrorStacktrace = writeErrorStacktrace;
         this.executionContextService = executionContextService;
+        this.workScheduler = workScheduler;
     }
 
     @Override
@@ -77,8 +80,13 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
     @Override
     public void register(HttpServerRoutes httpServerRoutes, ReactiveHandler reactiveHandler, HttpRoute route) {
         Method method = route.handlerMethod();
-        FilterChain routeChain = (request) -> invokeHandlerMethod(reactiveHandler, method, request)
+        FilterChain routeChain = workScheduler == null ?
+                (request) -> Mono.defer(() -> invokeHandlerMethod(reactiveHandler, method, request))
+                        .doOnError(error -> LOGGER.debug("An error occurred while calling {}:{}, {}", reactiveHandler.getClass().getSimpleName(), method.getName(), error.getMessage()))
+                : (request) -> Mono.defer(() -> invokeHandlerMethod(reactiveHandler, method, request))
+                .subscribeOn(workScheduler)
                 .doOnError(error -> LOGGER.debug("An error occurred while calling {}:{}, {}", reactiveHandler.getClass().getSimpleName(), method.getName(), error.getMessage()));
+
         BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> {
             Optional<Route> matchingRoute = Optional.of(Route.http(0, HttpMethod.valueOf(req.method().name()), route.path(), method));
             return FilterUtils.applyFilters(req, res, codecManager, filterChainer, routeChain, matchingRoute, writeErrorStacktrace);
@@ -157,7 +165,23 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                 }
             }
             Object rawResult = method.invoke(reactiveHandler, args.toArray());
-            return ResultUtils.toResult(returnType, rawResult);
+            return ResultUtils.toResult(returnType, rawResult)
+                    // This allows the thread subscribing the inner Publisher to get our ExecutionContext
+                    .map(res -> {
+                        if (res.data() != null) {
+                            Result.Builder copy = res.copy();
+                            if (res.data() instanceof Flux) {
+                                copy.data(Flux.from(res.data())
+                                        .doOnSubscribe(s -> executionContext.apply()), res.type());
+                            } else {
+                                copy.data(Mono.from(res.data())
+                                        .doOnSubscribe(s -> executionContext.apply()), res.type());
+                            }
+                            return copy.build();
+                        }
+                        return res;
+                    })
+                    .doOnSubscribe(s -> executionContext.apply());
         } catch (InvocationTargetException e) {
             return Mono.error(e.getTargetException());
         } catch (Throwable e) {
