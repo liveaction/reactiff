@@ -21,7 +21,7 @@
         <netty.version>4.1.63.Final</netty.version>
         <reactor-core.version>3.3.16.RELEASE</reactor-core.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <guava.version>28.0-jre</guava.version>
+        <guava.version>29.0-jre</guava.version>
         <reactor-netty.version>0.9.19.RELEASE</reactor-netty.version>
         <jackson.version>2.11.4</jackson.version>
     </properties>
