@@ -80,12 +80,9 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
     @Override
     public void register(HttpServerRoutes httpServerRoutes, ReactiveHandler reactiveHandler, HttpRoute route) {
         Method method = route.handlerMethod();
-        FilterChain routeChain = workScheduler == null ?
-                (request) -> Mono.defer(() -> invokeHandlerMethod(reactiveHandler, method, request))
-                        .doOnError(error -> LOGGER.debug("An error occurred while calling {}:{}, {}", reactiveHandler.getClass().getSimpleName(), method.getName(), error.getMessage()))
-                : (request) -> Mono.defer(() -> invokeHandlerMethod(reactiveHandler, method, request))
-                .subscribeOn(workScheduler)
-                .doOnError(error -> LOGGER.debug("An error occurred while calling {}:{}, {}", reactiveHandler.getClass().getSimpleName(), method.getName(), error.getMessage()));
+        FilterChain routeChain = (request) -> Mono.defer(() -> invokeHandlerMethod(reactiveHandler, method, request))
+                .doOnError(error -> LOGGER.debug("An error occurred while calling {}:{}, {}", reactiveHandler.getClass().getSimpleName(), method.getName(), error.getMessage()))
+                .transform(mono -> workScheduler == null ? mono : mono.subscribeOn(workScheduler));
 
         BiFunction<HttpServerRequest, HttpServerResponse, Publisher<Void>> onRequest = (req, res) -> {
             Optional<Route> matchingRoute = Optional.of(Route.http(0, HttpMethod.valueOf(req.method().name()), route.path(), method));
