@@ -7,7 +7,7 @@
     <groupId>com.liveaction</groupId>
     <artifactId>reactiff</artifactId>
     <packaging>pom</packaging>
-    <version>1.4.0</version>
+    <version>1.4.1</version>
     <modules>
         <module>reactiff-api</module>
         <module>reactiff-server</module>
@@ -18,11 +18,11 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty.version>4.1.52.Final</netty.version>
-        <reactor-core.version>3.3.10.RELEASE</reactor-core.version>
+        <netty.version>4.1.63.Final</netty.version>
+        <reactor-core.version>3.3.17.RELEASE</reactor-core.version>
         <slf4j.version>1.7.30</slf4j.version>
         <guava.version>28.0-jre</guava.version>
-        <reactor-netty.version>0.9.12.RELEASE</reactor-netty.version>
+        <reactor-netty.version>0.9.20.RELEASE</reactor-netty.version>
         <jackson.version>2.11.2</jackson.version>
     </properties>
 

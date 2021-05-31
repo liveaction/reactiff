@@ -8,6 +8,7 @@ import com.liveaction.reactiff.codec.CodecManagerImpl;
 import com.liveaction.reactiff.server.context.ExecutionContextService;
 import com.liveaction.reactiff.server.internal.ReactiveHttpServerImpl;
 import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
+import reactor.core.scheduler.Scheduler;
 import reactor.netty.http.HttpProtocol;
 import reactor.util.annotation.Nullable;
 
@@ -31,7 +32,9 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
 
     private Collection<ParamTypeConverter<?>> converters = Sets.newConcurrentHashSet();
 
-    private Executor executor;
+    private Executor ioExecutor;
+
+    private Scheduler workScheduler;
 
     private boolean wiretap = false;
 
@@ -135,8 +138,14 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
     }
 
     @Override
-    public ReactiveHttpServer.Builder executor(Executor executor) {
-        this.executor = executor;
+    public ReactiveHttpServer.Builder ioExecutor(Executor ioExecutor) {
+        this.ioExecutor = ioExecutor;
+        return this;
+    }
+
+    @Override
+    public ReactiveHttpServer.Builder workScheduler(Scheduler workScheduler) {
+        this.workScheduler = workScheduler;
         return this;
     }
 
@@ -169,7 +178,7 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
         if (codecManager == null) {
             codecManager = new CodecManagerImpl();
         }
-        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, executor, wiretap, compress, displayRoutes, writeErrorStacktrace);
+        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, ioExecutor, workScheduler, wiretap, compress, displayRoutes, writeErrorStacktrace);
         filters.forEach(reactiveHttpServer::addReactiveFilter);
         handlers.forEach(reactiveHttpServer::addReactiveHandler);
         converters.forEach(reactiveHttpServer::addParamTypeConverter);
