@@ -16,6 +16,7 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
 import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 
 public final class PerformanceTest implements ReactiveHandler {
     static int i = 0;
@@ -34,9 +35,8 @@ public final class PerformanceTest implements ReactiveHandler {
                 .codecManager(withCodecManager.codecManager)
                 .build();
         server.addReactiveFilter((DefaultFilters.exceptionMapping(throwable -> {
-            if (throwable instanceof IllegalAccessException) return 500;
-            if (throwable instanceof UnsupportedOperationException) return 401;
-            if (throwable instanceof NullPointerException) return 404;
+            if (throwable instanceof TimeoutException) return 404;
+            if (throwable instanceof io.netty.handler.timeout.TimeoutException) return 401;
             return null;
         })));
         server.addReactiveHandler(new PerformanceController());
@@ -86,6 +86,17 @@ public final class PerformanceTest implements ReactiveHandler {
                 .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
                 .post()
                 .uri("/post-timeout")
+                .send(withCodecManager.codecManager.send("application/stream+json", data, String.class))
+                .response(withCodecManager.codecManager.decodeAsFlux(Integer.class)).blockLast();
+    }
+
+    @Test
+    public void cancel() {
+        Flux<String> data = Flux.just("str1", "str2").delayElements(Duration.ofMillis(200));
+        client
+                .headers(httpHeaders -> httpHeaders.set("Accept", "application/json"))
+                .post()
+                .uri("/post-cancel")
                 .send(withCodecManager.codecManager.send("application/stream+json", data, String.class))
                 .response(withCodecManager.codecManager.decodeAsFlux(Integer.class)).blockLast();
     }

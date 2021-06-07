@@ -32,12 +32,15 @@ public class PerformanceController implements ReactiveHandler {
     }
 
     @RequestMapping(method = HttpMethod.POST, path = "/post-cancel")
-    public Mono<Integer> post_cancel(Request request) {
+    public Flux<Integer> post_cancel(Request request) throws InterruptedException {
 
-        return request.bodyToFlux(new TypeToken<String>() {
+        Flux<Integer> map = request.bodyToFlux(new TypeToken<String>() {
         })
-                .next()
-                .map(s ->  1);
+                .map(s -> 1);
+
+        // calling next() will cancel the Flux
+        map.next().subscribe();
+        return map;
     }
 
     private Flux<Integer> delayedFlux(Duration delay) {
