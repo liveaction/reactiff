@@ -24,6 +24,11 @@
         <guava.version>30.1.1-jre</guava.version>
         <reactor-netty.version>1.0.10</reactor-netty.version>
         <jackson.version>2.12.4</jackson.version>
+
+        <mockito.version>3.12.0</mockito.version>
+        <junit.version>4.13.2</junit.version>
+        <junit-params.version>1.1.1</junit-params.version>
+        <assertj.version>3.20.2</assertj.version>
     </properties>
 
     <licenses>
@@ -255,25 +260,25 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>3.5.10</version>
+                <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.12</version>
+                <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>pl.pragmatists</groupId>
                 <artifactId>JUnitParams</artifactId>
-                <version>1.1.1</version>
+                <version>${junit-params.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
-                <version>3.17.2</version>
+                <version>${assertj.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
