@@ -121,12 +121,12 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                             TypeToken<?> paramType = parametrizedType.resolveType(Mono.class.getTypeParameters()[0]);
                             args.add(request.bodyToMono(paramType)
                                     .transform(mono -> workScheduler == null ? mono : mono.publishOn(workScheduler))
-                                    .doOnNext(v -> executionContext.apply()));
+                                    .doOnEach(v -> executionContext.apply()));
                         } else if (parameterType.isSupertypeOf(Flux.class)) {
                             TypeToken<?> paramType = parametrizedType.resolveType(Flux.class.getTypeParameters()[0]);
                             args.add(request.bodyToFlux(paramType)
                                     .transform(flux -> workScheduler == null ? flux : flux.publishOn(workScheduler))
-                                    .doOnNext(v -> executionContext.apply()));
+                                    .doOnEach(v -> executionContext.apply()));
                         } else {
                             throw new IllegalArgumentException(RequestBody.class.getSimpleName() + " only support Mono<T> or Flux<T> type");
                         }
