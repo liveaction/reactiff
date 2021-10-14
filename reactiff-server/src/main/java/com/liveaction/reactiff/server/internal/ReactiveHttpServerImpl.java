@@ -7,19 +7,23 @@ import com.liveaction.reactiff.api.server.ReactiveFilter;
 import com.liveaction.reactiff.api.server.ReactiveHandler;
 import com.liveaction.reactiff.api.server.route.Route;
 import com.liveaction.reactiff.server.ReactiveHttpServer;
+import com.liveaction.reactiff.server.TextualLoggingHandler;
 import com.liveaction.reactiff.server.context.ExecutionContextService;
 import com.liveaction.reactiff.server.internal.context.ExecutionContextServiceManager;
 import com.liveaction.reactiff.server.internal.param.ParamConverter;
 import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
 import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.handler.logging.LogLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.scheduler.Scheduler;
 import reactor.netty.DisposableServer;
+import reactor.netty.channel.BootstrapHandlers;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.server.HttpServer;
 
+import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
@@ -151,9 +155,9 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
 
     private HttpServer createServer(boolean wiretap, boolean compress) {
         HttpServer httpServer = HttpServer.create();
-        if (wiretap) {
-            httpServer = httpServer.wiretap(true);
-        }
+        httpServer = httpServer.tcpConfiguration(tcpServer -> tcpServer.bootstrap(b ->
+                BootstrapHandlers.updateLogSupport(b, new TextualLoggingHandler(HttpServer.class.getName(), LogLevel.DEBUG, Charset.defaultCharset()))));
+
         if (compress) {
             httpServer = httpServer.compress(true);
         }
