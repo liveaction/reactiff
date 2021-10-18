@@ -13,6 +13,7 @@ import com.liveaction.reactiff.server.internal.param.ParamConverter;
 import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
 import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.handler.logging.LogLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.scheduler.Scheduler;
@@ -20,6 +21,7 @@ import reactor.netty.DisposableServer;
 import reactor.netty.channel.ChannelMetricsRecorder;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.server.HttpServer;
+import reactor.netty.transport.logging.AdvancedByteBufFormat;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -153,16 +155,18 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
 
     private HttpServer createServer(boolean wiretap, boolean compress, ChannelMetricsRecorder channelMetricsRecorder) {
         HttpServer httpServer = HttpServer.create()
-                .wiretap(wiretap)
                 .compress(compress)
                 .protocol(protocols.toArray(new HttpProtocol[0]))
                 .host(host);
+        if (wiretap) {
+            httpServer = httpServer.wiretap(HttpServer.class.getName(), LogLevel.DEBUG, AdvancedByteBufFormat.TEXTUAL);
+        }
 
         if (channelMetricsRecorder != null) {
             httpServer = httpServer.metrics(true, () -> channelMetricsRecorder);
         }
 
-        if (ioExecutor !=null) {
+        if (ioExecutor != null) {
             httpServer = httpServer.runOn(new EpollEventLoopGroup(0, ioExecutor));
         }
 
