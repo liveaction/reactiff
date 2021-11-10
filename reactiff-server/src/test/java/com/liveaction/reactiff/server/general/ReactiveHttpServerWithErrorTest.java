@@ -15,7 +15,7 @@ import reactor.test.StepVerifier;
 
 import java.util.NoSuchElementException;
 
-public final class ReactiveHttpServerTestWithError {
+public final class ReactiveHttpServerWithErrorTest {
 
     @ClassRule
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -68,7 +68,7 @@ public final class ReactiveHttpServerTestWithError {
                 .get()
                 .uri("/route/valid/test")
                 .response(withCodecManager.checkErrorAndDecodeAsMono(Boolean.class)))
-                .expectErrorMessage("404 : Not Found")
+                .expectErrorMessage("404 : '/route/valid/test' not found")
                 .verify();
 
         StepVerifier.create(withReactiveServer.httpClient()
@@ -76,7 +76,7 @@ public final class ReactiveHttpServerTestWithError {
                 .get()
                 .uri("/route/invalid/test")
                 .response(withCodecManager.checkErrorAndDecodeAsMono(Boolean.class)))
-                .expectErrorMessage("404 : Not Found")
+                .expectErrorMessage("404 : '/route/invalid/test' not found")
                 .verify();
     }
 }
