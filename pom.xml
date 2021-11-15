@@ -7,7 +7,7 @@
     <groupId>com.liveaction</groupId>
     <artifactId>reactiff</artifactId>
     <packaging>pom</packaging>
-    <version>1.6.0</version>
+    <version>1.6.1-SNAPSHOT</version>
     <modules>
         <module>reactiff-api</module>
         <module>reactiff-server</module>
