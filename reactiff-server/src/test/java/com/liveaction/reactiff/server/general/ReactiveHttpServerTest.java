@@ -4,7 +4,6 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
-import com.google.common.net.HttpHeaders;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.Body;
 import com.liveaction.reactiff.server.DefaultFilters;
@@ -17,7 +16,6 @@ import com.liveaction.reactiff.server.rules.ReactorUtils;
 import com.liveaction.reactiff.server.rules.WithCodecManager;
 import com.liveaction.reactiff.server.rules.WithReactiveServer;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
@@ -93,16 +91,15 @@ public final class ReactiveHttpServerTest {
     @Test
     public void shouldDownloadFile() {
         StepVerifier.create(withReactiveServer.httpClient()
-                .get()
-                .uri("/download/file")
-                .response()
-                .map(HttpClientResponse::responseHeaders)
-                .map(headers -> headers.entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))))
+                        .get()
+                        .uri("/download/file")
+                        .response()
+                        .map(HttpClientResponse::responseHeaders)
+                        .map(headers -> headers.entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))))
                 .expectNextMatches(map ->
                         map.get(HttpHeaderNames.CONTENT_DISPOSITION.toString()).equals("attachment; filename=\"table.csv\"")
-                                && map.get(HttpHeaderNames.TRANSFER_ENCODING.toString()).equals(HttpHeaderValues.CHUNKED.toString())
-                                && !map.containsKey(HttpHeaders.CONTENT_LENGTH)).expectComplete()
-                .verify();
+                                && map.get(HttpHeaderNames.CONTENT_LENGTH.toString()).equals("9"))
+                .verifyComplete();
     }
 
     @Test
@@ -115,9 +112,8 @@ public final class ReactiveHttpServerTest {
                 .map(headers -> headers.entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))))
                 .expectNextMatches(map ->
                         map.get(HttpHeaderNames.CONTENT_DISPOSITION.toString()).equals("attachment; filename=\"table.csv\"")
-                                && map.get(HttpHeaderNames.TRANSFER_ENCODING.toString()).equals(HttpHeaderValues.CHUNKED.toString())
-                                && !map.containsKey(HttpHeaders.CONTENT_LENGTH)).expectComplete()
-                .verify();
+                                && map.get(HttpHeaderNames.CONTENT_LENGTH.toString()).equals("9"))
+                .verifyComplete();
     }
 
     @Test

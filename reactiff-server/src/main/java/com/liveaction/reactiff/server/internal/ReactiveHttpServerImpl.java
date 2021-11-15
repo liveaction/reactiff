@@ -13,12 +13,15 @@ import com.liveaction.reactiff.server.internal.param.ParamConverter;
 import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
 import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.handler.logging.LogLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.scheduler.Scheduler;
 import reactor.netty.DisposableServer;
+import reactor.netty.channel.ChannelMetricsRecorder;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.server.HttpServer;
+import reactor.netty.transport.logging.AdvancedByteBufFormat;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -55,6 +58,7 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
                                   CodecManager codecManager,
                                   Executor ioExecutor,
                                   Scheduler workScheduler,
+                                  ChannelMetricsRecorder channelMetricsRecorder,
                                   boolean wiretap,
                                   boolean compress,
                                   boolean displayRoutes,
@@ -65,7 +69,7 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
         this.ioExecutor = ioExecutor;
         this.workScheduler = workScheduler;
         this.router = new Router(codecManager, paramConverter, this::chain, writeErrorStacktrace, executionContextServiceManager, displayRoutes, workScheduler);
-        this.httpServer = createServer(wiretap, compress);
+        this.httpServer = createServer(wiretap, compress, channelMetricsRecorder);
     }
 
     @Override
@@ -149,23 +153,22 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
         executionContextServiceManager.removeExecutionContextService(executionContextService);
     }
 
-    private HttpServer createServer(boolean wiretap, boolean compress) {
-        HttpServer httpServer = HttpServer.create();
-        if (wiretap) {
-            httpServer = httpServer.wiretap(true);
-        }
-        if (compress) {
-            httpServer = httpServer.compress(true);
-        }
-        httpServer = httpServer
-                .tcpConfiguration(tcpServer -> {
-                    if (ioExecutor != null) {
-                        tcpServer = tcpServer.runOn(new EpollEventLoopGroup(0, ioExecutor));
-                    }
-                    return tcpServer;
-                })
+    private HttpServer createServer(boolean wiretap, boolean compress, ChannelMetricsRecorder channelMetricsRecorder) {
+        HttpServer httpServer = HttpServer.create()
+                .compress(compress)
                 .protocol(protocols.toArray(new HttpProtocol[0]))
                 .host(host);
+        if (wiretap) {
+            httpServer = httpServer.wiretap(HttpServer.class.getName(), LogLevel.DEBUG, AdvancedByteBufFormat.TEXTUAL);
+        }
+
+        if (channelMetricsRecorder != null) {
+            httpServer = httpServer.metrics(true, () -> channelMetricsRecorder);
+        }
+
+        if (ioExecutor != null) {
+            httpServer = httpServer.runOn(new EpollEventLoopGroup(0, ioExecutor));
+        }
 
         if (port != -1) {
             httpServer = httpServer.port(port);

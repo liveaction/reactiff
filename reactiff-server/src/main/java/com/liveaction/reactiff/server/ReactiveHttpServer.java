@@ -7,6 +7,7 @@ import com.liveaction.reactiff.api.server.route.Route;
 import com.liveaction.reactiff.server.context.ExecutionContextService;
 import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
 import reactor.core.scheduler.Scheduler;
+import reactor.netty.channel.ChannelMetricsRecorder;
 import reactor.netty.http.HttpProtocol;
 
 import java.io.Closeable;
@@ -57,6 +58,8 @@ public interface ReactiveHttpServer extends Closeable {
         Builder ioExecutor(Executor ioExecutor);
 
         Builder workScheduler(Scheduler workScheduler);
+
+        Builder metrics(ChannelMetricsRecorder channelMetricsRecorder);
 
         Builder wiretap(boolean wiretap);
 

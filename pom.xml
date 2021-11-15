@@ -7,7 +7,7 @@
     <groupId>com.liveaction</groupId>
     <artifactId>reactiff</artifactId>
     <packaging>pom</packaging>
-    <version>1.5.1</version>
+    <version>1.6.0</version>
     <modules>
         <module>reactiff-api</module>
         <module>reactiff-server</module>
@@ -18,12 +18,17 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty.version>4.1.63.Final</netty.version>
-        <reactor-core.version>3.3.16.RELEASE</reactor-core.version>
+        <netty.version>4.1.69.Final</netty.version>
+        <reactor-core.version>3.4.11</reactor-core.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <guava.version>28.0-jre</guava.version>
-        <reactor-netty.version>0.9.19.RELEASE</reactor-netty.version>
-        <jackson.version>2.11.4</jackson.version>
+        <guava.version>30.1.1-jre</guava.version>
+        <reactor-netty.version>1.0.12</reactor-netty.version>
+        <jackson.version>2.12.5</jackson.version>
+
+        <mockito.version>3.12.0</mockito.version>
+        <junit.version>4.13.2</junit.version>
+        <junit-params.version>1.1.1</junit-params.version>
+        <assertj.version>3.20.2</assertj.version>
     </properties>
 
     <licenses>
@@ -226,7 +231,12 @@
 
             <dependency>
                 <groupId>io.projectreactor.netty</groupId>
-                <artifactId>reactor-netty</artifactId>
+                <artifactId>reactor-netty-http</artifactId>
+                <version>${reactor-netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.projectreactor.netty</groupId>
+                <artifactId>reactor-netty-core</artifactId>
                 <version>${reactor-netty.version}</version>
             </dependency>
             <dependency>
@@ -250,25 +260,25 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>3.5.10</version>
+                <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.12</version>
+                <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>pl.pragmatists</groupId>
                 <artifactId>JUnitParams</artifactId>
-                <version>1.1.1</version>
+                <version>${junit-params.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
-                <version>3.17.2</version>
+                <version>${assertj.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

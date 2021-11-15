@@ -126,7 +126,7 @@ public abstract class Result<T> {
 
 
         public Builder<BT> status(int status, String reasonPhrase) {
-            this.status = HttpResponseStatus.valueOf(status, reasonPhrase);
+            this.status = HttpResponseStatus.valueOf(status, reasonPhrase == null ? "" : reasonPhrase);
             return this;
         }
 

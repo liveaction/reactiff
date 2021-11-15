@@ -7,6 +7,8 @@ import com.liveaction.reactiff.api.server.utils.MimeType;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
@@ -14,9 +16,12 @@ import reactor.netty.ByteBufFlux;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public final class RawFileCodec implements Codec {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RawFileCodec.class);
 
     private static final TypeToken<File> FILE = TypeToken.of(File.class);
     private static final TypeToken<Path> PATH = TypeToken.of(Path.class);
@@ -88,7 +93,7 @@ public final class RawFileCodec implements Codec {
             path = Mono.from(data)
                     .cast(File.class)
                     .map(File::toPath);
-        } else if(PATH.isSupertypeOf(typeToken)) {
+        } else if (PATH.isSupertypeOf(typeToken)) {
             path = Mono.from(data)
                     .cast(Path.class);
         } else {
@@ -101,18 +106,29 @@ public final class RawFileCodec implements Codec {
     public <T> Mono<Result<T>> enrich(Result<T> result) {
         return ((Mono<?>) result.data())
                 .map(item -> {
-                    String fileName;
+                    long size = -1;
+                    Path path;
                     if (item instanceof File) {
-                        fileName = ((File) item).getName();
+                        path = ((File) item).toPath();
                     } else if (item instanceof Path) {
-                        fileName = ((Path) item).getFileName().toString();
+                        path = ((Path) item);
                     } else {
                         throw new IllegalArgumentException("Only Path and File is accepted");
                     }
-                    return result.copy()
+                    String fileName = path.getFileName().toString();
+                    try {
+                        size = Files.size(path);
+                    } catch (IOException e) {
+                        LOGGER.debug("Cannot get size of {}", item);
+                    }
+                    Result.Builder<T> resultBuilder = result.copy()
                             .header(HttpHeaderNames.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                            .header(HttpHeaderNames.CONTENT_TYPE, new MimeType(fileName).toString(), false)
-                            .build();
+                            .header(HttpHeaderNames.CONTENT_TYPE, new MimeType(fileName).toString(), false);
+                    if (size != -1) {
+                        resultBuilder
+                                .header(HttpHeaderNames.CONTENT_LENGTH, Long.toString(size), false);
+                    }
+                    return resultBuilder.build();
                 });
 
     }
