@@ -18,7 +18,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty.version>4.1.69.Final</netty.version>
+        <netty.version>4.1.71.Final</netty.version>
         <reactor-core.version>3.4.11</reactor-core.version>
         <slf4j.version>1.7.30</slf4j.version>
         <guava.version>30.1.1-jre</guava.version>
