@@ -18,11 +18,11 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty.version>4.1.72.Final</netty.version>
-        <reactor-core.version>3.4.14</reactor-core.version>
+        <netty.version>4.1.74.Final</netty.version>
+        <reactor-core.version>3.4.15</reactor-core.version>
         <slf4j.version>1.7.32</slf4j.version>
         <guava.version>31.0.1-jre</guava.version>
-        <reactor-netty.version>1.0.14</reactor-netty.version>
+        <reactor-netty.version>1.0.16</reactor-netty.version>
         <jackson.version>2.13.1</jackson.version>
 
         <mockito.version>4.2.0</mockito.version>
