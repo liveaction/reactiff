@@ -23,7 +23,7 @@
         <slf4j.version>1.7.32</slf4j.version>
         <guava.version>31.0.1-jre</guava.version>
         <reactor-netty.version>1.0.16</reactor-netty.version>
-        <jackson.version>2.13.1</jackson.version>
+        <jackson.version>2.13.2.1</jackson.version>
 
         <mockito.version>4.2.0</mockito.version>
         <junit.version>4.13.2</junit.version>
