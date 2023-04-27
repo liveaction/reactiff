@@ -9,11 +9,13 @@ import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
 import reactor.core.scheduler.Scheduler;
 import reactor.netty.channel.ChannelMetricsRecorder;
 import reactor.netty.http.HttpProtocol;
+import reactor.netty.http.server.HttpServer;
 
 import java.io.Closeable;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public interface ReactiveHttpServer extends Closeable {
 
@@ -68,6 +70,8 @@ public interface ReactiveHttpServer extends Closeable {
         Builder compress(boolean compress);
 
         Builder writeErrorStacktrace(boolean writeErrorStacktrace);
+
+        Builder configure(Function<HttpServer, HttpServer> configuration);
 
         ReactiveHttpServer build();
 

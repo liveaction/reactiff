@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
 
@@ -62,14 +63,15 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
                                   boolean wiretap,
                                   boolean compress,
                                   boolean displayRoutes,
-                                  boolean writeErrorStacktrace) {
+                                  boolean writeErrorStacktrace,
+                                  Function<HttpServer, HttpServer> configuration) {
         this.host = host;
         this.port = port;
         this.protocols = protocols;
         this.ioExecutor = ioExecutor;
         this.workScheduler = workScheduler;
         this.router = new Router(codecManager, paramConverter, this::chain, writeErrorStacktrace, executionContextServiceManager, displayRoutes, workScheduler);
-        this.httpServer = createServer(wiretap, compress, channelMetricsRecorder);
+        this.httpServer = configuration.apply(createServer(wiretap, compress, channelMetricsRecorder));
     }
 
     @Override
