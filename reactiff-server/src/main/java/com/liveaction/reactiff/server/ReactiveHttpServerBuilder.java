@@ -11,11 +11,13 @@ import com.liveaction.reactiff.server.param.converter.ParamTypeConverter;
 import reactor.core.scheduler.Scheduler;
 import reactor.netty.channel.ChannelMetricsRecorder;
 import reactor.netty.http.HttpProtocol;
+import reactor.netty.http.server.HttpServer;
 import reactor.util.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 
 final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
 
@@ -46,6 +48,7 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
     private boolean displayRoutes = false;
 
     private boolean writeErrorStacktrace = true;
+    private Function<HttpServer, HttpServer> configuration = Function.identity();
 
 
     @Nullable
@@ -183,11 +186,18 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
     }
 
     @Override
+    public ReactiveHttpServer.Builder configure(Function<HttpServer, HttpServer> configuration) {
+        this.configuration = configuration;
+        return this;
+    }
+
+    @Override
     public ReactiveHttpServer build() {
         if (codecManager == null) {
             codecManager = new CodecManagerImpl();
         }
-        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, ioExecutor, workScheduler, channelMetricsRecorder, wiretap, compress, displayRoutes, writeErrorStacktrace);
+        ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, ioExecutor, workScheduler,
+                channelMetricsRecorder, wiretap, compress, displayRoutes, writeErrorStacktrace, configuration);
         filters.forEach(reactiveHttpServer::addReactiveFilter);
         handlers.forEach(reactiveHttpServer::addReactiveHandler);
         converters.forEach(reactiveHttpServer::addParamTypeConverter);
