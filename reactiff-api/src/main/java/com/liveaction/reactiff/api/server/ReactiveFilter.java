@@ -4,6 +4,9 @@ import reactor.core.publisher.Mono;
 
 public interface ReactiveFilter extends Comparable<ReactiveFilter> {
 
+    /**
+     * Rank of the filter. Lower ranks get executed first
+     */
     default int filterRank() {
         return 0;
     }
