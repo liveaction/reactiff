@@ -141,7 +141,7 @@ public final class TestController implements ReactiveHandler {
         return Mono.fromCallable(() -> Result.<byte[]>builder()
                 .data(Mono.just(test.getBytes()), byte[].class)
                 .build())
-                .subscribeOn(Schedulers.elastic());
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     @RequestMapping(method = HttpMethod.POST, path = "/void")
