@@ -1,8 +1,8 @@
 package com.liveaction.reactiff.codec.jackson.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
-import org.codehaus.jackson.annotate.JsonCreator;
 
 import java.util.Objects;
 
