@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -56,6 +55,7 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
 
     private final CodecManager codecManager;
     private final Function<FilterChain, FilterChain> filterFunction;
+    private final RequestMappingSupport requestMappingSupport;
     private HttpServerRoutes httpServerRoutes = HttpServerRoutes.newRoutes();
 
     private final boolean writeErrorStacktrace;
@@ -64,12 +64,25 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
     private static final Logger LOGGER = LoggerFactory.getLogger(Router.class);
 
 
-    public Router(CodecManager codecManager, ParamConverter paramConverter, Function<FilterChain, FilterChain> filterFunction,
-                  boolean writeErrorStacktrace, ExecutionContextService executionContextService, boolean displayRoutes, Scheduler workScheduler) {
+    public Router(CodecManager codecManager,
+                  ParamConverter paramConverter,
+                  Function<FilterChain, FilterChain> filterFunction,
+                  boolean writeErrorStacktrace,
+                  ExecutionContextService executionContextService,
+                  boolean displayRoutes,
+                  Scheduler workScheduler,
+                  Optional<String> originHeader) {
         this.codecManager = codecManager;
         this.filterFunction = filterFunction;
+        this.requestMappingSupport = new RequestMappingSupport(codecManager,
+                paramConverter,
+                filterFunction,
+                writeErrorStacktrace,
+                executionContextService,
+                workScheduler,
+                originHeader);
         this.handlerSupportFunctions = ImmutableSet.of(
-                new RequestMappingSupport(codecManager, paramConverter, filterFunction, writeErrorStacktrace, executionContextService, workScheduler),
+                requestMappingSupport,
                 new WsMappingSupport(filterFunction, codecManager, workScheduler)
         );
         this.writeErrorStacktrace = writeErrorStacktrace;
@@ -91,6 +104,10 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
         LOGGER.info("Removing Controller {}", reactiveHandler.getClass().getName());
         this.reactiveHandlers.remove(reactiveHandler);
         updateRoutes();
+    }
+
+    public void setOriginsToMonitor(Set<String> originsToMonitor) {
+        requestMappingSupport.setOriginsToMonitor(originsToMonitor);
     }
 
     @Override

@@ -5,17 +5,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.CodecManager;
-import com.liveaction.reactiff.api.server.FilterChain;
-import com.liveaction.reactiff.api.server.HttpMethod;
-import com.liveaction.reactiff.api.server.ReactiveHandler;
-import com.liveaction.reactiff.api.server.Request;
-import com.liveaction.reactiff.api.server.Result;
-import com.liveaction.reactiff.api.server.annotation.DefaultValue;
-import com.liveaction.reactiff.api.server.annotation.HeaderParam;
-import com.liveaction.reactiff.api.server.annotation.PathParam;
-import com.liveaction.reactiff.api.server.annotation.RequestBody;
-import com.liveaction.reactiff.api.server.annotation.RequestMapping;
-import com.liveaction.reactiff.api.server.annotation.UriParam;
+import com.liveaction.reactiff.api.server.*;
+import com.liveaction.reactiff.api.server.annotation.*;
 import com.liveaction.reactiff.api.server.route.HttpRoute;
 import com.liveaction.reactiff.api.server.route.Route;
 import com.liveaction.reactiff.server.context.ExecutionContext;
@@ -38,6 +29,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -54,15 +47,23 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
     private final ExecutionContextService executionContextService;
     private final Scheduler workScheduler;
 
-    public RequestMappingSupport(CodecManager codecManager, ParamConverter paramConverter,
-                                 Function<FilterChain, FilterChain> chainFunction, boolean writeErrorStacktrace,
-                                 ExecutionContextService executionContextService, Scheduler workScheduler) {
+    private final AtomicReference<Set<String>> originsToMonitor = new AtomicReference<>(ImmutableSet.of());
+    private final Optional<String> originHeader;
+
+    public RequestMappingSupport(CodecManager codecManager,
+                                 ParamConverter paramConverter,
+                                 Function<FilterChain, FilterChain> chainFunction,
+                                 boolean writeErrorStacktrace,
+                                 ExecutionContextService executionContextService,
+                                 Scheduler workScheduler,
+                                 Optional<String> originHeader) {
         this.codecManager = codecManager;
         this.paramConverter = paramConverter;
         this.filterChainer = chainFunction;
         this.writeErrorStacktrace = writeErrorStacktrace;
         this.executionContextService = executionContextService;
         this.workScheduler = workScheduler;
+        this.originHeader = originHeader;
     }
 
     @Override
@@ -94,6 +95,12 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
 
     private Mono<Result> invokeHandlerMethod(ReactiveHandler reactiveHandler, Method method, Request request) {
         try {
+            Optional<String> origin = originHeader.map(request::header);
+            Set<String> originsToMonitor = this.originsToMonitor.get();
+            if (origin.map(originsToMonitor::contains)
+                    .orElse(false)) {
+                LOGGER.info("{} {} from {}", request.method(), request.uri(), origin.get());
+            }
             ExecutionContext executionContext = executionContextService.prepare();
             TypeToken<?> returnType = TypeToken.of(method.getGenericReturnType());
             List<Object> args = Lists.newArrayList();
@@ -188,4 +195,8 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
         }
     }
 
+    public void setOriginsToMonitor(Set<String> originsToMonitor) {
+        LOGGER.info("Will now follow origins {}", originsToMonitor);
+        this.originsToMonitor.set(originsToMonitor);
+    }
 }
