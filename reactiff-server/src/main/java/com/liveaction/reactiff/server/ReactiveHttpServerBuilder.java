@@ -16,6 +16,8 @@ import reactor.util.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 
@@ -35,6 +37,8 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
 
     private final Collection<ParamTypeConverter<?>> converters = Sets.newConcurrentHashSet();
 
+    private final Set<String> originsToMonitor = Sets.newConcurrentHashSet();
+
     private Executor ioExecutor;
 
     private Scheduler workScheduler;
@@ -53,6 +57,7 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
 
     @Nullable
     private CodecManager codecManager;
+    private Optional<String> originHeader = Optional.empty();
 
     @Override
     public ReactiveHttpServer.Builder host(String host) {
@@ -192,12 +197,18 @@ final class ReactiveHttpServerBuilder implements ReactiveHttpServer.Builder {
     }
 
     @Override
+    public ReactiveHttpServer.Builder originHeader(String originHeader) {
+        this.originHeader = Optional.of(originHeader);
+        return this;
+    }
+
+    @Override
     public ReactiveHttpServer build() {
         if (codecManager == null) {
             codecManager = new CodecManagerImpl();
         }
         ReactiveHttpServerImpl reactiveHttpServer = new ReactiveHttpServerImpl(host, port, protocols, codecManager, ioExecutor, workScheduler,
-                channelMetricsRecorder, wiretap, compress, displayRoutes, writeErrorStacktrace, configuration);
+                channelMetricsRecorder, wiretap, compress, displayRoutes, writeErrorStacktrace, configuration, originHeader);
         filters.forEach(reactiveHttpServer::addReactiveFilter);
         handlers.forEach(reactiveHttpServer::addReactiveHandler);
         converters.forEach(reactiveHttpServer::addParamTypeConverter);

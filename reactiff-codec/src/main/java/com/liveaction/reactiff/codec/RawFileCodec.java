@@ -122,6 +122,7 @@ public final class RawFileCodec implements Codec {
                         LOGGER.debug("Cannot get size of {}", item);
                     }
                     Result.Builder<T> resultBuilder = result.copy()
+                            .data((Publisher<T>) Mono.just(item), result.type())
                             .header(HttpHeaderNames.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
                             .header(HttpHeaderNames.CONTENT_TYPE, new MimeType(fileName).toString(), false);
                     if (size != -1) {

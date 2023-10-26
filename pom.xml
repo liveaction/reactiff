@@ -7,7 +7,7 @@
     <groupId>com.liveaction</groupId>
     <artifactId>reactiff</artifactId>
     <packaging>pom</packaging>
-    <version>1.9.0</version>
+    <version>1.10.0</version>
     <modules>
         <module>reactiff-api</module>
         <module>reactiff-server</module>
@@ -18,22 +18,20 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty.version>4.1.91.Final</netty.version>
-        <reactor-core.version>3.4.29</reactor-core.version>
+        <netty.version>4.1.98.Final</netty.version>
+        <reactor-core.version>3.5.10</reactor-core.version>
         <slf4j.version>1.7.36</slf4j.version>
         <guava.version>31.0.1-jre</guava.version>
-        <reactor-netty.version>1.0.31</reactor-netty.version>
-        <jackson.version>2.14.2</jackson.version>
+        <reactor-netty.version>1.1.11</reactor-netty.version>
+        <jackson.version>2.15.2</jackson.version>
 
-        <mockito.version>4.9.0</mockito.version>
+        <mockito.version>5.3.1</mockito.version>
         <junit.version>4.13.2</junit.version>
         <junit-params.version>1.1.1</junit-params.version>
         <assertj.version>3.23.1</assertj.version>
-        <commons-io.version>2.11.0</commons-io.version>
+        <commons-io.version>2.12.0</commons-io.version>
         <logback.version>1.2.11</logback.version>
         <javax.activation.version>1.2.0</javax.activation.version>
-        <!-- 3.0 upgrades to java14 and is not compatible with java11 jre -->
-        <fst.version>2.57</fst.version>
         <nio-multipart-parser.version>1.1.0</nio-multipart-parser.version>
     </properties>
 
@@ -67,7 +65,7 @@
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
                 <extensions>true</extensions>
-                <version>4.2.1</version>
+                <version>5.1.8</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -151,26 +149,6 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-smile</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-avro</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-ion</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-protobuf</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-cbor</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
@@ -318,18 +296,6 @@
                 <groupId>com.sun.activation</groupId>
                 <artifactId>javax.activation</artifactId>
                 <version>${javax.activation.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.esotericsoftware</groupId>
-                <artifactId>kryo</artifactId>
-                <version>5.2.0</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>de.ruedigermoeller</groupId>
-                <artifactId>fst</artifactId>
-                <version>${fst.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

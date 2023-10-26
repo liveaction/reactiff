@@ -13,6 +13,7 @@ import reactor.netty.http.server.HttpServer;
 
 import java.io.Closeable;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -72,6 +73,7 @@ public interface ReactiveHttpServer extends Closeable {
         Builder writeErrorStacktrace(boolean writeErrorStacktrace);
 
         Builder configure(Function<HttpServer, HttpServer> configuration);
+        Builder originHeader(String originHeader);
 
         ReactiveHttpServer build();
 
@@ -101,4 +103,5 @@ public interface ReactiveHttpServer extends Closeable {
 
     void removeReactiveHandler(ReactiveHandler reactiveHandler);
 
+    void setOriginsToMonitor(Set<String> originToMonitor);
 }

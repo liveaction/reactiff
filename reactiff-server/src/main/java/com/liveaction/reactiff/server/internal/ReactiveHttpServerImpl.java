@@ -24,12 +24,7 @@ import reactor.netty.http.server.HttpServer;
 import reactor.netty.transport.logging.AdvancedByteBufFormat;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -53,6 +48,7 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
 
     private DisposableServer disposableServer;
 
+
     public ReactiveHttpServerImpl(String host,
                                   int port,
                                   Collection<HttpProtocol> protocols,
@@ -64,13 +60,21 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
                                   boolean compress,
                                   boolean displayRoutes,
                                   boolean writeErrorStacktrace,
-                                  Function<HttpServer, HttpServer> configuration) {
+                                  Function<HttpServer, HttpServer> configuration,
+                                  Optional<String> originHeader) {
         this.host = host;
         this.port = port;
         this.protocols = protocols;
         this.ioExecutor = ioExecutor;
         this.workScheduler = workScheduler;
-        this.router = new Router(codecManager, paramConverter, this::chain, writeErrorStacktrace, executionContextServiceManager, displayRoutes, workScheduler);
+        this.router = new Router(codecManager,
+                paramConverter,
+                this::chain,
+                writeErrorStacktrace,
+                executionContextServiceManager,
+                displayRoutes,
+                workScheduler,
+                originHeader);
         this.httpServer = configuration.apply(createServer(wiretap, compress, channelMetricsRecorder));
     }
 
@@ -133,6 +137,11 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     public void removeReactiveHandler(ReactiveHandler reactiveHandler) {
         router.removeReactiveHander(reactiveHandler);
         LOGGER.info("ReactiveHandler {}(rank={}) removed", reactiveHandler.getClass().getName(), reactiveHandler.handlerRank());
+    }
+
+    @Override
+    public void setOriginsToMonitor(Set<String> originsToMonitor) {
+        router.setOriginsToMonitor(originsToMonitor);
     }
 
     @Override
