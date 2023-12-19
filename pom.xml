@@ -19,13 +19,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <netty.version>4.1.98.Final</netty.version>
-        <reactor-core.version>3.5.10</reactor-core.version>
+        <reactor-core.version>3.6.1</reactor-core.version>
         <slf4j.version>1.7.36</slf4j.version>
         <guava.version>31.0.1-jre</guava.version>
-        <reactor-netty.version>1.1.11</reactor-netty.version>
-        <jackson.version>2.15.2</jackson.version>
+        <reactor-netty.version>1.1.14</reactor-netty.version>
+        <jackson.version>2.16.0</jackson.version>
 
-        <mockito.version>5.3.1</mockito.version>
+        <mockito.version>5.8.0</mockito.version>
         <junit.version>4.13.2</junit.version>
         <junit-params.version>1.1.1</junit-params.version>
         <assertj.version>3.23.1</assertj.version>
