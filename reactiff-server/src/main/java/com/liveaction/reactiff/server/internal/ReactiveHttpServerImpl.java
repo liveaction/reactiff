@@ -118,25 +118,25 @@ public final class ReactiveHttpServerImpl implements ReactiveHttpServer {
     @Override
     public void addReactiveFilter(ReactiveFilter reactiveFilter) {
         this.reactiveFilters.add(reactiveFilter);
-        LOGGER.info("ReactiveFilter {}(rank={}) added", reactiveFilter, reactiveFilter.filterRank());
+        LOGGER.debug("ReactiveFilter {}(rank={}) added", reactiveFilter, reactiveFilter.filterRank());
     }
 
     @Override
     public void removeReactiveFilter(ReactiveFilter reactiveFilter) {
         this.reactiveFilters.remove(reactiveFilter);
-        LOGGER.info("ReactiveFilter {}(rank={}) removed", reactiveFilter, reactiveFilter.filterRank());
+        LOGGER.debug("ReactiveFilter {}(rank={}) removed", reactiveFilter, reactiveFilter.filterRank());
     }
 
     @Override
     public void addReactiveHandler(ReactiveHandler reactiveHandler) {
         router.addReactiveHander(reactiveHandler);
-        LOGGER.info("ReactiveHandler {}(rank={}) added", reactiveHandler.getClass().getName(), reactiveHandler.handlerRank());
+        LOGGER.debug("ReactiveHandler {}(rank={}) added", reactiveHandler.getClass().getName(), reactiveHandler.handlerRank());
     }
 
     @Override
     public void removeReactiveHandler(ReactiveHandler reactiveHandler) {
         router.removeReactiveHander(reactiveHandler);
-        LOGGER.info("ReactiveHandler {}(rank={}) removed", reactiveHandler.getClass().getName(), reactiveHandler.handlerRank());
+        LOGGER.debug("ReactiveHandler {}(rank={}) removed", reactiveHandler.getClass().getName(), reactiveHandler.handlerRank());
     }
 
     @Override

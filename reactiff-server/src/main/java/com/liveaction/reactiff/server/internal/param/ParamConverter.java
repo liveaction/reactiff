@@ -37,13 +37,13 @@ public final class ParamConverter {
 
     public <T> void addConverter(ParamTypeConverter<T> converter) {
         Type type = ((ParameterizedType) converter.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0];
-        LOGGER.info("Adding a converter for {}", type.getTypeName());
+        LOGGER.debug("Adding a converter for {}", type.getTypeName());
         this.converters.put(type, converter);
     }
 
     public void removeConverter(ParamTypeConverter<?> converter) {
         Type type = ((ParameterizedType) converter.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0];
-        LOGGER.info("Removing a converter for {}", type.getTypeName());
+        LOGGER.debug("Removing a converter for {}", type.getTypeName());
         this.converters.remove(type, converter);
     }
 

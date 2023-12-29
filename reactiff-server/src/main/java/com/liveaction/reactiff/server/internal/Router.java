@@ -90,7 +90,7 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
     }
 
     public void addReactiveHander(ReactiveHandler reactiveHandler) {
-        LOGGER.info("Adding Controller {}", reactiveHandler.getClass().getName());
+        LOGGER.debug("Adding Controller {}", reactiveHandler.getClass().getName());
         this.reactiveHandlers.add(reactiveHandler);
         try {
             updateRoutes();
@@ -101,7 +101,7 @@ public final class Router implements BiFunction<HttpServerRequest, HttpServerRes
     }
 
     public void removeReactiveHander(ReactiveHandler reactiveHandler) {
-        LOGGER.info("Removing Controller {}", reactiveHandler.getClass().getName());
+        LOGGER.debug("Removing Controller {}", reactiveHandler.getClass().getName());
         this.reactiveHandlers.remove(reactiveHandler);
         updateRoutes();
     }
