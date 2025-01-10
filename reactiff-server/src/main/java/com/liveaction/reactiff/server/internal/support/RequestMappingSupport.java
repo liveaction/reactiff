@@ -1,12 +1,23 @@
 package com.liveaction.reactiff.server.internal.support;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
 import com.liveaction.reactiff.api.codec.CodecManager;
-import com.liveaction.reactiff.api.server.*;
-import com.liveaction.reactiff.api.server.annotation.*;
+import com.liveaction.reactiff.api.server.FilterChain;
+import com.liveaction.reactiff.api.server.HttpMethod;
+import com.liveaction.reactiff.api.server.ReactiveHandler;
+import com.liveaction.reactiff.api.server.Request;
+import com.liveaction.reactiff.api.server.Result;
+import com.liveaction.reactiff.api.server.annotation.DefaultValue;
+import com.liveaction.reactiff.api.server.annotation.HeaderParam;
+import com.liveaction.reactiff.api.server.annotation.PathParam;
+import com.liveaction.reactiff.api.server.annotation.RequestBody;
+import com.liveaction.reactiff.api.server.annotation.RequestMapping;
+import com.liveaction.reactiff.api.server.annotation.UriParam;
+import com.liveaction.reactiff.api.server.multipart.Part;
 import com.liveaction.reactiff.api.server.route.HttpRoute;
 import com.liveaction.reactiff.api.server.route.Route;
 import com.liveaction.reactiff.server.context.ExecutionContext;
@@ -14,6 +25,9 @@ import com.liveaction.reactiff.server.context.ExecutionContextService;
 import com.liveaction.reactiff.server.internal.param.ParamConverter;
 import com.liveaction.reactiff.server.internal.utils.FilterUtils;
 import com.liveaction.reactiff.server.internal.utils.ResultUtils;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.cookie.Cookie;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +41,10 @@ import reactor.netty.http.server.HttpServerRoutes;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -110,7 +127,7 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
                 TypeToken<?> parameterType = TypeToken.of(parameter.getType());
                 TypeToken<?> parametrizedType = TypeToken.of(parameter.getParameterizedType());
                 if (parameterType.isSupertypeOf(Request.class)) {
-                    args.add(request);
+                    args.add(requestWithMultipartContext(request, executionContext));
                 } else {
                     PathParam annotation;
                     HeaderParam headerAnnotation;
@@ -193,6 +210,143 @@ public class RequestMappingSupport implements HandlerSupportFunction<RequestMapp
         } catch (Throwable e) {
             return Mono.error(e);
         }
+    }
+
+    private Request requestWithMultipartContext(Request request, ExecutionContext executionContext) {
+        return new Request() {
+            @Override
+            public <T> Mono<T> bodyToMono(TypeToken<T> typeToken) {
+                return request.bodyToMono(typeToken)
+                        .transform(mono -> workScheduler == null ? mono : mono.publishOn(workScheduler))
+                        .doOnEach(v -> executionContext.apply());
+            }
+
+            @Override
+            public <T> Flux<T> bodyToFlux(TypeToken<T> typeToken) {
+                return request.bodyToFlux(typeToken)
+                        .transform(mono -> workScheduler == null ? mono : mono.publishOn(workScheduler))
+                        .doOnEach(v -> executionContext.apply());
+            }
+
+            @Override
+            public String uriParam(String name) {
+                return request.uriParam(name);
+            }
+
+            @Override
+            public ImmutableList<String> uriParams(String name) {
+                return request.uriParams(name);
+            }
+
+            @Override
+            public String pathParam(String name) {
+                return request.pathParam(name);
+            }
+
+            @Override
+            public Mono<Map<String, Part>> parts() {
+                return request.parts()
+                        .transform(mono -> workScheduler == null ? mono : mono.publishOn(workScheduler))
+                        .doOnEach(v -> executionContext.apply());
+            }
+
+            @Override
+            public ImmutableMap<String, ImmutableList<String>> uriParams() {
+                return request.uriParams();
+            }
+
+            @Override
+            public String header(CharSequence name) {
+                return request.header(name);
+            }
+
+            @Override
+            public List<String> headers(CharSequence name) {
+                return request.headers(name);
+            }
+
+            @Override
+            public InetSocketAddress hostAddress() {
+                return request.hostAddress();
+            }
+
+            @Override
+            public InetSocketAddress remoteAddress() {
+                return request.remoteAddress();
+            }
+
+            @Override
+            public HttpHeaders requestHeaders() {
+                return request.requestHeaders();
+            }
+
+            @Override
+            public String scheme() {
+                return request.scheme();
+            }
+
+            @Override
+            public Map<CharSequence, Set<Cookie>> cookies() {
+                return request.cookies();
+            }
+
+            @Override
+            public boolean isKeepAlive() {
+                return request.isKeepAlive();
+            }
+
+            @Override
+            public boolean isWebsocket() {
+                return request.isWebsocket();
+            }
+
+            @Override
+            public HttpMethod method() {
+                return request.method();
+            }
+
+            @Override
+            public String path() {
+                return request.path();
+            }
+
+            @Override
+            public String query() {
+                return request.query();
+            }
+
+            @Override
+            public String uri() {
+                return request.uri();
+            }
+
+            @Override
+            public HttpVersion version() {
+                return request.version();
+            }
+
+            @Override
+            public Optional<Route> matchingRoute() {
+                return request.matchingRoute();
+            }
+
+            @Override
+            public Locale getLocale() {
+                return request.getLocale();
+            }
+
+            @Override
+            public ImmutableList<Locale.LanguageRange> getLanguageRanges() {
+                return request.getLanguageRanges();
+            }
+
+            @Override
+            public Mono<ImmutableMap<String, ImmutableList<String>>> getFormData() {
+                return request.getFormData()
+                        .transform(mono -> workScheduler == null ? mono : mono.publishOn(workScheduler))
+                        .doOnEach(v -> executionContext.apply());
+            }
+        };
     }
 
     public void setOriginsToMonitor(Set<String> originsToMonitor) {
