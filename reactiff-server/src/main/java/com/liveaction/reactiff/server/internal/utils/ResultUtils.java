@@ -45,5 +45,4 @@ public final class ResultUtils {
     private static <T> Result<T> toTypedResult(Object result, TypeToken<T> typeToken) {
         return Result.ok((Publisher<T>) result, typeToken);
     }
-
 }

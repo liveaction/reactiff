@@ -87,6 +87,11 @@ public final class TestController implements ReactiveHandler {
                 .map(pojo -> new Pojo(pojo.id, pojo.name + " from server"));
     }
 
+    @RequestMapping(method = HttpMethod.GET, path = "/pojo")
+    public Mono<Result<Pojo>> getPojo() {
+        return Mono.just(Result.ok(Mono.just(new Pojo("ozzy", "Ozzy")), Pojo.class));
+    }
+
     @RequestMapping(method = HttpMethod.GET, path = "/boolean")
     public Mono<Boolean> getBoolean(Request request) {
         return Mono.just(true);
