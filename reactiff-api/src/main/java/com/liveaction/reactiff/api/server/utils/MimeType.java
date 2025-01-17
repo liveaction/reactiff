@@ -50,7 +50,7 @@ public final class MimeType {
         if (lastDotPosition > 0) {
             String fileExtension = fileName.substring(lastDotPosition + 1).toLowerCase();
 
-            if (fileExtension.length() > 0) {
+            if (!fileExtension.isBlank()) {
                 return Optional.ofNullable(MAIN_MAP.get(fileExtension))
                         .orElse(FALLBACK_MAP.getContentType(fileName));
             }

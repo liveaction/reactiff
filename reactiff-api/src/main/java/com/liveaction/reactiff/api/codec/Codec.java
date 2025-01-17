@@ -19,7 +19,7 @@ public interface Codec {
 
     <T> Publisher<ByteBuf> encode(String contentType, Publisher<T> data, TypeToken<T> typeToken);
 
-    default <T> Mono<Result<T>> enrich(Result<T> result) {
+    default <T> Mono<Result<T>> enrich(Result<T> result, String contentType) {
         return Mono.just(result);
     }
 }

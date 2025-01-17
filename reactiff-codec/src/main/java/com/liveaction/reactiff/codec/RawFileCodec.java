@@ -103,7 +103,7 @@ public final class RawFileCodec implements Codec {
     }
 
     @Override
-    public <T> Mono<Result<T>> enrich(Result<T> result) {
+    public <T> Mono<Result<T>> enrich(Result<T> result, String contentType) {
         return ((Mono<?>) result.data())
                 .map(item -> {
                     long size = -1;
