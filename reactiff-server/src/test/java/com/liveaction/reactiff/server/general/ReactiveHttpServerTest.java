@@ -89,6 +89,20 @@ public final class ReactiveHttpServerTest {
     }
 
     @Test
+    public void shouldSetDefaultCharset() {
+        StepVerifier.create(
+                        withReactiveServer.httpClient()
+                                .get()
+                                .uri("/pojo")
+                                .response())
+                .expectNextMatches(httpClientResponse -> {
+                    String contentType = httpClientResponse.responseHeaders().get("content-type");
+                    return contentType.equalsIgnoreCase("application/json; charset=UTF-8");
+                })
+                .verifyComplete();
+    }
+
+    @Test
     public void shouldDownloadFile() {
         StepVerifier.create(withReactiveServer.httpClient()
                         .get()
@@ -441,7 +455,6 @@ public final class ReactiveHttpServerTest {
                 .expectComplete()
                 .verify();
     }
-
 
     @Test
     public void shouldPostAndReceivePojo_flux_withCompression() {

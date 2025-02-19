@@ -18,7 +18,12 @@ import reactor.netty.http.server.HttpServerRequest;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.StreamSupport;
 
@@ -82,12 +87,13 @@ public final class CodecManagerImpl implements CodecManager {
 
     @Override
     public <T> Mono<Result<T>> enrichResult(HttpHeaders requestHttpHeaders, HttpHeaders responseHttpHeaders, Result<T> result) {
-        String contentType = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
-        if (contentType == null) {
-            contentType = negotiateContentType(getAcceptHeaders(requestHttpHeaders), result.type());
-        }
+        String contentTypeHeader = responseHttpHeaders.get(HttpHeaderNames.CONTENT_TYPE);
+        final String contentType = contentTypeHeader == null ?
+                negotiateContentType(getAcceptHeaders(requestHttpHeaders), result.type()) :
+                contentTypeHeader;
+
         return getOptionalCodec(contentType, result.type())
-                .map(codec -> codec.enrich(result))
+                .map(codec -> codec.enrich(result, contentType))
                 .orElse(Mono.just(result));
     }
 
