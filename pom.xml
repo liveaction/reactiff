@@ -26,7 +26,6 @@
         <jackson.version>2.17.2</jackson.version>
 
         <mockito.version>5.15.2</mockito.version>
-        <junit.version>4.13.2</junit.version>
         <junit-params.version>1.1.1</junit-params.version>
         <assertj.version>3.27.3</assertj.version>
         <commons-io.version>2.18.0</commons-io.version>
@@ -102,6 +101,35 @@
             <url>https://artifactory.liveaction.com/artifactory/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
+
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>1.13.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.13.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.13.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>5.13.3</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <dependencyManagement>
         <dependencies>
@@ -254,12 +282,6 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
