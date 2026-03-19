@@ -95,11 +95,11 @@
     <distributionManagement>
         <repository>
             <id>nexus</id>
-            <url>https://artifactory.liveaction.com/artifactory/releases</url>
+            <url>https://artifactory.bluecatlabs.net/artifactory/lsp-releases-local</url>
         </repository>
         <snapshotRepository>
             <id>nexus</id>
-            <url>https://artifactory.liveaction.com/artifactory/snapshots</url>
+            <url>https://artifactory.bluecatlabs.net/artifactory/lsp-snapshots-local</url>
         </snapshotRepository>
     </distributionManagement>
 
